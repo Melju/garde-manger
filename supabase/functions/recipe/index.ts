@@ -1,37 +1,18 @@
-// Edge Function « recipe » : génère une recette à partir du stock via l'API Claude.
-// La clé API n'est jamais dans l'app : elle est lue depuis l'environnement serveur
-// (ANTHROPIC_API_KEY). Le routeur principal vérifie déjà le JWT de l'utilisateur.
+// Edge Function « recipe » : génère une recette à partir du stock via Claude.
+// Modèle « smart » (Sonnet). Résultat mis en cache (entrées identiques) pour
+// éviter de repayer un appel. La clé API reste côté serveur uniquement.
 
-const ANTHROPIC_KEY = Deno.env.get('ANTHROPIC_API_KEY')
-const MODEL = Deno.env.get('ANTHROPIC_MODEL') ?? 'claude-3-5-haiku-latest'
+import { callClaude, extractJson } from '../_shared/claude.ts'
+import { cacheGet, cacheSet, cacheKey } from '../_shared/cache.ts'
 
 function json(obj: unknown, status = 200): Response {
-  return new Response(JSON.stringify(obj), {
-    status,
-    headers: { 'content-type': 'application/json' },
-  })
+  return new Response(JSON.stringify(obj), { status, headers: { 'content-type': 'application/json' } })
 }
 
-/** Extrait le premier objet JSON d'un texte (au cas où le modèle l'enrobe). */
-function extractJson(text: string): any | null {
-  try {
-    return JSON.parse(text)
-  } catch {
-    const m = text.match(/\{[\s\S]*\}/)
-    if (m) {
-      try {
-        return JSON.parse(m[0])
-      } catch {
-        /* ignore */
-      }
-    }
-    return null
-  }
-}
+const TTL = 30 * 60 * 1000 // 30 min
 
 Deno.serve(async (req) => {
   if (req.method !== 'POST') return json({ error: 'Méthode non autorisée' }, 405)
-  if (!ANTHROPIC_KEY) return json({ error: 'Clé API non configurée côté serveur' }, 500)
 
   let body: any = {}
   try {
@@ -46,6 +27,16 @@ Deno.serve(async (req) => {
     ? body.expiring.filter((x: unknown) => typeof x === 'string').slice(0, 15)
     : []
   const constraints: string = typeof body.constraints === 'string' ? body.constraints.slice(0, 400) : ''
+  const preferences: string[] = Array.isArray(body.preferences)
+    ? body.preferences.filter((x: unknown) => typeof x === 'string').slice(0, 12)
+    : []
+  const nocache = body.nocache === true
+
+  const key = cacheKey('recipe', { ingredients, expiring, constraints, preferences })
+  if (!nocache) {
+    const hit = cacheGet<any>(key)
+    if (hit) return json({ recipe: hit, cached: true })
+  }
 
   const prompt = `Tu es un chef cuisinier. Propose UNE seule recette familiale réaliste,
 en utilisant EN PRIORITÉ les ingrédients déjà disponibles ci-dessous (tu peux en ajouter
@@ -53,44 +44,21 @@ quelques-uns courants si nécessaire).
 
 Ingrédients disponibles : ${ingredients.length ? ingredients.join(', ') : 'aucun en particulier'}.
 ${expiring.length ? `À écouler en priorité (périment bientôt) : ${expiring.join(', ')}.` : ''}
+${preferences.length ? `Goûts de la famille (plats qu'ils cuisinent/aiment souvent) — inspire-toi de ce style sans forcément les répéter : ${preferences.join(', ')}.` : ''}
 ${constraints ? `Contraintes : ${constraints}.` : ''}
 
 Réponds STRICTEMENT en JSON valide, sans aucun texte autour, avec ce schéma exact :
 {"title": string, "timeMin": number, "cuisine": string, "tags": string[], "ingredients": [{"name": string, "qty": string}], "steps": string[]}
 Les quantités sont pour 4 personnes. Le titre est court. timeMin est le temps total en minutes.`
 
-  let resp: Response
-  try {
-    resp = await fetch('https://api.anthropic.com/v1/messages', {
-      method: 'POST',
-      headers: {
-        'content-type': 'application/json',
-        'x-api-key': ANTHROPIC_KEY,
-        'anthropic-version': '2023-06-01',
-      },
-      body: JSON.stringify({
-        model: MODEL,
-        max_tokens: 1200,
-        messages: [{ role: 'user', content: prompt }],
-      }),
-    })
-  } catch (e) {
-    return json({ error: 'Appel Anthropic impossible', detail: String(e) }, 502)
-  }
+  const res = await callClaude({ prompt, tier: 'smart', maxTokens: 1200 })
+  if (!res.ok) return json({ error: res.detail }, res.status)
 
-  if (!resp.ok) {
-    const detail = await resp.text()
-    return json({ error: `Anthropic ${resp.status}`, detail }, 502)
-  }
-
-  const data = await resp.json()
-  const text: string = data?.content?.[0]?.text ?? ''
-  const recipe = extractJson(text)
+  const recipe = extractJson(res.text)
   if (!recipe || typeof recipe.title !== 'string') {
-    return json({ error: 'Réponse illisible du modèle', raw: text }, 502)
+    return json({ error: 'Réponse illisible du modèle', raw: res.text }, 502)
   }
 
-  // Normalisation défensive.
   const clean = {
     title: String(recipe.title).slice(0, 120),
     timeMin: Number(recipe.timeMin) || 0,
@@ -107,5 +75,6 @@ Les quantités sont pour 4 personnes. Le titre est court. timeMin est le temps t
       : [],
   }
 
+  cacheSet(key, clean, TTL)
   return json({ recipe: clean })
 })

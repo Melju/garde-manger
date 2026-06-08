@@ -343,8 +343,22 @@ export function StoreProvider({ children }: { children: ReactNode }) {
         const rest = products.map((p) => p.name).filter((n) => !prio.includes(n))
         const ingredients = [...new Set([...prio, ...rest])].slice(0, 40)
         const expiring = prio.slice(0, 12)
+        // Apprentissage des goûts : plats fréquents (planning + préparés) + favoris.
+        const freq = new Map<string, number>()
+        for (const label of Object.values(mealPlan)) {
+          const t = label.trim()
+          if (t) freq.set(t, (freq.get(t) ?? 0) + 1)
+        }
+        for (const h of history) {
+          if (h.kind !== 'prepare') continue
+          const t = h.label.replace(/\s+préparée?$/i, '').trim()
+          if (t) freq.set(t, (freq.get(t) ?? 0) + 1)
+        }
+        const frequent = [...freq.entries()].sort((a, b) => b[1] - a[1]).map(([t]) => t)
+        const favorites = recipes.filter((r) => r.favorite).map((r) => r.title)
+        const preferences = [...new Set([...frequent, ...favorites])].slice(0, 12)
         const { data, error } = await supabase.functions.invoke('recipe', {
-          body: { ingredients, expiring, constraints },
+          body: { ingredients, expiring, constraints, preferences },
         })
         if (error) throw new Error(error.message || 'Génération impossible')
         const r = (data as any)?.recipe

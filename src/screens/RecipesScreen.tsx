@@ -134,25 +134,25 @@ export function RecipesScreen({ onOpenRecipe, onOpenFamily }: RecipesScreenProps
         })}
 
         <div className="ai-block">
-          <div className="ai-constraints">
-            {CONSTRAINTS.map(([val, label]) => (
-              <button
-                key={label}
-                className={`chip-toggle${constraint === val ? ' active' : ''}`}
-                onClick={() => setConstraint(val)}
-              >
-                {label}
-              </button>
-            ))}
-          </div>
           <div className={`ai-suggest-card${generating ? ' busy' : ''}`} onClick={handleGenerate}>
             <div className="ai-icon">
               <Icon name="sparkles" />
             </div>
-            <div>
+            <div className="ai-text">
               <div className="ai-title">{generating ? 'Génération en cours…' : 'Génère une recette créative'}</div>
-              <div className="ai-desc">À partir de ton stock (priorité anti-gaspi) · Claude</div>
+              <div className="ai-desc">À partir de ton stock · Claude</div>
             </div>
+            <select
+              className="ai-select"
+              value={constraint}
+              onClick={(e) => e.stopPropagation()}
+              onChange={(e) => setConstraint(e.target.value)}
+              aria-label="Type de recette"
+            >
+              {CONSTRAINTS.map(([val, label]) => (
+                <option key={label} value={val}>{label}</option>
+              ))}
+            </select>
           </div>
         </div>
       </div>
