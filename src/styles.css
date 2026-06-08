@@ -160,7 +160,8 @@ button { font-family: inherit; }
   flex: 1;
   border: none;
   background: none;
-  font-size: 15px;
+  /* 16px minimum : évite le zoom automatique de Safari iOS au focus. */
+  font-size: 16px;
   font-family: inherit;
   color: var(--fg);
   outline: none;

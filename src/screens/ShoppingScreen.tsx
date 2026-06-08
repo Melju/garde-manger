@@ -91,7 +91,7 @@ export function ShoppingScreen() {
           />
           <select
             className="form-select"
-            style={{ width: 'auto', height: 36, border: 'none', padding: '0 8px', fontSize: 14 }}
+            style={{ width: 'auto', height: 36, border: 'none', padding: '0 8px', fontSize: 16 }}
             value={category}
             onChange={(e) => setCategory(e.target.value as Category)}
           >
