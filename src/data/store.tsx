@@ -9,6 +9,7 @@ import {
 } from 'react'
 import type {
   BudgetConfig,
+  Category,
   Expense,
   FamilyMember,
   FamilyMemberInput,
@@ -20,6 +21,7 @@ import type {
   Recipe,
   RecipeInput,
   Settings,
+  ShopCatalogEntry,
   ShoppingItem,
   ShoppingItemInput,
 } from '../types'
@@ -64,6 +66,10 @@ interface StoreValue {
   removeShoppingItem(id: string): Promise<void>
   clearCheckedShopping(): Promise<void>
 
+  // Catalogue d'apprentissage des courses
+  shopCatalog: ShopCatalogEntry[]
+  recordShopItem(name: string, category: Category, unit: string, qty: number): Promise<void>
+
   // Recettes
   addRecipe(input: RecipeInput): Promise<Recipe>
   toggleFavorite(id: string): Promise<void>
@@ -106,6 +112,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   const [mealPlan, setMealPlan] = useState<MealPlan>({})
   const [history, setHistory] = useState<HistoryEntry[]>([])
   const [expenses, setExpenses] = useState<Expense[]>([])
+  const [shopCatalog, setShopCatalog] = useState<ShopCatalogEntry[]>([])
   const [budget, setBudget] = useState<BudgetConfig>({ monthlyLimit: 400 })
   const [settings, setSettings] = useState<Settings>({
     notifExpiry: true,
@@ -122,7 +129,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   )
 
   const loadAll = useCallback(async () => {
-    const [p, s, r, f, m, h, e, b, st] = await Promise.all([
+    const [p, s, r, f, m, h, e, b, st, sc] = await Promise.all([
       repo.listProducts(),
       repo.listShopping(),
       repo.getRecipes(),
@@ -132,6 +139,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       repo.getExpenses(),
       repo.getBudget(),
       repo.getSettings(),
+      repo.getShopCatalog(),
     ])
     setProducts(p)
     setShopping(s)
@@ -142,6 +150,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     setExpenses(e)
     setBudget(b)
     setSettings(st)
+    setShopCatalog(sc)
   }, [repo])
 
   useEffect(() => {
@@ -299,6 +308,23 @@ export function StoreProvider({ children }: { children: ReactNode }) {
         setShopping(await repo.listShopping())
       },
 
+      shopCatalog,
+      async recordShopItem(name, category, unit, qty) {
+        const k = name.trim().toLowerCase()
+        if (!k) return
+        const prev = shopCatalog.find((e) => e.name.trim().toLowerCase() === k)
+        const entry: ShopCatalogEntry = {
+          name: name.trim(),
+          category,
+          unit,
+          qty,
+          count: (prev?.count ?? 0) + 1,
+          at: new Date().toISOString(),
+        }
+        const next = [entry, ...shopCatalog.filter((e) => e.name.trim().toLowerCase() !== k)]
+        setShopCatalog(next)
+        await repo.saveShopCatalog(next)
+      },
       async addRecipe(input) {
         const recipe: Recipe = { ...input, id: newId() }
         const next = [recipe, ...recipes]
@@ -367,7 +393,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
         await loadAll()
       },
     }
-  }, [repo, products, shopping, recipes, family, mealPlan, history, expenses, budget, settings, loading, loadAll])
+  }, [repo, products, shopping, recipes, family, mealPlan, history, expenses, shopCatalog, budget, settings, loading, loadAll])
 
   return <StoreContext.Provider value={value}>{children}</StoreContext.Provider>
 }

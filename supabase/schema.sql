@@ -213,6 +213,19 @@ create table if not exists settings (
   low_stock_threshold int not null default 1
 );
 
+-- Catalogue d'apprentissage des courses (partagé au foyer).
+create table if not exists shop_catalog (
+  household_id uuid not null references households (id) on delete cascade,
+  name_key     text not null,
+  name         text not null,
+  category     text not null,
+  unit         text not null default '',
+  qty          numeric not null default 1,
+  count        int not null default 1,
+  at           timestamptz not null default now(),
+  primary key (household_id, name_key)
+);
+
 -- ---------- Row Level Security ----------
 
 alter table households      enable row level security;
@@ -226,6 +239,7 @@ alter table history         enable row level security;
 alter table expenses        enable row level security;
 alter table budget          enable row level security;
 alter table settings        enable row level security;
+alter table shop_catalog    enable row level security;
 
 -- Profil : chacun lit/modifie le sien.
 create policy profiles_self on profiles
@@ -243,7 +257,7 @@ declare t text;
 begin
   foreach t in array array[
     'products','shopping_items','recipes','family_members',
-    'meals','history','expenses','budget','settings'
+    'meals','history','expenses','budget','settings','shop_catalog'
   ] loop
     execute format($f$
       create policy %1$s_household on %1$s

@@ -5,8 +5,7 @@ import { Icon } from '../components/Icon'
 import { QuantityWheel } from '../components/QuantityWheel'
 import { CATEGORIES, categoryLabel, type Category, type ShoppingItem } from '../types'
 import { buyScale, formatContenance, parseContenance } from '../lib/contenance'
-import { guessCategoryFromName } from '../lib/categoryGuess'
-import { loadShopCatalog, recordShopItem } from '../lib/shoppingCatalog'
+import { guessCategoryFromName, guessUnitFromName } from '../lib/categoryGuess'
 
 interface KnownItem {
   name: string
@@ -21,6 +20,8 @@ export function ShoppingScreen() {
     shopping,
     products,
     history,
+    shopCatalog,
+    recordShopItem,
     addShoppingItem,
     toggleShoppingItem,
     removeShoppingItem,
@@ -53,24 +54,28 @@ export function ShoppingScreen() {
       if (k && !map.has(k)) map.set(k, { name: nm, category: 'autre', unit: '', count: 0 })
     }
     // L'apprentissage prime (catégorie/unité/quantité mémorisées + fréquence).
-    const learned = loadShopCatalog()
-    for (const k of Object.keys(learned)) {
-      const e = learned[k]
-      map.set(k, { name: e.name, category: e.category, unit: e.unit, qty: e.qty, count: e.count })
+    for (const e of shopCatalog) {
+      map.set(e.name.trim().toLowerCase(), {
+        name: e.name,
+        category: e.category,
+        unit: e.unit,
+        qty: e.qty,
+        count: e.count,
+      })
     }
     const inList = new Set(shopping.map((it) => it.name.trim().toLowerCase()))
     const catalog = [...map.values()]
       .filter((it) => !inList.has(it.name.toLowerCase()))
       .sort((a, b) => b.count - a.count || a.name.localeCompare(b.name))
     return { lookup: map, catalog }
-  }, [products, history, shopping])
+  }, [products, history, shopping, shopCatalog])
 
   const typed = name.trim().toLowerCase()
 
   // Brouillon courant : unité + catégorie devinées depuis l'article.
   const match = typed ? lookup.get(typed) : undefined
   const draftCategory: Category = match?.category ?? (typed ? guessCategoryFromName(name) : 'autre')
-  const rawUnit = match?.unit ?? ''
+  const rawUnit = match?.unit ?? (typed ? guessUnitFromName(name) : '')
   const scale = useMemo(() => buyScale(rawUnit), [rawUnit])
 
   // La roulette s'adapte : on recale la quantité par défaut quand l'unité change.
@@ -109,7 +114,7 @@ export function ShoppingScreen() {
       unit: scale.baseUnit || undefined,
       source: 'manuel',
     })
-    recordShopItem(trimmed, draftCategory, rawUnit, qty)
+    await recordShopItem(trimmed, draftCategory, rawUnit, qty)
     setName('')
     toast(`${trimmed} · ${qtyLabel(qty, scale.baseUnit || undefined)}`)
   }
@@ -125,7 +130,7 @@ export function ShoppingScreen() {
       unit: s.baseUnit || undefined,
       source: 'manuel',
     })
-    recordShopItem(item.name, item.category, item.unit, q)
+    await recordShopItem(item.name, item.category, item.unit, q)
     setName('')
     toast(`${item.name} · ${qtyLabel(q, s.baseUnit || undefined)}`)
   }

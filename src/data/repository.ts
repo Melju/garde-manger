@@ -8,6 +8,7 @@ import type {
   ProductInput,
   Recipe,
   Settings,
+  ShopCatalogEntry,
   ShoppingItem,
   ShoppingItemInput,
 } from '../types'
@@ -64,6 +65,10 @@ export interface Repository {
   // Paramètres
   getSettings(): Promise<Settings>
   saveSettings(settings: Settings): Promise<void>
+
+  // Catalogue d'apprentissage des courses (partagé au foyer en cloud)
+  getShopCatalog(): Promise<ShopCatalogEntry[]>
+  saveShopCatalog(entries: ShopCatalogEntry[]): Promise<void>
 
   /** Réinitialise toutes les données au jeu de démonstration. */
   resetDemo(): Promise<void>

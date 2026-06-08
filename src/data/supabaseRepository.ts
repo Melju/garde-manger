@@ -10,6 +10,7 @@ import type {
   ProductInput,
   Recipe,
   Settings,
+  ShopCatalogEntry,
   ShoppingItem,
   ShoppingItemInput,
 } from '../types'
@@ -394,6 +395,36 @@ export class SupabaseRepository implements Repository {
       notif_low_stock: settings.notifLowStock,
       low_stock_threshold: settings.lowStockThreshold,
     })
+    if (error) throw error
+  }
+
+  // ---------- Catalogue d'apprentissage des courses ----------
+  async getShopCatalog(): Promise<ShopCatalogEntry[]> {
+    const { data, error } = await this.sb.from('shop_catalog').select('*')
+    if (error) throw error
+    return (data ?? []).map((r: any) => ({
+      name: r.name,
+      category: r.category as Category,
+      unit: r.unit ?? '',
+      qty: Number(r.qty),
+      count: r.count ?? 0,
+      at: r.at,
+    }))
+  }
+
+  async saveShopCatalog(entries: ShopCatalogEntry[]): Promise<void> {
+    if (!entries.length) return
+    const rows = entries.map((e) => ({
+      household_id: this.hid,
+      name_key: e.name.trim().toLowerCase(),
+      name: e.name,
+      category: e.category,
+      unit: e.unit,
+      qty: e.qty,
+      count: e.count,
+      at: e.at,
+    }))
+    const { error } = await this.sb.from('shop_catalog').upsert(rows)
     if (error) throw error
   }
 

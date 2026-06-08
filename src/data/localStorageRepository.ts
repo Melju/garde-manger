@@ -8,6 +8,7 @@ import type {
   ProductInput,
   Recipe,
   Settings,
+  ShopCatalogEntry,
   ShoppingItem,
   ShoppingItemInput,
 } from '../types'
@@ -33,6 +34,7 @@ const HISTORY_KEY = 'gm.history'
 const EXPENSES_KEY = 'gm.expenses'
 const BUDGET_KEY = 'gm.budget'
 const SETTINGS_KEY = 'gm.settings'
+const SHOPCAT_KEY = 'gm.shopcatalog'
 const SEEDED_KEY = 'gm.seeded'
 
 function read<T>(key: string, fallback: T): T {
@@ -218,5 +220,12 @@ export class LocalStorageRepository implements Repository {
   }
   async saveSettings(settings: Settings): Promise<void> {
     write(SETTINGS_KEY, settings)
+  }
+
+  async getShopCatalog(): Promise<ShopCatalogEntry[]> {
+    return read<ShopCatalogEntry[]>(SHOPCAT_KEY, [])
+  }
+  async saveShopCatalog(entries: ShopCatalogEntry[]): Promise<void> {
+    write(SHOPCAT_KEY, entries)
   }
 }

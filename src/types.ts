@@ -117,6 +117,23 @@ export type ProductInput = Omit<Product, 'id' | 'createdAt' | 'updatedAt'>
 /** Données saisies pour un article de courses. */
 export type ShoppingItemInput = Omit<ShoppingItem, 'id' | 'createdAt' | 'checked'>
 
+/**
+ * Article appris pour les courses (catégorie, unité, dernière quantité, fréquence).
+ * Partagé au sein du foyer en mode cloud.
+ */
+export interface ShopCatalogEntry {
+  name: string
+  category: Category
+  /** Unité brute mémorisée (g, kg, L, mL… ou '' pour un nombre). */
+  unit: string
+  /** Dernière quantité saisie (dans l'unité de base). */
+  qty: number
+  /** Nombre d'ajouts, pour le tri par fréquence. */
+  count: number
+  /** Dernier ajout (ISO). */
+  at: string
+}
+
 // ===== Recettes =====
 
 export interface RecipeIngredient {

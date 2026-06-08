@@ -10,7 +10,7 @@ interface RecipesScreenProps {
   onOpenFamily: () => void
 }
 
-type Filter = 'toutes' | 'favoris' | 'rapides' | 'vegetarien'
+type Filter = 'toutes' | 'perso' | 'favoris' | 'rapides' | 'vegetarien'
 
 export function RecipesScreen({ onOpenRecipe, onOpenFamily }: RecipesScreenProps) {
   const { recipes, products, family, toggleFavorite } = useStore()
@@ -19,6 +19,7 @@ export function RecipesScreen({ onOpenRecipe, onOpenFamily }: RecipesScreenProps
 
   const filtered = useMemo(() => {
     return recipes.filter((r) => {
+      if (filter === 'perso') return r.tags.includes('perso')
       if (filter === 'favoris') return r.favorite
       if (filter === 'rapides') return r.tags.includes('rapide') || r.timeMin <= 15
       if (filter === 'vegetarien') return r.tags.includes('vegetarien') || r.tags.includes('vegetalien')
@@ -43,6 +44,7 @@ export function RecipesScreen({ onOpenRecipe, onOpenFamily }: RecipesScreenProps
       <div className="filter-tabs">
         {([
           ['toutes', 'Toutes'],
+          ['perso', 'Perso'],
           ['favoris', 'Favoris'],
           ['rapides', 'Rapides'],
           ['vegetarien', 'Végétarien'],
