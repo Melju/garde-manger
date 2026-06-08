@@ -458,10 +458,10 @@ button { font-family: inherit; }
   transition: border-color 0.15s ease;
 }
 
-/* iOS : empêche l'input date de dépasser la largeur du conteneur. */
+/* iOS : l'input date reste dans le conteneur (min/max-width ci-dessus) et
+   garde son apparence native (valeur alignée à gauche + icône calendrier). */
 input[type='date'].form-input {
-  -webkit-appearance: none;
-  appearance: none;
+  text-align: left;
   display: block;
 }
 .form-input:focus,
