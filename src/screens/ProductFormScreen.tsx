@@ -56,18 +56,26 @@ export function ProductFormScreen({ product, initial, onClose, onSaved }: Produc
     enrich.imageUrl || enrich.nutriscore || enrich.nova || enrich.kcal != null || warnings.length > 0
 
   const initCategory = product?.category ?? initial?.category ?? 'autre'
+  const initConservation =
+    product?.conservation ?? initial?.conservation ?? defaultConservation(initCategory)
   const [name, setName] = useState(product?.name ?? initial?.name ?? '')
   const [category, setCategory] = useState<Category>(initCategory)
-  const [conservation, setConservation] = useState<Conservation>(
-    product?.conservation ?? initial?.conservation ?? defaultConservation(initCategory),
-  )
+  const [conservation, setConservation] = useState<Conservation>(initConservation)
   const [quantity, setQuantity] = useState(product?.quantity ?? initial?.quantity ?? 1)
   const initSize = parseSize(product?.size ?? initial?.size)
   const [sizeValue, setSizeValue] = useState(initSize.value)
   const [sizeUnit, setSizeUnit] = useState(initSize.unit)
   const [dateType, setDateType] = useState<DateType>(product?.dateType ?? initial?.dateType ?? 'dlc')
   const [expiryDate, setExpiryDate] = useState(product?.expiryDate ?? initial?.expiryDate ?? '')
-  const [location, setLocation] = useState(product?.location ?? initial?.location ?? '')
+  const initLocation =
+    product?.location ??
+    initial?.location ??
+    (initConservation === 'refrigere'
+      ? 'Réfrigérateur'
+      : initConservation === 'congele'
+        ? 'Congélateur'
+        : '')
+  const [location, setLocation] = useState(initLocation)
   const [price, setPrice] = useState(product?.price != null ? String(product.price) : '')
   const barcode = product?.barcode ?? initial?.barcode
 
@@ -82,10 +90,23 @@ export function ProductFormScreen({ product, initial, onClose, onSaved }: Produc
     if (iso) setExpiryDate(iso)
   }
 
-  // Quand on change de catégorie, on aligne la conservation par défaut.
+  // L'emplacement découle de la conservation : réfrigéré → Réfrigérateur, congelé → Congélateur.
+  const CONS_LOCATION: Partial<Record<Conservation, string>> = {
+    refrigere: 'Réfrigérateur',
+    congele: 'Congélateur',
+  }
+  function pickConservation(c: Conservation) {
+    setConservation(c)
+    const auto = CONS_LOCATION[c]
+    if (auto) setLocation(auto)
+    // En repassant en « frais », on retire l'emplacement auto précédent.
+    else setLocation((cur) => (cur === 'Réfrigérateur' || cur === 'Congélateur' ? '' : cur))
+  }
+
+  // Quand on change de catégorie, on aligne la conservation par défaut (et l'emplacement).
   function pickCategory(c: Category) {
     setCategory(c)
-    setConservation(defaultConservation(c))
+    pickConservation(defaultConservation(c))
   }
 
   function buildInput(): ProductInput {
@@ -206,7 +227,7 @@ export function ProductFormScreen({ product, initial, onClose, onSaved }: Produc
               key={c.id}
               type="button"
               className={`opt-btn${conservation === c.id ? ' active' : ''}`}
-              onClick={() => setConservation(c.id)}
+              onClick={() => pickConservation(c.id)}
             >
               {c.label}
             </button>
