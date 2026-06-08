@@ -13,6 +13,7 @@ import { FamilyScreen } from './screens/FamilyScreen'
 import { MemberEditScreen } from './screens/MemberEditScreen'
 import { MoreScreen } from './screens/MoreScreen'
 import { SettingsScreen } from './screens/SettingsScreen'
+import { AccountScreen } from './screens/AccountScreen'
 import { Icon } from './components/Icon'
 import { useStore } from './data/store'
 import type { FamilyMember, Product, ProductInput, Recipe } from './types'
@@ -37,6 +38,7 @@ type Route =
   | { name: 'family' }
   | { name: 'member-edit'; member: FamilyMember | null }
   | { name: 'settings' }
+  | { name: 'account' }
 
 export function App() {
   const { loading } = useStore()
@@ -88,6 +90,7 @@ export function App() {
           onWaste={() => push({ name: 'waste' })}
           onBudget={() => push({ name: 'budget' })}
           onSettings={() => push({ name: 'settings' })}
+          onAccount={() => push({ name: 'account' })}
         />
       )}
 
@@ -139,6 +142,8 @@ export function App() {
         return <MemberEditScreen member={route.member} onBack={back} />
       case 'settings':
         return <SettingsScreen onBack={back} />
+      case 'account':
+        return <AccountScreen onBack={back} />
     }
   }
 }

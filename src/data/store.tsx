@@ -23,6 +23,9 @@ import type {
   ShoppingItemInput,
 } from '../types'
 import { LocalStorageRepository } from './localStorageRepository'
+import { SupabaseRepository } from './supabaseRepository'
+import { supabase } from './supabaseClient'
+import { useAuth } from './auth'
 import { newId, type Repository } from './repository'
 import { toISODate } from '../lib/dates'
 import { isIngredientInStock } from '../lib/recipesLib'
@@ -74,8 +77,8 @@ interface StoreValue {
 
 const StoreContext = createContext<StoreValue | null>(null)
 
-// Repository unique. Pour passer à Supabase : remplacer cette ligne.
-const repo: Repository = new LocalStorageRepository()
+// Repository local (hors-ligne), utilisé tant qu'on n'est pas connecté à un foyer.
+const localRepo: Repository = new LocalStorageRepository()
 
 const AVATAR_COLORS = [
   'linear-gradient(135deg, #3b82f6, #1d4ed8)',
@@ -102,6 +105,13 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   })
   const [loading, setLoading] = useState(true)
 
+  const auth = useAuth()
+  // Cloud (Supabase) si connecté avec un foyer, sinon stockage local.
+  const repo = useMemo<Repository>(
+    () => (supabase && auth.householdId ? new SupabaseRepository(supabase, auth.householdId) : localRepo),
+    [auth.householdId],
+  )
+
   const loadAll = useCallback(async () => {
     const [p, s, r, f, m, h, e, b, st] = await Promise.all([
       repo.listProducts(),
@@ -123,9 +133,10 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     setExpenses(e)
     setBudget(b)
     setSettings(st)
-  }, [])
+  }, [repo])
 
   useEffect(() => {
+    setLoading(true)
     loadAll().finally(() => setLoading(false))
   }, [loadAll])
 
@@ -286,7 +297,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
         await loadAll()
       },
     }
-  }, [products, shopping, recipes, family, mealPlan, history, expenses, budget, settings, loading, loadAll])
+  }, [repo, products, shopping, recipes, family, mealPlan, history, expenses, budget, settings, loading, loadAll])
 
   return <StoreContext.Provider value={value}>{children}</StoreContext.Provider>
 }

@@ -13,3 +13,6 @@ nas/supabase.env
 nas/caddy_data/
 nas/caddy_config/
 nas/volumes/
+
+# Build TS
+*.tsbuildinfo

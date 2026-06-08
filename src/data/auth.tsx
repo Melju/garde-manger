@@ -1,0 +1,126 @@
+import {
+  createContext,
+  useCallback,
+  useContext,
+  useEffect,
+  useState,
+  type ReactNode,
+} from 'react'
+import type { Session, User } from '@supabase/supabase-js'
+import { supabase, supabaseEnabled } from './supabaseClient'
+
+interface AuthValue {
+  /** true quand l'état initial est chargé. */
+  ready: boolean
+  /** Le backend cloud est-il configuré ? */
+  cloudEnabled: boolean
+  session: Session | null
+  user: User | null
+  /** Foyer de l'utilisateur (null s'il n'en a pas encore). */
+  householdId: string | null
+  inviteCode: string | null
+  /** Envoie un lien magique de connexion. */
+  signInWithEmail(email: string): Promise<{ error?: string }>
+  signOut(): Promise<void>
+  createHousehold(name: string): Promise<{ error?: string }>
+  joinHousehold(code: string): Promise<{ error?: string }>
+  refreshHousehold(): Promise<void>
+}
+
+const AuthContext = createContext<AuthValue | null>(null)
+
+const REDIRECT_URL =
+  typeof window !== 'undefined' ? `${window.location.origin}${window.location.pathname}` : undefined
+
+export function AuthProvider({ children }: { children: ReactNode }) {
+  const [ready, setReady] = useState(!supabaseEnabled)
+  const [session, setSession] = useState<Session | null>(null)
+  const [householdId, setHouseholdId] = useState<string | null>(null)
+  const [inviteCode, setInviteCode] = useState<string | null>(null)
+
+  const loadHousehold = useCallback(async (uid: string | undefined) => {
+    if (!supabase || !uid) {
+      setHouseholdId(null)
+      setInviteCode(null)
+      return
+    }
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('household_id')
+      .eq('id', uid)
+      .maybeSingle()
+    const hid = profile?.household_id ?? null
+    setHouseholdId(hid)
+    if (hid) {
+      const { data: h } = await supabase
+        .from('households')
+        .select('invite_code')
+        .eq('id', hid)
+        .maybeSingle()
+      setInviteCode(h?.invite_code ?? null)
+    } else {
+      setInviteCode(null)
+    }
+  }, [])
+
+  useEffect(() => {
+    if (!supabase) return
+    supabase.auth.getSession().then(async ({ data }) => {
+      setSession(data.session)
+      await loadHousehold(data.session?.user?.id)
+      setReady(true)
+    })
+    const { data: sub } = supabase.auth.onAuthStateChange(async (_evt, s) => {
+      setSession(s)
+      await loadHousehold(s?.user?.id)
+    })
+    return () => sub.subscription.unsubscribe()
+  }, [loadHousehold])
+
+  const value: AuthValue = {
+    ready,
+    cloudEnabled: supabaseEnabled,
+    session,
+    user: session?.user ?? null,
+    householdId,
+    inviteCode,
+    async signInWithEmail(email) {
+      if (!supabase) return { error: 'Cloud non configuré' }
+      const { error } = await supabase.auth.signInWithOtp({
+        email: email.trim(),
+        options: { emailRedirectTo: REDIRECT_URL },
+      })
+      return error ? { error: error.message } : {}
+    },
+    async signOut() {
+      await supabase?.auth.signOut()
+      setHouseholdId(null)
+      setInviteCode(null)
+    },
+    async createHousehold(name) {
+      if (!supabase) return { error: 'Cloud non configuré' }
+      const { error } = await supabase.rpc('create_household', { p_name: name })
+      if (error) return { error: error.message }
+      await loadHousehold(session?.user?.id)
+      return {}
+    },
+    async joinHousehold(code) {
+      if (!supabase) return { error: 'Cloud non configuré' }
+      const { error } = await supabase.rpc('join_household', { p_code: code })
+      if (error) return { error: error.message }
+      await loadHousehold(session?.user?.id)
+      return {}
+    },
+    async refreshHousehold() {
+      await loadHousehold(session?.user?.id)
+    },
+  }
+
+  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>
+}
+
+export function useAuth(): AuthValue {
+  const ctx = useContext(AuthContext)
+  if (!ctx) throw new Error('useAuth doit être utilisé dans un <AuthProvider>')
+  return ctx
+}

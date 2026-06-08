@@ -1,5 +1,6 @@
 import { useMemo } from 'react'
 import { useStore } from '../data/store'
+import { useAuth } from '../data/auth'
 import { Icon, type IconName } from '../components/Icon'
 import { buildNotifications } from '../lib/analytics'
 import { budgetSummary } from '../lib/analytics'
@@ -13,10 +14,12 @@ interface MoreScreenProps {
   onWaste: () => void
   onBudget: () => void
   onSettings: () => void
+  onAccount: () => void
 }
 
 export function MoreScreen(props: MoreScreenProps) {
   const { products, settings, expenses, budget, history } = useStore()
+  const auth = useAuth()
   const notifCount = useMemo(
     () => buildNotifications(products, settings).length,
     [products, settings],
@@ -44,6 +47,18 @@ export function MoreScreen(props: MoreScreenProps) {
     { icon: 'recycle', title: 'Anti-gaspillage', desc: `Score ${score}/100`, onClick: props.onWaste },
     { icon: 'wallet', title: 'Budget', desc: `${spent}€ ce mois`, onClick: props.onBudget },
     { icon: 'cog', title: 'Paramètres', desc: 'Notifications, données', onClick: props.onSettings },
+    {
+      icon: 'users',
+      title: 'Compte & famille (cloud)',
+      desc: auth.user
+        ? auth.householdId
+          ? `Connecté · ${auth.user.email}`
+          : 'Connecté — crée ou rejoins un foyer'
+        : auth.cloudEnabled
+          ? 'Se connecter pour synchroniser'
+          : 'Stockage local',
+      onClick: props.onAccount,
+    },
   ]
 
   return (
