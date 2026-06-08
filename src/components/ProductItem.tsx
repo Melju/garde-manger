@@ -3,6 +3,12 @@ import type { Product } from '../types'
 import { categoryLabel } from '../types'
 import { expiryLabel, expiryStatus } from '../lib/expiry'
 import { categoryColor } from '../lib/categoryColors'
+import {
+  parseContenance,
+  isWeightProduct,
+  consumeFraction,
+  consumeAmount,
+} from '../lib/contenance'
 import { Icon } from './Icon'
 
 interface ProductItemProps {
@@ -10,6 +16,8 @@ interface ProductItemProps {
   onSelect: (product: Product) => void
   onRemoveQty: (product: Product, qty: number | 'all') => void
   onWaste: (product: Product) => void
+  /** Mise à jour de la contenance restante (null = paquet terminé). */
+  onConsumePortion: (product: Product, newSize: string | null) => void
 }
 
 type Swipe = 'none' | 'left' | 'right'
@@ -19,13 +27,36 @@ type Swipe = 'none' | 'left' | 'right'
  * - glisser à gauche → retirer des quantités (consommé)
  * - glisser à droite → marquer périmé (jeté)
  */
-export function ProductItem({ product, onSelect, onRemoveQty, onWaste }: ProductItemProps) {
+export function ProductItem({
+  product,
+  onSelect,
+  onRemoveQty,
+  onWaste,
+  onConsumePortion,
+}: ProductItemProps) {
   const [swipe, setSwipe] = useState<Swipe>('none')
   const startX = useRef<number | null>(null)
   const moved = useRef(false)
 
   const status = expiryStatus(product)
   const col = categoryColor(product.category)
+  // Produit au poids/volume si une seule unité en stock avec une contenance continue.
+  const byWeight = product.quantity <= 1 && isWeightProduct(product.size)
+
+  function fraction(f: number) {
+    onConsumePortion(product, consumeFraction(product.size!, f))
+    setSwipe('none')
+  }
+  function askAmount() {
+    const parsed = parseContenance(product.size)
+    const unit = parsed?.unit ?? 'g'
+    const raw = window.prompt(`Quantité utilisée ? (en ${unit})`)
+    setSwipe('none')
+    if (!raw) return
+    const amount = Number(raw.replace(',', '.'))
+    if (!isFinite(amount) || amount <= 0) return
+    onConsumePortion(product, consumeAmount(product.size!, amount, unit))
+  }
 
   function onPointerDown(e: React.PointerEvent) {
     startX.current = e.clientX
@@ -91,28 +122,54 @@ export function ProductItem({ product, onSelect, onRemoveQty, onWaste }: Product
       {/* Action droite révélée par un glissement vers la gauche : retirer */}
       <div className="swipe-actions right">
         <div className="swipe-qty-picker">
-          {[1, 2, 3].map((n) => (
-            <button
-              key={n}
-              className="qty-btn"
-              disabled={n > product.quantity}
-              onClick={() => {
-                onRemoveQty(product, n)
-                setSwipe('none')
-              }}
-            >
-              −{n}
-            </button>
-          ))}
-          <button
-            className="qty-btn delete-all"
-            onClick={() => {
-              onRemoveQty(product, 'all')
-              setSwipe('none')
-            }}
-          >
-            Tout<span>suppr.</span>
-          </button>
+          {byWeight ? (
+            <>
+              <button className="qty-btn" onClick={() => fraction(0.25)}>
+                ¼
+              </button>
+              <button className="qty-btn" onClick={() => fraction(0.5)}>
+                ½
+              </button>
+              <button className="qty-btn" onClick={askAmount}>
+                <Icon name="pencil" width={1.2} />
+                <span>saisir</span>
+              </button>
+              <button
+                className="qty-btn delete-all"
+                onClick={() => {
+                  onConsumePortion(product, null)
+                  setSwipe('none')
+                }}
+              >
+                Tout<span>fini</span>
+              </button>
+            </>
+          ) : (
+            <>
+              {[1, 2, 3].map((n) => (
+                <button
+                  key={n}
+                  className="qty-btn"
+                  disabled={n > product.quantity}
+                  onClick={() => {
+                    onRemoveQty(product, n)
+                    setSwipe('none')
+                  }}
+                >
+                  −{n}
+                </button>
+              ))}
+              <button
+                className="qty-btn delete-all"
+                onClick={() => {
+                  onRemoveQty(product, 'all')
+                  setSwipe('none')
+                }}
+              >
+                Tout<span>suppr.</span>
+              </button>
+            </>
+          )}
         </div>
       </div>
     </div>

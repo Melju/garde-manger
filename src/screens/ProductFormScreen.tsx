@@ -18,6 +18,9 @@ import { familyAllergenWarnings, allergenLabel } from '../lib/allergens'
 /** Unités de contenance proposées. */
 const SIZE_UNITS = ['g', 'kg', 'mL', 'cl', 'L', 'pièce', 'pack', 'boîte', 'sachet', 'pot', 'tranches']
 
+/** Emplacements proposés (boutons). */
+const LOCATIONS = ['Placard', 'Réfrigérateur', 'Congélateur', 'Cellier', 'Garde-manger', 'Cave', 'Corbeille']
+
 /** Sépare une contenance « 400 g » en valeur + unité. */
 function parseSize(s?: string): { value: string; unit: string } {
   if (!s) return { value: '', unit: '' }
@@ -306,21 +309,26 @@ export function ProductFormScreen({ product, initial, onClose, onSaved }: Produc
 
       <div className="form-section">
         <label className="form-label" htmlFor="location">Emplacement (optionnel)</label>
+        <div className="opt-grid">
+          {LOCATIONS.map((l) => (
+            <button
+              key={l}
+              type="button"
+              className={`opt-btn${location === l ? ' active' : ''}`}
+              onClick={() => setLocation((cur) => (cur === l ? '' : l))}
+            >
+              {l}
+            </button>
+          ))}
+        </div>
         <input
           id="location"
           className="form-input"
-          list="emplacements"
-          placeholder="Choisir ou saisir…"
-          value={location}
+          style={{ marginTop: 10 }}
+          placeholder="Autre emplacement…"
+          value={LOCATIONS.includes(location) ? '' : location}
           onChange={(e) => setLocation(e.target.value)}
         />
-        <datalist id="emplacements">
-          {['Placard cuisine', 'Réfrigérateur', 'Congélateur', 'Cellier', 'Garde-manger', 'Cave', 'Tiroir', 'Corbeille à fruits'].map(
-            (l) => (
-              <option key={l} value={l} />
-            ),
-          )}
-        </datalist>
       </div>
 
       <div className="form-section">

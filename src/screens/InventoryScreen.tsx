@@ -22,7 +22,7 @@ export function InventoryScreen({
   onOpenNotifications,
   onOpenBudget,
 }: InventoryScreenProps) {
-  const { products, adjustQuantity, wasteProduct, expenses, budget, cloudMode } = useStore()
+  const { products, adjustQuantity, wasteProduct, updateProduct, expenses, budget, cloudMode } = useStore()
   const spent = useMemo(() => budgetSummary(expenses, budget).spent, [expenses, budget])
   const toast = useToast()
   const [search, setSearch] = useState('')
@@ -50,6 +50,17 @@ export function InventoryScreen({
   async function handleWaste(product: Product) {
     await wasteProduct(product.id)
     toast(`${product.name} marqué périmé`)
+  }
+
+  async function handleConsumePortion(product: Product, newSize: string | null) {
+    if (newSize === null) {
+      // Contenance épuisée : on retire le produit du stock (consommé).
+      await adjustQuantity(product.id, -Math.max(1, product.quantity))
+      toast(`${product.name} terminé`)
+    } else {
+      await updateProduct(product.id, { size: newSize })
+      toast(`${product.name} : ${newSize} restant`)
+    }
   }
 
   return (
@@ -158,6 +169,7 @@ export function InventoryScreen({
                 onSelect={onEdit}
                 onRemoveQty={handleRemoveQty}
                 onWaste={handleWaste}
+                onConsumePortion={handleConsumePortion}
               />
             ))}
           </>

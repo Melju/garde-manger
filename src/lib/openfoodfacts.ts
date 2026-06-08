@@ -15,17 +15,22 @@ export interface BarcodeLookup {
  * Heuristique simple ; l'utilisateur peut corriger dans le formulaire.
  */
 function guessCategory(tags: string[]): Category {
-  const t = tags.join(' ')
+  // La catégorie parapluie d'OFF « plant-based-foods-and-beverages » contient
+  // le mot « beverages » et fausse la détection (pâtes, riz, farine en font partie).
+  const clean = tags.filter((x) => !/plant-based-foods-and-beverages/.test(x))
+  const t = clean.join(' ')
   if (/(frozen|surgel|congel)/.test(t)) return 'surgeles'
-  if (/(beverage|boisson|drink|juice|jus|soda|water|eau|wine|vin|biere|beer)/.test(t)) return 'boissons'
+  // Épicerie sèche détectée tôt (avant boissons) : pâtes, riz, céréales, légumes secs…
+  if (/(pasta|p[aâ]tes|spaghetti|macaroni|rice|riz|cereal|c[eé]r[eé]al|flour|farine|semoule|couscous|quinoa|lentil|lentille|l[eé]gumineuse|pois-chiche|haricot|farines|sucre|sugar|sel|salt|huile|oil|vinaigre|sauce|epice|[eé]pice|condiment)/.test(t)) return 'epicerie'
+  if (/(beverage|boisson|drink|juice|jus|soda|water|eau|wine|\bvin\b|biere|bi[eè]re|beer|coffee|caf[eé]|\bthe\b|th[eé]|tea)/.test(t)) return 'boissons'
   if (/(fruit)/.test(t)) return 'fruits'
-  if (/(vegetable|legume|salad)/.test(t)) return 'legumes'
+  if (/(vegetable|legume|l[eé]gume|salad)/.test(t)) return 'legumes'
   if (/(meat|viande|charcuterie|poultry|volaille|beef|boeuf|porc|chicken|poulet|jambon)/.test(t)) return 'viandes'
   if (/(fish|poisson|seafood|fruits-de-mer|saumon|thon)/.test(t)) return 'poissons'
   if (/(dairy|cheese|yogurt|yaourt|fromage|lait|crème|creme|milk|butter|beurre|egg|œuf|oeuf)/.test(t)) return 'laitiers'
   if (/(canned|conserve|en-conserve)/.test(t)) return 'conserves'
   if (/(snack|chips|aperitif|apero)/.test(t)) return 'apero'
-  if (/(candy|sweet|chocolate|chocolat|sucre|biscuit|confiserie|dessert)/.test(t)) return 'sucreries'
+  if (/(candy|sweet|chocolate|chocolat|biscuit|confiserie|dessert)/.test(t)) return 'sucreries'
   return 'epicerie'
 }
 
