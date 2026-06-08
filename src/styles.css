@@ -57,7 +57,7 @@ button { font-family: inherit; }
   min-height: 100dvh;
   background: var(--bg);
   position: relative;
-  padding-bottom: calc(150px + env(safe-area-inset-bottom));
+  padding-bottom: calc(164px + env(safe-area-inset-bottom));
 }
 
 /* Header */
@@ -1161,7 +1161,7 @@ input[type='date'].form-input {
 /* ===== Barre d'ajout (fixe en bas, largeur d'une fiche produit) ===== */
 .add-bar {
   position: fixed;
-  bottom: calc(76px + env(safe-area-inset-bottom));
+  bottom: calc(90px + env(safe-area-inset-bottom));
   left: 50%;
   transform: translateX(-50%);
   width: 100%;
@@ -1186,7 +1186,7 @@ input[type='date'].form-input {
   font-size: 16px;
   font-weight: 700;
   cursor: pointer;
-  box-shadow: 0 8px 24px oklch(0.62 0.13 195 / 0.38);
+  box-shadow: 0 6px 16px oklch(0.62 0.13 195 / 0.3);
   transition: transform 0.15s ease;
 }
 .add-btn:active { transform: scale(0.98); }
