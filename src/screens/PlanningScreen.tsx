@@ -2,18 +2,16 @@ import { useMemo, useState } from 'react'
 import { useStore } from '../data/store'
 import { useToast } from '../components/Toast'
 import { Icon } from '../components/Icon'
+import { MealPlanDrawer } from '../components/MealPlanDrawer'
 import { MEAL_SLOTS } from '../types'
 import { DAYS_FR, addDays, formatDayMonth, fromISODate, startOfWeek, toISODate, weekDays } from '../lib/dates'
 import { recipeStock } from '../lib/recipesLib'
 
-interface PlanningScreenProps {
-  onEditMeal: (date: string, slot: string) => void
-}
-
-export function PlanningScreen({ onEditMeal }: PlanningScreenProps) {
+export function PlanningScreen() {
   const { mealPlan, recipes, products, addManyShopping } = useStore()
   const toast = useToast()
   const [weekRef, setWeekRef] = useState(() => startOfWeek(new Date()))
+  const [drawer, setDrawer] = useState<{ date: string; slot: string } | null>(null)
 
   const days = useMemo(() => weekDays(weekRef), [weekRef])
   const todayISO = toISODate(new Date())
@@ -81,7 +79,7 @@ export function PlanningScreen({ onEditMeal }: PlanningScreenProps) {
                     <span className={`meal-content${meal ? '' : ' empty'}`}>
                       {meal ?? 'Ajouter un repas'}
                     </span>
-                    <button className="meal-add" onClick={() => onEditMeal(date, slot.id)} aria-label="Modifier">
+                    <button className="meal-add" onClick={() => setDrawer({ date, slot: slot.id })} aria-label="Modifier">
                       <Icon name={meal ? 'pencil' : 'plus'} />
                     </button>
                   </div>
@@ -97,6 +95,10 @@ export function PlanningScreen({ onEditMeal }: PlanningScreenProps) {
           Générer la liste de courses
         </button>
       </div>
+
+      {drawer && (
+        <MealPlanDrawer date={drawer.date} slot={drawer.slot} onClose={() => setDrawer(null)} />
+      )}
     </div>
   )
 }

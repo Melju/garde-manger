@@ -6,7 +6,6 @@ import { RecipesScreen } from './screens/RecipesScreen'
 import { RecipeDetailScreen } from './screens/RecipeDetailScreen'
 import { NotificationsScreen } from './screens/NotificationsScreen'
 import { PlanningScreen } from './screens/PlanningScreen'
-import { MealPickerScreen } from './screens/MealPickerScreen'
 import { StatsScreen } from './screens/StatsScreen'
 import { BudgetScreen } from './screens/BudgetScreen'
 import { WasteScreen } from './screens/WasteScreen'
@@ -35,7 +34,6 @@ type Route =
   | { name: 'product-form'; product: Product | null; initial?: Partial<ProductInput>; fromScan?: boolean }
   | { name: 'scan' }
   | { name: 'notifications' }
-  | { name: 'meal-picker'; date: string; slot: string }
   | { name: 'stats' }
   | { name: 'budget' }
   | { name: 'waste' }
@@ -88,9 +86,7 @@ export function App() {
           onOpenFamily={() => push({ name: 'family' })}
         />
       )}
-      {tab === 'planning' && (
-        <PlanningScreen onEditMeal={(date, slot) => push({ name: 'meal-picker', date, slot })} />
-      )}
+      {tab === 'planning' && <PlanningScreen />}
       {tab === 'shopping' && <ShoppingScreen />}
       {tab === 'more' && (
         <MoreScreen
@@ -140,8 +136,6 @@ export function App() {
         )
       case 'notifications':
         return <NotificationsScreen onBack={back} />
-      case 'meal-picker':
-        return <MealPickerScreen date={route.date} slot={route.slot} onBack={back} />
       case 'stats':
         return <StatsScreen onBack={back} onOpenWaste={() => push({ name: 'waste' })} />
       case 'budget':
