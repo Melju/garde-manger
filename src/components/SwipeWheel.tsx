@@ -61,7 +61,7 @@ export function SwipeWheel({
             return (
               <div key={i} className={`sw-tick${i === index ? ' active' : ''}${major ? ' major' : ''}`}>
                 <span className="sw-mark" />
-                {major && <span className="sw-lab">{format(v)}</span>}
+                {major && i !== index && <span className="sw-lab">{format(v)}</span>}
               </div>
             )
           })}
