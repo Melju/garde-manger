@@ -11,15 +11,21 @@ export interface BarcodeLookup {
 }
 
 /**
- * Devine la catégorie de rangement à partir des tags Open Food Facts.
+ * Devine la catégorie d'aliment à partir des tags Open Food Facts.
  * Heuristique simple ; l'utilisateur peut corriger dans le formulaire.
  */
 function guessCategory(tags: string[]): Category {
   const t = tags.join(' ')
   if (/(frozen|surgel|congel)/.test(t)) return 'surgeles'
+  if (/(beverage|boisson|drink|juice|jus|soda|water|eau|wine|vin|biere|beer)/.test(t)) return 'boissons'
+  if (/(fruit)/.test(t)) return 'fruits'
+  if (/(vegetable|legume|salad)/.test(t)) return 'legumes'
+  if (/(meat|viande|charcuterie|poultry|volaille|beef|boeuf|porc|chicken|poulet|jambon)/.test(t)) return 'viandes'
+  if (/(fish|poisson|seafood|fruits-de-mer|saumon|thon)/.test(t)) return 'poissons'
+  if (/(dairy|cheese|yogurt|yaourt|fromage|lait|crème|creme|milk|butter|beurre|egg|œuf|oeuf)/.test(t)) return 'laitiers'
   if (/(canned|conserve|en-conserve)/.test(t)) return 'conserves'
-  if (/(dairy|cheese|yogurt|yaourt|fromage|lait|crème|creme|meat|viande|charcuterie|fresh|frais|œuf|oeuf|egg)/.test(t))
-    return 'frais'
+  if (/(snack|chips|aperitif|apero)/.test(t)) return 'apero'
+  if (/(candy|sweet|chocolate|chocolat|sucre|biscuit|confiserie|dessert)/.test(t)) return 'sucreries'
   return 'epicerie'
 }
 

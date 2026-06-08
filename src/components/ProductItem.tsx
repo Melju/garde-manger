@@ -1,6 +1,6 @@
 import { useRef, useState } from 'react'
 import type { Product } from '../types'
-import { CATEGORY_LABELS } from '../types'
+import { categoryLabel } from '../types'
 import { expiryLabel, expiryStatus } from '../lib/expiry'
 import { Icon } from './Icon'
 
@@ -48,7 +48,7 @@ export function ProductItem({ product, onSelect, onRemoveQty }: ProductItemProps
     onSelect(product)
   }
 
-  const meta = [CATEGORY_LABELS[product.category], product.size].filter(Boolean).join(' · ')
+  const meta = [categoryLabel(product.category), product.size].filter(Boolean).join(' · ')
   const qtyLabel = product.unit ? `×${product.quantity} ${product.unit}` : `×${product.quantity}`
 
   return (

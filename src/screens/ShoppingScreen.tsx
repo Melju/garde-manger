@@ -2,7 +2,7 @@ import { useMemo, useState } from 'react'
 import { useStore } from '../data/store'
 import { useToast } from '../components/Toast'
 import { Icon } from '../components/Icon'
-import { CATEGORIES, CATEGORY_LABELS, type Category, type ShoppingItem } from '../types'
+import { CATEGORIES, categoryLabel, type Category, type ShoppingItem } from '../types'
 
 export function ShoppingScreen() {
   const {
@@ -16,7 +16,7 @@ export function ShoppingScreen() {
   const toast = useToast()
 
   const [name, setName] = useState('')
-  const [category, setCategory] = useState<Category>('frais')
+  const [category, setCategory] = useState<Category>('autre')
 
   const remaining = shopping.filter((it) => !it.checked).length
 
@@ -118,7 +118,7 @@ export function ShoppingScreen() {
       ) : (
         grouped.map((group) => (
           <div className="shopping-category" key={group.category}>
-            <div className="shopping-category-title">{CATEGORY_LABELS[group.category]}</div>
+            <div className="shopping-category-title">{categoryLabel(group.category)}</div>
             {group.items.map((it) => (
               <div
                 key={it.id}

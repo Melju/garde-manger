@@ -30,16 +30,16 @@ export function seedProducts(): Product[] {
     updatedAt: now,
   })
   return [
-    make({ name: 'Yaourts nature', category: 'frais', quantity: 2, unit: 'packs', expiryDate: inDays(1) }),
-    make({ name: 'Crème fraîche', category: 'frais', quantity: 1, size: '20cl', expiryDate: inDays(2) }),
-    make({ name: 'Poulet', category: 'frais', quantity: 1, size: '500g', expiryDate: inDays(3) }),
-    make({ name: 'Comté 18 mois', category: 'frais', quantity: 1, size: '200g', expiryDate: inDays(7) }),
-    make({ name: 'Tomates pelées Mutti', category: 'conserves', quantity: 4, size: '400g', expiryDate: inDays(720) }),
-    make({ name: 'Spaghetti n°5 Barilla', category: 'epicerie', quantity: 2, size: '500g', expiryDate: inDays(540) }),
-    make({ name: 'Riz basmati', category: 'epicerie', quantity: 3, size: '1kg', expiryDate: inDays(400) }),
-    make({ name: 'Petits pois', category: 'surgeles', quantity: 2, size: '750g', expiryDate: inDays(300) }),
-    make({ name: 'Lait demi-écrémé', category: 'frais', quantity: 6, unit: 'briques', expiryDate: inDays(20) }),
-    make({ name: 'Œufs', category: 'frais', quantity: 12, expiryDate: inDays(12) }),
+    make({ name: 'Yaourts nature', category: 'laitiers', conservation: 'refrigere', quantity: 2, unit: 'packs', expiryDate: inDays(1), dateType: 'dlc' }),
+    make({ name: 'Crème fraîche', category: 'laitiers', conservation: 'refrigere', quantity: 1, size: '20cl', expiryDate: inDays(2), dateType: 'dlc' }),
+    make({ name: 'Poulet', category: 'viandes', conservation: 'refrigere', quantity: 1, size: '500g', expiryDate: inDays(3), dateType: 'dlc' }),
+    make({ name: 'Comté 18 mois', category: 'laitiers', conservation: 'refrigere', quantity: 1, size: '200g', expiryDate: inDays(7), dateType: 'ddm' }),
+    make({ name: 'Tomates pelées Mutti', category: 'conserves', conservation: 'frais', quantity: 4, size: '400g', expiryDate: inDays(720), dateType: 'ddm' }),
+    make({ name: 'Spaghetti n°5 Barilla', category: 'epicerie', conservation: 'frais', quantity: 2, size: '500g', expiryDate: inDays(540), dateType: 'ddm' }),
+    make({ name: 'Riz basmati', category: 'epicerie', conservation: 'frais', quantity: 3, size: '1kg', expiryDate: inDays(400), dateType: 'ddm' }),
+    make({ name: 'Petits pois', category: 'surgeles', conservation: 'congele', quantity: 2, size: '750g', expiryDate: inDays(300), dateType: 'ddm' }),
+    make({ name: 'Lait demi-écrémé', category: 'laitiers', conservation: 'refrigere', quantity: 6, unit: 'briques', expiryDate: inDays(20), dateType: 'dlc' }),
+    make({ name: 'Œufs', category: 'laitiers', conservation: 'refrigere', quantity: 12, expiryDate: inDays(12), dateType: 'ddm' }),
   ]
 }
 
@@ -49,7 +49,7 @@ export function seedShopping(): ShoppingItem[] {
     {
       id: newId(),
       name: 'Beurre doux',
-      category: 'frais',
+      category: 'laitiers',
       quantity: 1,
       checked: false,
       source: 'manuel',
@@ -186,9 +186,9 @@ export function seedExpenses(): Expense[] {
     amount,
   })
   return [
-    make(1, 'frais', 'Courses Carrefour', 64),
+    make(1, 'laitiers', 'Courses Carrefour', 64),
     make(1, 'epicerie', 'Courses Carrefour', 38),
-    make(6, 'frais', 'Marché', 41),
+    make(6, 'legumes', 'Marché', 41),
     make(6, 'epicerie', 'Épicerie', 22),
     make(10, 'surgeles', 'Picard', 28),
     make(14, 'conserves', 'Conserves', 19),

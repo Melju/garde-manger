@@ -23,7 +23,7 @@ export function RecipeDetailScreen({ recipe, onBack, onGoShopping }: RecipeDetai
       return
     }
     const n = await addManyShopping(
-      missing.map((i) => ({ name: i.name, category: 'frais' as const, quantity: 1, source: 'auto' as const })),
+      missing.map((i) => ({ name: i.name, category: 'autre' as const, quantity: 1, source: 'auto' as const })),
     )
     toast(`${n} ingrédient${n > 1 ? 's' : ''} ajouté${n > 1 ? 's' : ''} aux courses`)
     onGoShopping()

@@ -14,6 +14,7 @@ import { MemberEditScreen } from './screens/MemberEditScreen'
 import { MoreScreen } from './screens/MoreScreen'
 import { SettingsScreen } from './screens/SettingsScreen'
 import { AccountScreen } from './screens/AccountScreen'
+import { AddMenuScreen } from './screens/AddMenuScreen'
 import { Icon } from './components/Icon'
 import { Fab } from './components/Fab'
 import { useToast } from './components/Toast'
@@ -41,6 +42,7 @@ type Route =
   | { name: 'member-edit'; member: FamilyMember | null }
   | { name: 'settings' }
   | { name: 'account' }
+  | { name: 'add-menu' }
 
 export function App() {
   const { loading } = useStore()
@@ -95,11 +97,7 @@ export function App() {
         />
       )}
 
-      <Fab
-        onScanBarcode={() => push({ name: 'scan' })}
-        onManual={() => push({ name: 'product-form', product: null })}
-        onScanTicket={() => toast('Scan de ticket — bientôt disponible')}
-      />
+      <Fab onOpen={() => push({ name: 'add-menu' })} />
 
       <nav className="bottom-nav">
         <NavButton tab="inventory" current={tab} icon="box" label="Stock" onClick={goTab} />
@@ -151,6 +149,16 @@ export function App() {
         return <SettingsScreen onBack={back} />
       case 'account':
         return <AccountScreen onBack={back} />
+      case 'add-menu':
+        return (
+          <AddMenuScreen
+            onBack={back}
+            onBarcode={() => replace({ name: 'scan' })}
+            onManual={() => replace({ name: 'product-form', product: null })}
+            onTicket={() => toast('Scan de ticket — bientôt disponible')}
+            onTicketEmail={() => toast('Ticket électronique — bientôt disponible')}
+          />
+        )
     }
   }
 }

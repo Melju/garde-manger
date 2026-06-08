@@ -53,7 +53,7 @@ export function PlanningScreen({ onBack }: PlanningScreenProps) {
       return
     }
     const n = await addManyShopping(
-      [...missing.values()].map((name) => ({ name, category: 'frais' as const, quantity: 1, source: 'auto' as const })),
+      [...missing.values()].map((name) => ({ name, category: 'autre' as const, quantity: 1, source: 'auto' as const })),
     )
     toast(`${n} ingrédient${n > 1 ? 's' : ''} ajouté${n > 1 ? 's' : ''} aux courses`)
   }

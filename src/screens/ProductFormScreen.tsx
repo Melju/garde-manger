@@ -4,19 +4,18 @@ import { useToast } from '../components/Toast'
 import { Icon } from '../components/Icon'
 import {
   CATEGORIES,
-  STORAGES,
-  defaultStorage,
+  CONSERVATIONS,
+  defaultConservation,
   type Category,
+  type Conservation,
+  type DateType,
   type Product,
   type ProductInput,
-  type Storage,
 } from '../types'
 import { estimateShelfLife, estimatedExpiryISO, durationLabel } from '../lib/shelfLife'
 
 interface ProductFormScreenProps {
-  /** Produit à éditer, ou null pour une création. */
   product: Product | null
-  /** Valeurs pré-remplies pour une création (ex : issues du scan). */
   initial?: Partial<ProductInput>
   onClose: () => void
 }
@@ -26,55 +25,61 @@ export function ProductFormScreen({ product, initial, onClose }: ProductFormScre
   const toast = useToast()
   const isEdit = product !== null
 
+  const initCategory = product?.category ?? initial?.category ?? 'autre'
   const [name, setName] = useState(product?.name ?? initial?.name ?? '')
-  const [category, setCategory] = useState<Category>(product?.category ?? initial?.category ?? 'frais')
-  const [quantity, setQuantity] = useState(product?.quantity ?? initial?.quantity ?? 1)
-  const [unit, setUnit] = useState(product?.unit ?? initial?.unit ?? '')
-  const [size, setSize] = useState(product?.size ?? initial?.size ?? '')
-  const [expiryDate, setExpiryDate] = useState(product?.expiryDate ?? initial?.expiryDate ?? '')
-  const [price, setPrice] = useState(product?.price != null ? String(product.price) : '')
-  const [storage, setStorage] = useState<Storage>(
-    product?.storage ?? initial?.storage ?? defaultStorage(product?.category ?? initial?.category ?? 'frais'),
+  const [category, setCategory] = useState<Category>(initCategory)
+  const [conservation, setConservation] = useState<Conservation>(
+    product?.conservation ?? initial?.conservation ?? defaultConservation(initCategory),
   )
+  const [quantity, setQuantity] = useState(product?.quantity ?? initial?.quantity ?? 1)
+  const [size, setSize] = useState(product?.size ?? initial?.size ?? '')
+  const [dateType, setDateType] = useState<DateType>(product?.dateType ?? initial?.dateType ?? 'dlc')
+  const [expiryDate, setExpiryDate] = useState(product?.expiryDate ?? initial?.expiryDate ?? '')
+  const [location, setLocation] = useState(product?.location ?? initial?.location ?? '')
+  const [price, setPrice] = useState(product?.price != null ? String(product.price) : '')
   const barcode = product?.barcode ?? initial?.barcode
 
   const canSave = name.trim().length > 0 && quantity > 0
 
-  // Estimation de péremption d'après le type d'aliment ET l'emplacement.
-  const estimate = useMemo(() => estimateShelfLife(name, storage), [name, storage])
+  const estimate = useMemo(
+    () => estimateShelfLife(name, conservation, category),
+    [name, conservation, category],
+  )
   function applyEstimate() {
-    const iso = estimatedExpiryISO(name, storage)
+    const iso = estimatedExpiryISO(name, conservation, category)
     if (iso) setExpiryDate(iso)
+  }
+
+  // Quand on change de catégorie, on aligne la conservation par défaut.
+  function pickCategory(c: Category) {
+    setCategory(c)
+    setConservation(defaultConservation(c))
+  }
+
+  function buildInput(): ProductInput {
+    return {
+      name: name.trim(),
+      category,
+      conservation,
+      quantity,
+      size: size.trim() || undefined,
+      dateType,
+      expiryDate: expiryDate || undefined,
+      location: location.trim() || undefined,
+      price: price ? Number(price.replace(',', '.')) || undefined : undefined,
+      barcode,
+    }
   }
 
   async function handleSave() {
     if (!canSave) return
-    const input = {
-      name: name.trim(),
-      category,
-      quantity,
-      unit: unit.trim() || undefined,
-      size: size.trim() || undefined,
-      expiryDate: expiryDate || undefined,
-      price: price ? Number(price.replace(',', '.')) || undefined : undefined,
-      barcode,
-      storage,
-    }
     if (isEdit && product) {
-      await updateProduct(product.id, input)
+      await updateProduct(product.id, buildInput())
       toast('Produit mis à jour')
     } else {
-      await addProduct(input)
+      await addProduct(buildInput())
       toast('Produit ajouté')
     }
-    onClose()
-  }
-
-  async function handleDelete() {
-    if (!product) return
-    if (!confirm(`Supprimer « ${product.name} » ?`)) return
-    await removeProduct(product.id)
-    toast('Produit supprimé')
     onClose()
   }
 
@@ -84,12 +89,18 @@ export function ProductFormScreen({ product, initial, onClose }: ProductFormScre
     toast('1 consommé')
     onClose()
   }
-
   async function handleWaste() {
     if (!product) return
     if (!confirm(`Marquer « ${product.name} » comme jeté ?`)) return
     await wasteProduct(product.id)
     toast('Produit jeté')
+    onClose()
+  }
+  async function handleDelete() {
+    if (!product) return
+    if (!confirm(`Supprimer « ${product.name} » ?`)) return
+    await removeProduct(product.id)
+    toast('Produit supprimé')
     onClose()
   }
 
@@ -99,91 +110,105 @@ export function ProductFormScreen({ product, initial, onClose }: ProductFormScre
         <button className="back-btn" onClick={onClose} aria-label="Retour">
           <Icon name="back" />
         </button>
-        <h1>{isEdit ? 'Modifier le produit' : 'Ajouter un produit'}</h1>
+        <h1 style={{ flex: 1 }}>{isEdit ? 'Modifier le produit' : 'Ajouter un produit'}</h1>
       </div>
 
       <div className="form-section">
-        <label className="form-label" htmlFor="name">Nom</label>
+        <label className="form-label" htmlFor="name">Nom du produit</label>
         <input
           id="name"
           className="form-input"
-          placeholder="Ex : Tomates pelées"
+          placeholder="Ex : Tomates, Poulet, Lait…"
           value={name}
           autoFocus={!isEdit}
           onChange={(e) => setName(e.target.value)}
         />
         {barcode && (
-          <p style={{ fontSize: 12, color: 'var(--muted)', marginTop: 6 }}>
-            Code-barres scanné : {barcode}
-          </p>
+          <p style={{ fontSize: 12, color: 'var(--muted)', marginTop: 6 }}>Code-barres : {barcode}</p>
         )}
       </div>
 
       <div className="form-section">
-        <label className="form-label" htmlFor="category">Catégorie</label>
-        <select
-          id="category"
-          className="form-select"
-          value={category}
-          onChange={(e) => setCategory(e.target.value as Category)}
-        >
-          {CATEGORIES.map((c) => (
-            <option key={c.id} value={c.id}>{c.label}</option>
-          ))}
-        </select>
-      </div>
-
-      <div className="form-section">
-        <label className="form-label">Emplacement</label>
-        <div className="diet-options">
-          {STORAGES.map((s) => (
+        <label className="form-label">Conservation</label>
+        <div className="opt-grid">
+          {CONSERVATIONS.map((c) => (
             <button
-              key={s.id}
+              key={c.id}
               type="button"
-              className={`diet-option${storage === s.id ? ' active' : ''}`}
-              onClick={() => setStorage(s.id)}
+              className={`opt-btn${conservation === c.id ? ' active' : ''}`}
+              onClick={() => setConservation(c.id)}
             >
-              {s.label}
+              {c.label}
             </button>
           ))}
         </div>
       </div>
 
       <div className="form-section">
-        <label className="form-label">Quantité</label>
-        <div className="form-row">
-          <div className="qty-stepper">
-            <button type="button" onClick={() => setQuantity((q) => Math.max(1, q - 1))} aria-label="Diminuer">−</button>
-            <input
-              type="number"
-              min={1}
-              value={quantity}
-              onChange={(e) => setQuantity(Math.max(1, Number(e.target.value) || 1))}
-            />
-            <button type="button" onClick={() => setQuantity((q) => q + 1)} aria-label="Augmenter">+</button>
-          </div>
-          <input
-            className="form-input"
-            placeholder="Unité (packs, g…)"
-            value={unit}
-            onChange={(e) => setUnit(e.target.value)}
-          />
+        <label className="form-label">Catégorie</label>
+        <div className="opt-grid">
+          {CATEGORIES.map((c) => (
+            <button
+              key={c.id}
+              type="button"
+              className={`opt-btn${category === c.id ? ' active' : ''}`}
+              onClick={() => pickCategory(c.id)}
+            >
+              {c.label}
+            </button>
+          ))}
         </div>
       </div>
 
       <div className="form-section">
-        <label className="form-label" htmlFor="size">Conditionnement (optionnel)</label>
-        <input
-          id="size"
-          className="form-input"
-          placeholder="Ex : 400g, 1L"
-          value={size}
-          onChange={(e) => setSize(e.target.value)}
-        />
+        <div className="form-row">
+          <div>
+            <label className="form-label">Quantité</label>
+            <div className="qty-stepper">
+              <button type="button" onClick={() => setQuantity((q) => Math.max(1, q - 1))} aria-label="Diminuer">−</button>
+              <input
+                type="number"
+                min={1}
+                value={quantity}
+                onChange={(e) => setQuantity(Math.max(1, Number(e.target.value) || 1))}
+              />
+              <button type="button" onClick={() => setQuantity((q) => q + 1)} aria-label="Augmenter">+</button>
+            </div>
+          </div>
+          <div>
+            <label className="form-label">Contenance</label>
+            <input
+              className="form-input"
+              placeholder="400g, 1L…"
+              value={size}
+              onChange={(e) => setSize(e.target.value)}
+            />
+          </div>
+        </div>
       </div>
 
       <div className="form-section">
-        <label className="form-label" htmlFor="expiry">Date de péremption (optionnel)</label>
+        <label className="form-label">Type de date</label>
+        <div className="opt-grid two">
+          <button
+            type="button"
+            className={`opt-btn date${dateType === 'dlc' ? ' active' : ''}`}
+            onClick={() => setDateType('dlc')}
+          >
+            DLC<span className="sub">À consommer jusqu'au</span>
+          </button>
+          <button
+            type="button"
+            className={`opt-btn date${dateType === 'ddm' ? ' active' : ''}`}
+            onClick={() => setDateType('ddm')}
+          >
+            DDM<span className="sub">À consommer de préférence avant</span>
+          </button>
+        </div>
+      </div>
+
+      <div className="form-section">
+        <label className="form-label" htmlFor="expiry">Date de péremption</label>
         <input
           id="expiry"
           type="date"
@@ -202,7 +227,18 @@ export function ProductFormScreen({ product, initial, onClose }: ProductFormScre
       </div>
 
       <div className="form-section">
-        <label className="form-label" htmlFor="price">Prix unitaire en € (optionnel)</label>
+        <label className="form-label" htmlFor="location">Emplacement (optionnel)</label>
+        <input
+          id="location"
+          className="form-input"
+          placeholder="Placard cuisine, Réfrigérateur…"
+          value={location}
+          onChange={(e) => setLocation(e.target.value)}
+        />
+      </div>
+
+      <div className="form-section">
+        <label className="form-label" htmlFor="price">Prix en € (optionnel)</label>
         <input
           id="price"
           type="text"
@@ -214,26 +250,21 @@ export function ProductFormScreen({ product, initial, onClose }: ProductFormScre
         />
       </div>
 
-      <div className="btn-row" style={{ marginBottom: 16 }}>
+      <div className="btn-row" style={{ marginBottom: isEdit ? 12 : 0 }}>
+        <button className="btn-secondary" onClick={onClose}>Annuler</button>
         <button className="btn-primary" disabled={!canSave} onClick={handleSave}>
-          {isEdit ? 'Enregistrer' : 'Ajouter au stock'}
+          {isEdit ? 'Enregistrer' : 'Ajouter'}
         </button>
       </div>
 
       {isEdit && (
         <>
           <div className="btn-row" style={{ marginBottom: 12 }}>
-            <button className="btn-secondary" onClick={handleConsume}>
-              Consommer 1
-            </button>
-            <button className="btn-secondary btn-danger" onClick={handleWaste}>
-              Jeter (périmé)
-            </button>
+            <button className="btn-secondary" onClick={handleConsume}>Consommer 1</button>
+            <button className="btn-secondary btn-danger" onClick={handleWaste}>Jeter (périmé)</button>
           </div>
           <div className="btn-row">
-            <button className="btn-secondary btn-danger" onClick={handleDelete}>
-              Supprimer le produit
-            </button>
+            <button className="btn-secondary btn-danger" onClick={handleDelete}>Supprimer le produit</button>
           </div>
         </>
       )}

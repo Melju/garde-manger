@@ -28,7 +28,9 @@ function toProduct(r: any): Product {
     expiryDate: r.expiry_date ?? undefined,
     price: r.price != null ? Number(r.price) : undefined,
     barcode: r.barcode ?? undefined,
-    storage: r.storage ?? undefined,
+    conservation: r.conservation ?? undefined,
+    dateType: r.date_type ?? undefined,
+    location: r.location ?? undefined,
     createdAt: r.created_at,
     updatedAt: r.updated_at,
   }
@@ -108,7 +110,9 @@ export class SupabaseRepository implements Repository {
         expiry_date: input.expiryDate ?? null,
         price: input.price ?? null,
         barcode: input.barcode ?? null,
-        storage: input.storage ?? null,
+        conservation: input.conservation ?? null,
+        date_type: input.dateType ?? null,
+        location: input.location ?? null,
       })
       .select()
       .single()
@@ -126,7 +130,9 @@ export class SupabaseRepository implements Repository {
     if (patch.expiryDate !== undefined) row.expiry_date = patch.expiryDate ?? null
     if (patch.price !== undefined) row.price = patch.price ?? null
     if (patch.barcode !== undefined) row.barcode = patch.barcode ?? null
-    if (patch.storage !== undefined) row.storage = patch.storage ?? null
+    if (patch.conservation !== undefined) row.conservation = patch.conservation ?? null
+    if (patch.dateType !== undefined) row.date_type = patch.dateType ?? null
+    if (patch.location !== undefined) row.location = patch.location ?? null
     const { data, error } = await this.sb.from('products').update(row).eq('id', id).select().single()
     if (error) throw error
     return toProduct(data)

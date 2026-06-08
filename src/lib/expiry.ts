@@ -1,7 +1,7 @@
 import type { Product } from '../types'
 
 /** Statut de péremption d'un produit. */
-export type ExpiryStatus = 'urgent' | 'soon' | 'ok' | 'expired' | 'none'
+export type ExpiryStatus = 'urgent' | 'soon' | 'ok' | 'expired' | 'still-good' | 'none'
 
 const MS_PER_DAY = 1000 * 60 * 60 * 24
 
@@ -24,6 +24,13 @@ export function daysUntilExpiry(product: Product, now: Date = new Date()): numbe
 export function expiryStatus(product: Product, now: Date = new Date()): ExpiryStatus {
   const days = daysUntilExpiry(product, now)
   if (days === null) return 'none'
+  // DDM (« à consommer de préférence ») : pas de danger une fois la date passée.
+  if (product.dateType === 'ddm') {
+    if (days < 0) return 'still-good'
+    if (days <= 3) return 'soon'
+    if (days <= 14) return 'soon'
+    return 'ok'
+  }
   if (days < 0) return 'expired'
   if (days <= 3) return 'urgent'
   if (days <= 14) return 'soon'
@@ -34,7 +41,7 @@ export function expiryStatus(product: Product, now: Date = new Date()): ExpirySt
 export function expiryLabel(product: Product, now: Date = new Date()): string {
   const days = daysUntilExpiry(product, now)
   if (days === null) return '—'
-  if (days < 0) return `Périmé (${Math.abs(days)}j)`
+  if (days < 0) return product.dateType === 'ddm' ? 'Encore bon' : `Périmé (${Math.abs(days)}j)`
   if (days === 0) return "Aujourd'hui"
   if (days === 1) return 'Demain'
   if (days <= 30) return `${days} jours`

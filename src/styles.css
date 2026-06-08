@@ -1210,6 +1210,31 @@ button { font-family: inherit; }
 }
 .fab-backdrop.open { opacity: 1; pointer-events: auto; }
 
+/* Grilles d'options (conservation, catégories, type de date) */
+.opt-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+}
+.opt-grid.two { grid-template-columns: repeat(2, 1fr); }
+.opt-btn {
+  padding: 12px 8px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  font-size: 13px;
+  font-weight: 500;
+  font-family: inherit;
+  color: var(--fg-2);
+  cursor: pointer;
+  transition: all 0.15s ease;
+  text-align: center;
+}
+.opt-btn:hover { border-color: var(--fg); color: var(--fg); }
+.opt-btn.active { background: var(--fg); border-color: var(--fg); color: var(--surface); }
+.opt-btn .sub { display: block; font-size: 11px; font-weight: 400; opacity: 0.75; margin-top: 3px; }
+.opt-btn.date { text-align: left; padding: 12px 14px; }
+
 /* Suggestion de péremption estimée */
 .estimate-hint {
   display: flex;

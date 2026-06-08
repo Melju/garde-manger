@@ -1,43 +1,63 @@
 // Modèle de données métier de l'application Garde-Manger.
 
-/** Catégories de rangement d'un produit. */
-export type Category = 'frais' | 'conserves' | 'epicerie' | 'surgeles'
+/** Catégorie (type d'aliment) d'un produit. */
+export type Category =
+  | 'fruits'
+  | 'legumes'
+  | 'viandes'
+  | 'poissons'
+  | 'laitiers'
+  | 'epicerie'
+  | 'conserves'
+  | 'sucreries'
+  | 'apero'
+  | 'boissons'
+  | 'surgeles'
+  | 'autre'
 
 export const CATEGORIES: { id: Category; label: string }[] = [
-  { id: 'frais', label: 'Frais' },
-  { id: 'conserves', label: 'Conserves' },
+  { id: 'fruits', label: 'Fruits' },
+  { id: 'legumes', label: 'Légumes' },
+  { id: 'viandes', label: 'Viandes' },
+  { id: 'poissons', label: 'Poissons' },
+  { id: 'laitiers', label: 'Laitiers' },
   { id: 'epicerie', label: 'Épicerie' },
+  { id: 'conserves', label: 'Conserves' },
+  { id: 'sucreries', label: 'Sucreries' },
+  { id: 'apero', label: 'Apéro' },
+  { id: 'boissons', label: 'Boissons' },
   { id: 'surgeles', label: 'Surgelés' },
+  { id: 'autre', label: 'Autre' },
 ]
 
-export const CATEGORY_LABELS: Record<Category, string> = {
-  frais: 'Frais',
-  conserves: 'Conserves',
-  epicerie: 'Épicerie',
-  surgeles: 'Surgelés',
+const CAT_MAP: Record<string, string> = Object.fromEntries(CATEGORIES.map((c) => [c.id, c.label]))
+
+/** Libellé d'une catégorie, avec repli sur « Autre » pour les valeurs inconnues (anciennes données). */
+export function categoryLabel(c: string): string {
+  return CAT_MAP[c] ?? 'Autre'
 }
 
-/** Mode de conservation / emplacement. */
-export type Storage = 'placard' | 'frigo' | 'congelateur'
+/** @deprecated utiliser categoryLabel() — conservé pour compat. */
+export const CATEGORY_LABELS = CAT_MAP as Record<Category, string>
 
-export const STORAGES: { id: Storage; label: string }[] = [
-  { id: 'placard', label: 'Placard' },
-  { id: 'frigo', label: 'Réfrigérateur' },
-  { id: 'congelateur', label: 'Congélateur' },
+/** Mode de conservation (influe sur l'estimation de péremption). */
+export type Conservation = 'frais' | 'refrigere' | 'congele'
+
+export const CONSERVATIONS: { id: Conservation; label: string }[] = [
+  { id: 'frais', label: 'Frais' },
+  { id: 'refrigere', label: 'Réfrigéré' },
+  { id: 'congele', label: 'Congelé' },
 ]
 
-export const STORAGE_LABELS: Record<Storage, string> = {
-  placard: 'Placard',
-  frigo: 'Réfrigérateur',
-  congelateur: 'Congélateur',
+/** Conservation par défaut déduite de la catégorie. */
+export function defaultConservation(category: Category): Conservation {
+  if (category === 'surgeles') return 'congele'
+  if (['viandes', 'poissons', 'laitiers', 'fruits', 'legumes'].includes(category)) return 'refrigere'
+  return 'frais'
 }
 
-/** Emplacement par défaut déduit de la catégorie. */
-export function defaultStorage(category: Category): Storage {
-  if (category === 'surgeles') return 'congelateur'
-  if (category === 'frais') return 'frigo'
-  return 'placard'
-}
+/** Type de date de péremption : DLC (limite stricte) ou DDM (préférence). */
+export type DateType = 'dlc' | 'ddm'
 
 /** Un produit présent dans le garde-manger. */
 export interface Product {
@@ -56,8 +76,12 @@ export interface Product {
   price?: number
   /** Code-barres EAN/UPC, optionnel (renseigné via le scan). */
   barcode?: string
-  /** Emplacement de conservation (influe sur l'estimation de péremption). */
-  storage?: Storage
+  /** Mode de conservation (influe sur l'estimation de péremption). */
+  conservation?: Conservation
+  /** Type de date : DLC (limite stricte) ou DDM (préférence). */
+  dateType?: DateType
+  /** Emplacement libre (ex : « Placard cuisine »), optionnel. */
+  location?: string
   /** Horodatages ISO. */
   createdAt: string
   updatedAt: string

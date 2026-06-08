@@ -1,5 +1,5 @@
 import type { BudgetConfig, Category, Expense, HistoryEntry, Product, Settings } from '../types'
-import { CATEGORY_LABELS } from '../types'
+import { categoryLabel } from '../types'
 import { daysUntilExpiry, expiryStatus, expiryLabel } from './expiry'
 import { monthKey, toISODate } from './dates'
 
@@ -169,7 +169,7 @@ export function budgetSummary(
   const byCategory = [...totals.entries()]
     .map(([category, amount]) => ({
       category,
-      label: CATEGORY_LABELS[category],
+      label: categoryLabel(category),
       amount: Math.round(amount),
       ratio: amount / maxCat,
     }))
