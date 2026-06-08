@@ -131,6 +131,11 @@ create table if not exists products (
   conservation text,
   date_type    text,
   location     text,
+  image_url    text,
+  nutriscore   text,
+  nova         int,
+  kcal         numeric,
+  allergens    text[],
   created_at   timestamptz not null default now(),
   updated_at   timestamptz not null default now()
 );

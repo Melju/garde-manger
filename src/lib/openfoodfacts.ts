@@ -36,9 +36,20 @@ function guessCategory(tags: string[]): Category {
 export async function lookupBarcode(barcode: string): Promise<BarcodeLookup> {
   const base: BarcodeLookup = { found: false, barcode, prefill: { barcode, category: 'epicerie', quantity: 1 } }
   try {
-    const url = `https://world.openfoodfacts.org/api/v2/product/${encodeURIComponent(
-      barcode,
-    )}.json?fields=product_name,product_name_fr,brands,quantity,categories_tags`
+    const fields = [
+      'product_name',
+      'product_name_fr',
+      'brands',
+      'quantity',
+      'categories_tags',
+      'image_front_url',
+      'image_url',
+      'nutriscore_grade',
+      'nova_group',
+      'nutriments',
+      'allergens_tags',
+    ].join(',')
+    const url = `https://world.openfoodfacts.org/api/v2/product/${encodeURIComponent(barcode)}.json?fields=${fields}`
     const res = await fetch(url)
     if (!res.ok) return base
     const data = await res.json()
@@ -49,11 +60,22 @@ export async function lookupBarcode(barcode: string): Promise<BarcodeLookup> {
     const brand: string | undefined = (p.brands || '').split(',')[0]?.trim() || undefined
     const tags: string[] = Array.isArray(p.categories_tags) ? p.categories_tags : []
 
-    // Nom affiché : « Nom Marque » si la marque n'y figure pas déjà.
     let displayName = name
     if (brand && name && !name.toLowerCase().includes(brand.toLowerCase())) {
       displayName = `${name} ${brand}`
     }
+
+    const grade: string | undefined =
+      typeof p.nutriscore_grade === 'string' && /^[a-e]$/i.test(p.nutriscore_grade)
+        ? p.nutriscore_grade.toLowerCase()
+        : undefined
+    const nova: number | undefined =
+      typeof p.nova_group === 'number' ? p.nova_group : Number(p.nova_group) || undefined
+    const kcalRaw = p.nutriments?.['energy-kcal_100g']
+    const kcal: number | undefined = typeof kcalRaw === 'number' ? Math.round(kcalRaw) : undefined
+    const allergens: string[] = Array.isArray(p.allergens_tags)
+      ? p.allergens_tags.map((t: string) => t.replace(/^[a-z]{2}:/, '')).filter(Boolean)
+      : []
 
     return {
       found: Boolean(name),
@@ -65,6 +87,11 @@ export async function lookupBarcode(barcode: string): Promise<BarcodeLookup> {
         category: guessCategory(tags),
         quantity: 1,
         size: (p.quantity || '').trim() || undefined,
+        imageUrl: p.image_front_url || p.image_url || undefined,
+        nutriscore: grade,
+        nova,
+        kcal,
+        allergens: allergens.length ? allergens : undefined,
       },
     }
   } catch {

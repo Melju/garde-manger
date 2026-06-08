@@ -31,6 +31,11 @@ function toProduct(r: any): Product {
     conservation: r.conservation ?? undefined,
     dateType: r.date_type ?? undefined,
     location: r.location ?? undefined,
+    imageUrl: r.image_url ?? undefined,
+    nutriscore: r.nutriscore ?? undefined,
+    nova: r.nova ?? undefined,
+    kcal: r.kcal != null ? Number(r.kcal) : undefined,
+    allergens: r.allergens ?? undefined,
     createdAt: r.created_at,
     updatedAt: r.updated_at,
   }
@@ -113,6 +118,11 @@ export class SupabaseRepository implements Repository {
         conservation: input.conservation ?? null,
         date_type: input.dateType ?? null,
         location: input.location ?? null,
+        image_url: input.imageUrl ?? null,
+        nutriscore: input.nutriscore ?? null,
+        nova: input.nova ?? null,
+        kcal: input.kcal ?? null,
+        allergens: input.allergens ?? null,
       })
       .select()
       .single()
@@ -133,6 +143,11 @@ export class SupabaseRepository implements Repository {
     if (patch.conservation !== undefined) row.conservation = patch.conservation ?? null
     if (patch.dateType !== undefined) row.date_type = patch.dateType ?? null
     if (patch.location !== undefined) row.location = patch.location ?? null
+    if (patch.imageUrl !== undefined) row.image_url = patch.imageUrl ?? null
+    if (patch.nutriscore !== undefined) row.nutriscore = patch.nutriscore ?? null
+    if (patch.nova !== undefined) row.nova = patch.nova ?? null
+    if (patch.kcal !== undefined) row.kcal = patch.kcal ?? null
+    if (patch.allergens !== undefined) row.allergens = patch.allergens ?? null
     const { data, error } = await this.sb.from('products').update(row).eq('id', id).select().single()
     if (error) throw error
     return toProduct(data)

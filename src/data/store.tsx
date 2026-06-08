@@ -29,6 +29,7 @@ import { useAuth } from './auth'
 import { newId, type Repository } from './repository'
 import { toISODate } from '../lib/dates'
 import { isIngredientInStock } from '../lib/recipesLib'
+import { lookupBarcode } from '../lib/openfoodfacts'
 
 interface StoreValue {
   products: Product[]
@@ -45,6 +46,8 @@ interface StoreValue {
   cloudMode: boolean
   /** Copie les produits/courses du stockage local de cet appareil vers le cloud. */
   importLocalData(): Promise<number>
+  /** Complète les infos manquantes (photo, Nutri-Score, allergènes…) des produits ayant un code-barres, via Open Food Facts. */
+  refreshFromOFF(): Promise<{ updated: number; scanned: number }>
 
   // Produits
   addProduct(input: ProductInput): Promise<void>
@@ -202,6 +205,29 @@ export function StoreProvider({ children }: { children: ReactNode }) {
         setProducts(await repo.listProducts())
         setShopping(await repo.listShopping())
         return lp.length + ls.length
+      },
+
+      async refreshFromOFF() {
+        const withBarcode = products.filter((p) => p.barcode)
+        let updated = 0
+        for (const p of withBarcode) {
+          // On saute ceux déjà complets.
+          if (p.imageUrl && p.nutriscore && p.kcal != null && p.allergens) continue
+          const { prefill: pf } = await lookupBarcode(p.barcode as string)
+          const patch: Partial<ProductInput> = {}
+          if (!p.imageUrl && pf.imageUrl) patch.imageUrl = pf.imageUrl
+          if (!p.nutriscore && pf.nutriscore) patch.nutriscore = pf.nutriscore
+          if (p.nova == null && pf.nova != null) patch.nova = pf.nova
+          if (p.kcal == null && pf.kcal != null) patch.kcal = pf.kcal
+          if ((!p.allergens || !p.allergens.length) && pf.allergens) patch.allergens = pf.allergens
+          if (!p.size && pf.size) patch.size = pf.size
+          if (Object.keys(patch).length) {
+            await repo.updateProduct(p.id, patch)
+            updated++
+          }
+        }
+        if (updated) setProducts(await repo.listProducts())
+        return { updated, scanned: withBarcode.length }
       },
 
       async addProduct(input) {

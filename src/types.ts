@@ -82,6 +82,17 @@ export interface Product {
   dateType?: DateType
   /** Emplacement libre (ex : « Placard cuisine »), optionnel. */
   location?: string
+  // ----- Données enrichies Open Food Facts (optionnelles) -----
+  /** URL de la photo du produit. */
+  imageUrl?: string
+  /** Nutri-Score : 'a' à 'e'. */
+  nutriscore?: string
+  /** Groupe NOVA (degré de transformation) 1 à 4. */
+  nova?: number
+  /** Énergie en kcal pour 100 g/mL. */
+  kcal?: number
+  /** Allergènes (clés OFF normalisées : gluten, milk, eggs…). */
+  allergens?: string[]
   /** Horodatages ISO. */
   createdAt: string
   updatedAt: string

@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import { useStore } from '../data/store'
 import { useToast } from '../components/Toast'
 import { PageHeader } from '../components/PageHeader'
@@ -16,8 +17,17 @@ function Toggle({ checked, onChange }: { checked: boolean; onChange: (v: boolean
 }
 
 export function SettingsScreen({ onBack }: SettingsScreenProps) {
-  const { settings, updateSettings, resetDemo } = useStore()
+  const { settings, updateSettings, resetDemo, refreshFromOFF } = useStore()
   const toast = useToast()
+  const [busy, setBusy] = useState(false)
+
+  async function refresh() {
+    setBusy(true)
+    const { updated, scanned } = await refreshFromOFF()
+    setBusy(false)
+    if (scanned === 0) toast('Aucun produit avec code-barres à compléter')
+    else toast(`${updated} produit(s) complété(s) sur ${scanned}`)
+  }
 
   async function reset() {
     if (!confirm('Réinitialiser toutes les données avec le jeu de démonstration ?')) return
@@ -81,6 +91,9 @@ export function SettingsScreen({ onBack }: SettingsScreenProps) {
             </div>
           </div>
         </div>
+        <button className="btn-secondary" disabled={busy} onClick={refresh} style={{ marginBottom: 12 }}>
+          {busy ? 'Mise à jour…' : 'Compléter les infos produits (Open Food Facts)'}
+        </button>
         <button className="btn-secondary btn-danger" onClick={reset}>
           Réinitialiser les données démo
         </button>

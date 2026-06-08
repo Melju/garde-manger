@@ -13,6 +13,7 @@ import {
   type ProductInput,
 } from '../types'
 import { estimateShelfLife, estimatedExpiryISO, durationLabel } from '../lib/shelfLife'
+import { familyAllergenWarnings, allergenLabel } from '../lib/allergens'
 
 /** Unités de contenance proposées. */
 const SIZE_UNITS = ['g', 'kg', 'mL', 'cl', 'L', 'pièce', 'pack', 'boîte', 'sachet', 'pot', 'tranches']
@@ -35,9 +36,21 @@ interface ProductFormScreenProps {
 }
 
 export function ProductFormScreen({ product, initial, onClose, onSaved }: ProductFormScreenProps) {
-  const { addProduct, updateProduct, removeProduct, adjustQuantity, wasteProduct } = useStore()
+  const { addProduct, updateProduct, removeProduct, adjustQuantity, wasteProduct, family } = useStore()
   const toast = useToast()
   const isEdit = product !== null
+
+  // Données enrichies Open Food Facts (lecture seule, conservées telles quelles).
+  const enrich = {
+    imageUrl: product?.imageUrl ?? initial?.imageUrl,
+    nutriscore: product?.nutriscore ?? initial?.nutriscore,
+    nova: product?.nova ?? initial?.nova,
+    kcal: product?.kcal ?? initial?.kcal,
+    allergens: product?.allergens ?? initial?.allergens,
+  }
+  const warnings = familyAllergenWarnings(enrich.allergens, family)
+  const hasEnrich =
+    enrich.imageUrl || enrich.nutriscore || enrich.nova || enrich.kcal != null || warnings.length > 0
 
   const initCategory = product?.category ?? initial?.category ?? 'autre'
   const [name, setName] = useState(product?.name ?? initial?.name ?? '')
@@ -85,6 +98,11 @@ export function ProductFormScreen({ product, initial, onClose, onSaved }: Produc
       location: location.trim() || undefined,
       price: price ? Number(price.replace(',', '.')) || undefined : undefined,
       barcode,
+      imageUrl: enrich.imageUrl,
+      nutriscore: enrich.nutriscore,
+      nova: enrich.nova,
+      kcal: enrich.kcal,
+      allergens: enrich.allergens,
     }
   }
 
@@ -144,6 +162,38 @@ export function ProductFormScreen({ product, initial, onClose, onSaved }: Produc
           <p style={{ fontSize: 12, color: 'var(--muted)', marginTop: 6 }}>Code-barres : {barcode}</p>
         )}
       </div>
+
+      {hasEnrich && (
+        <div className="form-section">
+          <div className="enrich-card">
+            {enrich.imageUrl && <img className="enrich-photo" src={enrich.imageUrl} alt="" />}
+            <div className="enrich-info">
+              <div className="enrich-badges">
+                {enrich.nutriscore && (
+                  <span className={`nutri-badge ns-${enrich.nutriscore}`}>
+                    {enrich.nutriscore.toUpperCase()}
+                  </span>
+                )}
+                {enrich.nova ? <span className="meta-badge">NOVA {enrich.nova}</span> : null}
+                {enrich.kcal != null && <span className="meta-badge">{enrich.kcal} kcal/100g</span>}
+                {!enrich.nutriscore && enrich.nova == null && enrich.kcal == null && (
+                  <span className="meta-badge">Infos nutritionnelles indisponibles</span>
+                )}
+              </div>
+              {warnings.length > 0 && (
+                <div className="allergen-warn">
+                  <Icon name="alert" />
+                  <span>
+                    {warnings
+                      .map((w) => `${w.member.name} : ${w.allergens.map(allergenLabel).join(', ')}`)
+                      .join(' · ')}
+                  </span>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
 
       <div className="form-section">
         <label className="form-label">Conservation</label>
