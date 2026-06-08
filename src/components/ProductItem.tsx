@@ -9,7 +9,7 @@ import {
   portionScale,
   formatContenance,
 } from '../lib/contenance'
-import { Icon } from './Icon'
+import { Icon, categoryIcon } from './Icon'
 import { SwipeWheel } from './SwipeWheel'
 
 interface ProductItemProps {
@@ -96,7 +96,7 @@ export function ProductItem({
         onClick={handleClick}
       >
         <div className="product-icon" style={{ background: col.bg, color: col.fg }}>
-          <Icon name="box" width={1.7} />
+          <Icon name={categoryIcon(product.category)} width={1.7} />
         </div>
         <div className="product-info">
           <div className="product-name">{product.name}</div>

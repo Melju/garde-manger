@@ -1,4 +1,5 @@
 // Jeu d'icônes SVG (style Heroicons outline) utilisé dans l'app.
+import type { Category } from '../types'
 
 export type IconName =
   | 'bell'
@@ -34,6 +35,17 @@ export type IconName =
   | 'receipt'
   | 'cloud'
   | 'phone'
+  // Catégories d'aliments
+  | 'apple'
+  | 'meat'
+  | 'fish'
+  | 'milk'
+  | 'wheat'
+  | 'can'
+  | 'candy'
+  | 'wineglass'
+  | 'bottle'
+  | 'snowflake'
 
 const paths: Record<IconName, React.ReactNode> = {
   bell: (
@@ -209,6 +221,117 @@ const paths: Record<IconName, React.ReactNode> = {
       d="M10.5 1.5H8.25A2.25 2.25 0 006 3.75v16.5a2.25 2.25 0 002.25 2.25h7.5A2.25 2.25 0 0018 20.25V3.75a2.25 2.25 0 00-2.25-2.25H13.5m-3 0V3h3V1.5m-3 0h3m-3 18.75h3"
     />
   ),
+  // ----- Catégories d'aliments -----
+  apple: (
+    <>
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        d="M12 8.6C10.7 7 8.4 6.8 7.1 8.1c-1.7 1.7-1.4 4.9.6 7.2 1 1.2 2 2.3 3 2.3.5 0 .9-.2 1.3-.2s.8.2 1.3.2c1 0 2-1.1 3-2.3 2-2.3 2.3-5.5.6-7.2C15.6 6.8 13.3 7 12 8.6z"
+      />
+      <path strokeLinecap="round" strokeLinejoin="round" d="M12 8.6V6.4A2.4 2.4 0 0114.4 4" />
+    </>
+  ),
+  meat: (
+    <>
+      <path strokeLinecap="round" strokeLinejoin="round" d="M15.2 9.3a4 4 0 10-5.1 5.1l-1.4 1.4" />
+      <path strokeLinecap="round" strokeLinejoin="round" d="M8.7 15.8l-1.9.3.3-1.9" />
+    </>
+  ),
+  fish: (
+    <>
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        d="M16.5 12c-2 2.3-4.9 3.6-7.6 3.6-1.2 0-2.4-.3-3.4-.8.6-.9 1-1.9 1-2.8s-.4-1.9-1-2.8c1-.5 2.2-.8 3.4-.8 2.7 0 5.6 1.3 7.6 3.6z"
+      />
+      <path strokeLinecap="round" strokeLinejoin="round" d="M16.5 12l3-2.2v4.4L16.5 12z" />
+      <path strokeLinecap="round" strokeLinejoin="round" d="M8.5 11.2h.01" />
+    </>
+  ),
+  milk: (
+    <>
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        d="M7.5 9h9v10.2a1.3 1.3 0 01-1.3 1.3H8.8a1.3 1.3 0 01-1.3-1.3V9z"
+      />
+      <path strokeLinecap="round" strokeLinejoin="round" d="M7.5 9l1.6-3.4h5.8L16.5 9" />
+      <path strokeLinecap="round" strokeLinejoin="round" d="M10 13.5h4" />
+    </>
+  ),
+  wheat: (
+    <>
+      <path strokeLinecap="round" strokeLinejoin="round" d="M12 21V8.5" />
+      <path strokeLinecap="round" strokeLinejoin="round" d="M12 9.2c0-2 1.5-3.6 3.6-3.6.1 2-1.4 3.6-3.6 3.6z" />
+      <path strokeLinecap="round" strokeLinejoin="round" d="M12 9.2c0-2-1.5-3.6-3.6-3.6-.1 2 1.4 3.6 3.6 3.6z" />
+      <path strokeLinecap="round" strokeLinejoin="round" d="M12 13.4c0-2 1.5-3.6 3.6-3.6.1 2-1.4 3.6-3.6 3.6z" />
+      <path strokeLinecap="round" strokeLinejoin="round" d="M12 13.4c0-2-1.5-3.6-3.6-3.6-.1 2 1.4 3.6 3.6 3.6z" />
+      <path strokeLinecap="round" strokeLinejoin="round" d="M12 17.6c0-2 1.5-3.6 3.6-3.6.1 2-1.4 3.6-3.6 3.6z" />
+      <path strokeLinecap="round" strokeLinejoin="round" d="M12 17.6c0-2-1.5-3.6-3.6-3.6-.1 2 1.4 3.6 3.6 3.6z" />
+    </>
+  ),
+  can: (
+    <>
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        d="M6 7.5C6 6.4 8.7 5.5 12 5.5s6 .9 6 2-2.7 2-6 2-6-.9-6-2z"
+      />
+      <path strokeLinecap="round" strokeLinejoin="round" d="M6 7.5v9c0 1.1 2.7 2 6 2s6-.9 6-2v-9" />
+    </>
+  ),
+  candy: (
+    <>
+      <path strokeLinecap="round" strokeLinejoin="round" d="M15.5 12a3.5 3.5 0 11-7 0 3.5 3.5 0 017 0z" />
+      <path strokeLinecap="round" strokeLinejoin="round" d="M8.5 12L5 9.3v5.4L8.5 12z" />
+      <path strokeLinecap="round" strokeLinejoin="round" d="M15.5 12L19 9.3v5.4L15.5 12z" />
+    </>
+  ),
+  wineglass: (
+    <>
+      <path strokeLinecap="round" strokeLinejoin="round" d="M8 4h8l-.9 6.2a3.2 3.2 0 01-6.2 0L8 4z" />
+      <path strokeLinecap="round" strokeLinejoin="round" d="M12 13.4V19" />
+      <path strokeLinecap="round" strokeLinejoin="round" d="M9 19h6" />
+    </>
+  ),
+  bottle: (
+    <>
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        d="M10 3h4v2.8l1.4 2.4c.4.6.6 1.3.6 2v8.6a1.8 1.8 0 01-1.8 1.8H9.8A1.8 1.8 0 018 19.8v-8.6c0-.7.2-1.4.6-2L10 5.8V3z"
+      />
+      <path strokeLinecap="round" strokeLinejoin="round" d="M9 13h6" />
+    </>
+  ),
+  snowflake: (
+    <path
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      d="M12 3v18M3.3 7.5l17.4 10M20.7 7.5L3.3 17.5M12 3l-2.2 2.2M12 3l2.2 2.2M12 21l-2.2-2.2M12 21l2.2-2.2"
+    />
+  ),
+}
+
+/** Icône représentative pour chaque catégorie d'aliment. */
+const CATEGORY_ICON: Record<Category, IconName> = {
+  fruits: 'apple',
+  legumes: 'leaf',
+  viandes: 'meat',
+  poissons: 'fish',
+  laitiers: 'milk',
+  epicerie: 'wheat',
+  conserves: 'can',
+  sucreries: 'candy',
+  apero: 'wineglass',
+  boissons: 'bottle',
+  surgeles: 'snowflake',
+  autre: 'box',
+}
+
+export function categoryIcon(category: Category): IconName {
+  return CATEGORY_ICON[category] ?? 'box'
 }
 
 interface IconProps {
