@@ -75,7 +75,7 @@ interface StoreValue {
   // Recettes
   addRecipe(input: RecipeInput): Promise<Recipe>
   /** Génère une recette via Claude (edge function) à partir du stock. */
-  generateRecipe(constraints?: string): Promise<Recipe>
+  generateRecipe(opts?: { constraints?: string; course?: string }): Promise<Recipe>
   /** Analyse la photo d'un ticket de caisse (Claude Vision) → articles détectés. */
   scanReceipt(image: string, mediaType: string): Promise<ReceiptItem[]>
   toggleFavorite(id: string): Promise<void>
@@ -338,8 +338,12 @@ export function StoreProvider({ children }: { children: ReactNode }) {
         await repo.saveRecipes(next)
         return recipe
       },
-      async generateRecipe(constraints) {
+      async generateRecipe(opts) {
         if (!supabase) throw new Error('Connecte-toi pour utiliser la génération IA')
+        const course = opts?.course?.trim()
+        const constraints = [course ? `Type de plat : ${course}` : '', opts?.constraints ?? '']
+          .filter(Boolean)
+          .join('. ')
         // Coût maîtrisé : on priorise les produits qui périment bientôt (anti-gaspi)
         // puis le reste, en limitant la liste envoyée.
         const prio = priorityProducts(products).map((p) => p.name)
@@ -370,7 +374,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
           title: r.title,
           timeMin: Number(r.timeMin) || 0,
           cuisine: r.cuisine || undefined,
-          tags: Array.isArray(r.tags) ? [...new Set([...r.tags, 'ia'])] : ['ia'],
+          tags: [...new Set([...(Array.isArray(r.tags) ? r.tags : []), ...(course ? [course] : []), 'ia'])],
           favorite: false,
           ingredients: Array.isArray(r.ingredients) ? r.ingredients : [],
           steps: Array.isArray(r.steps) ? r.steps : undefined,

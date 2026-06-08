@@ -18,13 +18,14 @@ export function RecipesScreen({ onOpenRecipe, onOpenFamily }: RecipesScreenProps
   const [filter, setFilter] = useState<Filter>('toutes')
   const [generating, setGenerating] = useState(false)
   const [constraint, setConstraint] = useState('')
+  const [course, setCourse] = useState('')
 
   async function handleGenerate() {
     if (generating) return
     setGenerating(true)
     toast('Claude cuisine une idée…')
     try {
-      const recipe = await generateRecipe(constraint || undefined)
+      const recipe = await generateRecipe({ constraints: constraint || undefined, course: course || undefined })
       onOpenRecipe(recipe)
     } catch (e) {
       toast(e instanceof Error ? e.message : 'Génération impossible')
@@ -33,6 +34,14 @@ export function RecipesScreen({ onOpenRecipe, onOpenFamily }: RecipesScreenProps
     }
   }
 
+  const COURSES: [string, string][] = [
+    ['', 'Tout type'],
+    ['plat principal', 'Plat'],
+    ['entrée', 'Entrée'],
+    ['apéritif', 'Apéro'],
+    ['soupe', 'Soupe'],
+    ['dessert', 'Dessert'],
+  ]
   const CONSTRAINTS: [string, string][] = [
     ['', 'Au choix'],
     ['anti-gaspillage, utilise surtout les produits qui périment bientôt', 'Anti-gaspi'],
@@ -142,17 +151,28 @@ export function RecipesScreen({ onOpenRecipe, onOpenFamily }: RecipesScreenProps
               <div className="ai-title">{generating ? 'Génération en cours…' : 'Génère une recette créative'}</div>
               <div className="ai-desc">À partir de ton stock · Claude</div>
             </div>
-            <select
-              className="ai-select"
-              value={constraint}
-              onClick={(e) => e.stopPropagation()}
-              onChange={(e) => setConstraint(e.target.value)}
-              aria-label="Type de recette"
-            >
-              {CONSTRAINTS.map(([val, label]) => (
-                <option key={label} value={val}>{label}</option>
-              ))}
-            </select>
+            <div className="ai-selects" onClick={(e) => e.stopPropagation()}>
+              <select
+                className="ai-select"
+                value={course}
+                onChange={(e) => setCourse(e.target.value)}
+                aria-label="Type de plat"
+              >
+                {COURSES.map(([val, label]) => (
+                  <option key={label} value={val}>{label}</option>
+                ))}
+              </select>
+              <select
+                className="ai-select"
+                value={constraint}
+                onChange={(e) => setConstraint(e.target.value)}
+                aria-label="Style de recette"
+              >
+                {CONSTRAINTS.map(([val, label]) => (
+                  <option key={label} value={val}>{label}</option>
+                ))}
+              </select>
+            </div>
           </div>
         </div>
       </div>

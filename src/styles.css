@@ -635,19 +635,18 @@ button { font-family: inherit; }
 .ai-block { padding: 4px 0 0; }
 .ai-suggest-card.busy { opacity: 0.7; pointer-events: none; }
 .ai-text { flex: 1; min-width: 0; }
+.ai-selects { display: flex; flex-direction: column; gap: 6px; flex-shrink: 0; align-self: center; }
 .ai-select {
-  flex-shrink: 0;
-  align-self: center;
   border: 1px solid var(--border);
   background: var(--surface);
   color: var(--brand);
   font-family: inherit;
-  font-size: 13px;
+  font-size: 12.5px;
   font-weight: 600;
-  padding: 8px 10px;
+  padding: 7px 9px;
   border-radius: 10px;
   cursor: pointer;
-  max-width: 130px;
+  width: 110px;
 }
 
 /* Indice de catégorie devinée dans la barre d'ajout */
