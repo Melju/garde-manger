@@ -1,7 +1,7 @@
 import { useMemo } from 'react'
 import { useStore } from '../data/store'
 import { Icon } from '../components/Icon'
-import { monthlyStats } from '../lib/analytics'
+import { monthlyStats, nutritionStats } from '../lib/analytics'
 import { formatMonthYear, formatTime, fromISODate, MONTHS_FR } from '../lib/dates'
 
 interface StatsScreenProps {
@@ -12,6 +12,7 @@ interface StatsScreenProps {
 export function StatsScreen({ onBack, onOpenWaste }: StatsScreenProps) {
   const { products, history, expenses } = useStore()
   const stats = useMemo(() => monthlyStats(products, history, expenses), [products, history, expenses])
+  const nut = useMemo(() => nutritionStats(products), [products])
   const maxWeek = Math.max(1, ...stats.weekly)
   const recent = history.slice(0, 8)
 
@@ -62,6 +63,44 @@ export function StatsScreen({ onBack, onOpenWaste }: StatsScreenProps) {
             />
           ))}
         </div>
+      </div>
+
+      <div className="chart-section">
+        <div className="chart-title">Tendance alimentaire</div>
+        {nut.count === 0 ? (
+          <p style={{ color: 'var(--muted)', fontSize: 13 }}>
+            Scanne des produits pour suivre ta tendance « manger sain » (basée sur le Nutri-Score).
+          </p>
+        ) : (
+          <div className="health-card">
+            <div className="health-head">
+              <div>
+                <div className="health-score">
+                  {nut.healthScore}
+                  <span>/100</span>
+                </div>
+                <div className="health-verdict">{nut.verdict}</div>
+              </div>
+              <span className={`nutri-badge ns-${nut.grade}`}>{nut.grade.toUpperCase()}</span>
+            </div>
+            <div className="health-bar">
+              {nut.distribution
+                .filter((d) => d.count > 0)
+                .map((d) => (
+                  <span key={d.grade} className={`hb ns-${d.grade}`} style={{ flexGrow: d.count }} />
+                ))}
+            </div>
+            <div className="health-legend">
+              {nut.distribution.map((d) => (
+                <span key={d.grade}>
+                  <i className={`dot ns-${d.grade}`} />
+                  {d.grade.toUpperCase()} {d.count}
+                </span>
+              ))}
+            </div>
+            <p className="health-note">{nut.count} produit(s) avec Nutri-Score</p>
+          </div>
+        )}
       </div>
 
       <div className="history-section">

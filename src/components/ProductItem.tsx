@@ -9,14 +9,18 @@ interface ProductItemProps {
   product: Product
   onSelect: (product: Product) => void
   onRemoveQty: (product: Product, qty: number | 'all') => void
+  onWaste: (product: Product) => void
 }
 
+type Swipe = 'none' | 'left' | 'right'
+
 /**
- * Élément de la liste d'inventaire avec geste « glisser vers la gauche »
- * révélant les boutons de retrait de quantité (−1, −2, −3, tout).
+ * Élément d'inventaire avec gestes :
+ * - glisser à gauche → retirer des quantités (consommé)
+ * - glisser à droite → marquer périmé (jeté)
  */
-export function ProductItem({ product, onSelect, onRemoveQty }: ProductItemProps) {
-  const [swiped, setSwiped] = useState(false)
+export function ProductItem({ product, onSelect, onRemoveQty, onWaste }: ProductItemProps) {
+  const [swipe, setSwipe] = useState<Swipe>('none')
   const startX = useRef<number | null>(null)
   const moved = useRef(false)
 
@@ -27,24 +31,20 @@ export function ProductItem({ product, onSelect, onRemoveQty }: ProductItemProps
     startX.current = e.clientX
     moved.current = false
   }
-
   function onPointerMove(e: React.PointerEvent) {
     if (startX.current === null) return
     const dx = e.clientX - startX.current
     if (Math.abs(dx) > 8) moved.current = true
-    if (dx < -40) setSwiped(true)
-    else if (dx > 40) setSwiped(false)
+    if (dx < -40) setSwipe('left')
+    else if (dx > 40) setSwipe('right')
   }
-
   function onPointerUp() {
     startX.current = null
   }
-
   function handleClick() {
-    // Un clic après un glissement ne doit pas ouvrir la fiche.
     if (moved.current) return
-    if (swiped) {
-      setSwiped(false)
+    if (swipe !== 'none') {
+      setSwipe('none')
       return
     }
     onSelect(product)
@@ -54,7 +54,20 @@ export function ProductItem({ product, onSelect, onRemoveQty }: ProductItemProps
   const qtyLabel = product.unit ? `×${product.quantity} ${product.unit}` : `×${product.quantity}`
 
   return (
-    <div className={`swipe-wrapper${swiped ? ' swiped' : ''}`}>
+    <div className={`swipe-wrapper${swipe === 'left' ? ' swiped-left' : swipe === 'right' ? ' swiped-right' : ''}`}>
+      {/* Action gauche révélée par un glissement vers la droite : périmé */}
+      <div className="swipe-actions left">
+        <button
+          className="qty-btn waste"
+          onClick={() => {
+            onWaste(product)
+            setSwipe('none')
+          }}
+        >
+          Périmé<span>jeté</span>
+        </button>
+      </div>
+
       <div
         className="product-item"
         onPointerDown={onPointerDown}
@@ -74,7 +87,9 @@ export function ProductItem({ product, onSelect, onRemoveQty }: ProductItemProps
           <span className={`status-tag ${status}`}>{expiryLabel(product)}</span>
         </div>
       </div>
-      <div className="swipe-actions">
+
+      {/* Action droite révélée par un glissement vers la gauche : retirer */}
+      <div className="swipe-actions right">
         <div className="swipe-qty-picker">
           {[1, 2, 3].map((n) => (
             <button
@@ -83,7 +98,7 @@ export function ProductItem({ product, onSelect, onRemoveQty }: ProductItemProps
               disabled={n > product.quantity}
               onClick={() => {
                 onRemoveQty(product, n)
-                setSwiped(false)
+                setSwipe('none')
               }}
             >
               −{n}
@@ -93,7 +108,7 @@ export function ProductItem({ product, onSelect, onRemoveQty }: ProductItemProps
             className="qty-btn delete-all"
             onClick={() => {
               onRemoveQty(product, 'all')
-              setSwiped(false)
+              setSwipe('none')
             }}
           >
             Tout<span>suppr.</span>

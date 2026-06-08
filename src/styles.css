@@ -269,25 +269,29 @@ button { font-family: inherit; }
 .swipe-wrapper {
   position: relative;
   overflow: hidden;
+  border: 1px solid var(--border);
   border-radius: var(--radius);
   margin-bottom: 8px;
 }
 .swipe-wrapper .product-item {
   margin-bottom: 0;
+  border: none;
+  border-radius: 0;
   position: relative;
   z-index: 2;
-  transition: transform 0.25s ease;
+  transition: transform 0.28s cubic-bezier(0.22, 1, 0.36, 1);
 }
-.swipe-wrapper.swiped .product-item { transform: translateX(-160px); }
+.swipe-wrapper.swiped-left .product-item { transform: translateX(-160px); }
+.swipe-wrapper.swiped-right .product-item { transform: translateX(120px); }
 .swipe-actions {
   position: absolute;
   top: 0;
-  right: 0;
   bottom: 0;
-  width: 160px;
   display: flex;
   z-index: 1;
 }
+.swipe-actions.right { right: 0; width: 160px; }
+.swipe-actions.left { left: 0; width: 120px; }
 .swipe-qty-picker { display: flex; flex: 1; background: var(--danger); }
 .qty-btn {
   flex: 1;
@@ -304,9 +308,15 @@ button { font-family: inherit; }
   transition: background 0.15s ease;
   gap: 2px;
 }
-.qty-btn:hover { background: rgba(0, 0, 0, 0.1); }
-.qty-btn span { font-size: 11px; font-weight: 400; opacity: 0.8; }
-.qty-btn.delete-all { background: #991b1b; }
+.qty-btn:hover { background: rgba(0, 0, 0, 0.08); }
+.qty-btn:disabled { opacity: 0.35; cursor: default; }
+.qty-btn span { font-size: 11px; font-weight: 400; opacity: 0.85; }
+.qty-btn.delete-all { background: rgba(0, 0, 0, 0.18); }
+.qty-btn.waste {
+  flex: 1;
+  width: 100%;
+  background: var(--warn);
+}
 
 .swipe-hint {
   display: flex;
@@ -1177,7 +1187,7 @@ input[type='date'].form-input::-webkit-calendar-picker-indicator {
   transform: translateX(-50%);
   width: 100%;
   max-width: 420px;
-  padding: 0 20px;
+  padding: 0 44px;
   z-index: 150;
   pointer-events: none;
 }
@@ -1289,6 +1299,37 @@ input[type='date'].form-input::-webkit-calendar-picker-indicator {
 .opt-btn.active { background: var(--brand); border-color: var(--brand); color: #fff; }
 .opt-btn .sub { display: block; font-size: 11px; font-weight: 400; opacity: 0.75; margin-top: 3px; }
 .opt-btn.date { text-align: left; padding: 12px 14px; }
+
+/* Tendance alimentaire (Nutri-Score) */
+.health-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 16px;
+}
+.health-head { display: flex; justify-content: space-between; align-items: center; }
+.health-score { font-size: 30px; font-weight: 800; letter-spacing: -0.02em; }
+.health-score span { font-size: 14px; color: var(--muted); font-weight: 600; }
+.health-verdict { font-size: 13px; color: var(--fg-2); margin-top: 2px; }
+.health-bar {
+  display: flex;
+  height: 12px;
+  border-radius: 6px;
+  overflow: hidden;
+  gap: 2px;
+  margin: 14px 0 10px;
+  background: var(--accent-soft);
+}
+.health-bar .hb { min-width: 8px; }
+.health-legend { display: flex; flex-wrap: wrap; gap: 12px; font-size: 12px; color: var(--fg-2); }
+.health-legend span { display: inline-flex; align-items: center; gap: 5px; }
+.health-legend .dot { width: 10px; height: 10px; border-radius: 3px; }
+.health-note { font-size: 12px; color: var(--muted); margin-top: 10px; }
+.hb.ns-a, .dot.ns-a { background: #038141; }
+.hb.ns-b, .dot.ns-b { background: #85bb2f; }
+.hb.ns-c, .dot.ns-c { background: #fecb02; }
+.hb.ns-d, .dot.ns-d { background: #ee8100; }
+.hb.ns-e, .dot.ns-e { background: #e63e11; }
 
 /* Fiche enrichie Open Food Facts */
 .enrich-card {

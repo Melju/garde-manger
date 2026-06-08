@@ -309,10 +309,18 @@ export function ProductFormScreen({ product, initial, onClose, onSaved }: Produc
         <input
           id="location"
           className="form-input"
-          placeholder="Placard cuisine, Réfrigérateur…"
+          list="emplacements"
+          placeholder="Choisir ou saisir…"
           value={location}
           onChange={(e) => setLocation(e.target.value)}
         />
+        <datalist id="emplacements">
+          {['Placard cuisine', 'Réfrigérateur', 'Congélateur', 'Cellier', 'Garde-manger', 'Cave', 'Tiroir', 'Corbeille à fruits'].map(
+            (l) => (
+              <option key={l} value={l} />
+            ),
+          )}
+        </datalist>
       </div>
 
       <div className="form-section">

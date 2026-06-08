@@ -137,6 +137,45 @@ function computeWeekly(monthHistory: HistoryEntry[], now: Date): number[] {
   return weeks.slice(0, nbWeeks)
 }
 
+// ===== Tendance alimentaire (Nutri-Score) =====
+
+const GRADE_SCORE: Record<string, number> = { a: 100, b: 80, c: 60, d: 40, e: 20 }
+
+export interface NutritionStats {
+  count: number
+  distribution: { grade: string; count: number }[]
+  healthScore: number // 0-100
+  grade: string // lettre moyenne
+  verdict: string
+}
+
+/** Tendance « manger sain » d'après les Nutri-Scores des produits. */
+export function nutritionStats(products: Product[]): NutritionStats {
+  const grades = ['a', 'b', 'c', 'd', 'e']
+  const graded = products.filter((p) => p.nutriscore && GRADE_SCORE[p.nutriscore] != null)
+  const distribution = grades.map((g) => ({
+    grade: g,
+    count: graded.filter((p) => p.nutriscore === g).length,
+  }))
+  const count = graded.length
+  const healthScore = count
+    ? Math.round(graded.reduce((s, p) => s + GRADE_SCORE[p.nutriscore as string], 0) / count)
+    : 0
+  const grade = !count ? '—' : healthScore >= 90 ? 'a' : healthScore >= 70 ? 'b' : healthScore >= 50 ? 'c' : healthScore >= 30 ? 'd' : 'e'
+  const verdict = !count
+    ? 'Pas encore assez de données'
+    : healthScore >= 80
+      ? 'Très sain'
+      : healthScore >= 65
+        ? 'Plutôt sain'
+        : healthScore >= 50
+          ? 'Équilibré'
+          : healthScore >= 35
+            ? 'À surveiller'
+            : 'Trop transformé'
+  return { count, distribution, healthScore, grade, verdict }
+}
+
 // ===== Budget =====
 
 export interface BudgetSummary {

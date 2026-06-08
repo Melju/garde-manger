@@ -22,7 +22,7 @@ export function InventoryScreen({
   onOpenNotifications,
   onOpenBudget,
 }: InventoryScreenProps) {
-  const { products, adjustQuantity, expenses, budget, cloudMode } = useStore()
+  const { products, adjustQuantity, wasteProduct, expenses, budget, cloudMode } = useStore()
   const spent = useMemo(() => budgetSummary(expenses, budget).spent, [expenses, budget])
   const toast = useToast()
   const [search, setSearch] = useState('')
@@ -45,6 +45,11 @@ export function InventoryScreen({
     await adjustQuantity(product.id, delta)
     const remaining = qty === 'all' ? 0 : product.quantity - qty
     toast(remaining <= 0 ? `${product.name} retiré du stock` : `${product.name} : ×${remaining}`)
+  }
+
+  async function handleWaste(product: Product) {
+    await wasteProduct(product.id)
+    toast(`${product.name} marqué périmé`)
   }
 
   return (
@@ -144,10 +149,16 @@ export function InventoryScreen({
           <>
             <div className="swipe-hint">
               <Icon name="back" />
-              Glissez vers la gauche pour retirer
+              Glissez à gauche pour retirer · à droite si périmé
             </div>
             {filtered.map((p) => (
-              <ProductItem key={p.id} product={p} onSelect={onEdit} onRemoveQty={handleRemoveQty} />
+              <ProductItem
+                key={p.id}
+                product={p}
+                onSelect={onEdit}
+                onRemoveQty={handleRemoveQty}
+                onWaste={handleWaste}
+              />
             ))}
           </>
         ) : (
