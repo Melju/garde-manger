@@ -32,6 +32,7 @@ import { useAuth } from './auth'
 import { newId, type Repository } from './repository'
 import { toISODate } from '../lib/dates'
 import { isIngredientInStock } from '../lib/recipesLib'
+import { priorityProducts } from '../lib/expiry'
 import { lookupBarcode } from '../lib/openfoodfacts'
 
 interface StoreValue {
@@ -336,9 +337,14 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       },
       async generateRecipe(constraints) {
         if (!supabase) throw new Error('Connecte-toi pour utiliser la génération IA')
-        const ingredients = products.map((p) => p.name)
+        // Coût maîtrisé : on priorise les produits qui périment bientôt (anti-gaspi)
+        // puis le reste, en limitant la liste envoyée.
+        const prio = priorityProducts(products).map((p) => p.name)
+        const rest = products.map((p) => p.name).filter((n) => !prio.includes(n))
+        const ingredients = [...new Set([...prio, ...rest])].slice(0, 40)
+        const expiring = prio.slice(0, 12)
         const { data, error } = await supabase.functions.invoke('recipe', {
-          body: { ingredients, constraints },
+          body: { ingredients, expiring, constraints },
         })
         if (error) throw new Error(error.message || 'Génération impossible')
         const r = (data as any)?.recipe

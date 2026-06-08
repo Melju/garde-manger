@@ -588,6 +588,24 @@ button { font-family: inherit; }
 .quick-chip:active { transform: scale(0.96); }
 .quick-chip svg { width: 14px; height: 14px; }
 
+/* Génération IA : contraintes rapides */
+.ai-block { padding: 4px 0 0; }
+.ai-constraints { display: flex; flex-wrap: wrap; gap: 8px; padding: 0 20px 12px; }
+.chip-toggle {
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--fg-2);
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  padding: 7px 13px;
+  border-radius: 999px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+.chip-toggle.active { background: var(--brand); border-color: var(--brand); color: #fff; }
+.ai-suggest-card.busy { opacity: 0.7; pointer-events: none; }
+
 /* Indice de catégorie devinée dans la barre d'ajout */
 .add-cat-hint {
   flex-shrink: 0;

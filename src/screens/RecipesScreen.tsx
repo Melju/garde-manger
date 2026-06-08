@@ -17,13 +17,14 @@ export function RecipesScreen({ onOpenRecipe, onOpenFamily }: RecipesScreenProps
   const toast = useToast()
   const [filter, setFilter] = useState<Filter>('toutes')
   const [generating, setGenerating] = useState(false)
+  const [constraint, setConstraint] = useState('')
 
   async function handleGenerate() {
     if (generating) return
     setGenerating(true)
     toast('Claude cuisine une idée…')
     try {
-      const recipe = await generateRecipe()
+      const recipe = await generateRecipe(constraint || undefined)
       onOpenRecipe(recipe)
     } catch (e) {
       toast(e instanceof Error ? e.message : 'Génération impossible')
@@ -31,6 +32,14 @@ export function RecipesScreen({ onOpenRecipe, onOpenFamily }: RecipesScreenProps
       setGenerating(false)
     }
   }
+
+  const CONSTRAINTS: [string, string][] = [
+    ['', 'Au choix'],
+    ['anti-gaspillage, utilise surtout les produits qui périment bientôt', 'Anti-gaspi'],
+    ['rapide, moins de 20 minutes', 'Rapide'],
+    ['végétarien', 'Végétarien'],
+    ['sans gluten', 'Sans gluten'],
+  ]
 
   const filtered = useMemo(() => {
     return recipes.filter((r) => {
@@ -124,13 +133,26 @@ export function RecipesScreen({ onOpenRecipe, onOpenFamily }: RecipesScreenProps
           )
         })}
 
-        <div className={`ai-suggest-card${generating ? ' busy' : ''}`} onClick={handleGenerate}>
-          <div className="ai-icon">
-            <Icon name="sparkles" />
+        <div className="ai-block">
+          <div className="ai-constraints">
+            {CONSTRAINTS.map(([val, label]) => (
+              <button
+                key={label}
+                className={`chip-toggle${constraint === val ? ' active' : ''}`}
+                onClick={() => setConstraint(val)}
+              >
+                {label}
+              </button>
+            ))}
           </div>
-          <div>
-            <div className="ai-title">{generating ? 'Génération en cours…' : 'Génère une recette créative'}</div>
-            <div className="ai-desc">Basée sur tes ingrédients disponibles (Claude)</div>
+          <div className={`ai-suggest-card${generating ? ' busy' : ''}`} onClick={handleGenerate}>
+            <div className="ai-icon">
+              <Icon name="sparkles" />
+            </div>
+            <div>
+              <div className="ai-title">{generating ? 'Génération en cours…' : 'Génère une recette créative'}</div>
+              <div className="ai-desc">À partir de ton stock (priorité anti-gaspi) · Claude</div>
+            </div>
           </div>
         </div>
       </div>

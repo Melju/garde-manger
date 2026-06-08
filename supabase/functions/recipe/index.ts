@@ -42,6 +42,9 @@ Deno.serve(async (req) => {
   const ingredients: string[] = Array.isArray(body.ingredients)
     ? body.ingredients.filter((x: unknown) => typeof x === 'string').slice(0, 60)
     : []
+  const expiring: string[] = Array.isArray(body.expiring)
+    ? body.expiring.filter((x: unknown) => typeof x === 'string').slice(0, 15)
+    : []
   const constraints: string = typeof body.constraints === 'string' ? body.constraints.slice(0, 400) : ''
 
   const prompt = `Tu es un chef cuisinier. Propose UNE seule recette familiale réaliste,
@@ -49,6 +52,7 @@ en utilisant EN PRIORITÉ les ingrédients déjà disponibles ci-dessous (tu peu
 quelques-uns courants si nécessaire).
 
 Ingrédients disponibles : ${ingredients.length ? ingredients.join(', ') : 'aucun en particulier'}.
+${expiring.length ? `À écouler en priorité (périment bientôt) : ${expiring.join(', ')}.` : ''}
 ${constraints ? `Contraintes : ${constraints}.` : ''}
 
 Réponds STRICTEMENT en JSON valide, sans aucun texte autour, avec ce schéma exact :
