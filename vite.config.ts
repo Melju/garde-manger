@@ -7,9 +7,13 @@ import basicSsl from '@vitejs/plugin-basic-ssl'
 // un contexte sécurisé). Le dev normal reste en HTTP.
 const useHttps = process.env.HTTPS === 'true'
 
-export default defineConfig(({ command }) => ({
-  // Publié sur GitHub Pages sous https://melju.github.io/garde-manger/
-  // donc les assets doivent être préfixés par /garde-manger/ en production.
-  base: command === 'build' ? '/garde-manger/' : '/',
+// Chemin de base selon l'hébergeur :
+// - GitHub Pages sert l'app sous /garde-manger/ (sous-chemin du domaine github.io)
+// - Vercel et le dev local la servent à la racine (/)
+// On détecte GitHub Actions via la variable d'env GITHUB_ACTIONS.
+const base = process.env.GITHUB_ACTIONS ? '/garde-manger/' : '/'
+
+export default defineConfig({
+  base,
   plugins: [react(), ...(useHttps ? [basicSsl()] : [])],
-}))
+})
