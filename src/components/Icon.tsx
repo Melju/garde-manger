@@ -37,6 +37,7 @@ export type IconName =
   | 'phone'
   // Catégories d'aliments
   | 'apple'
+  | 'veggie'
   | 'meat'
   | 'fish'
   | 'milk'
@@ -221,103 +222,103 @@ const paths: Record<IconName, React.ReactNode> = {
       d="M10.5 1.5H8.25A2.25 2.25 0 006 3.75v16.5a2.25 2.25 0 002.25 2.25h7.5A2.25 2.25 0 0018 20.25V3.75a2.25 2.25 0 00-2.25-2.25H13.5m-3 0V3h3V1.5m-3 0h3m-3 18.75h3"
     />
   ),
-  // ----- Catégories d'aliments -----
+  // ----- Catégories d'aliments (icônes pleines, style sticker) -----
   apple: (
-    <>
-      <path
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        d="M12 8.6C10.7 7 8.4 6.8 7.1 8.1c-1.7 1.7-1.4 4.9.6 7.2 1 1.2 2 2.3 3 2.3.5 0 .9-.2 1.3-.2s.8.2 1.3.2c1 0 2-1.1 3-2.3 2-2.3 2.3-5.5.6-7.2C15.6 6.8 13.3 7 12 8.6z"
-      />
-      <path strokeLinecap="round" strokeLinejoin="round" d="M12 8.6V6.4A2.4 2.4 0 0114.4 4" />
-    </>
+    <path
+      fillRule="evenodd"
+      clipRule="evenodd"
+      d="M12 7.4c-1.4-1.5-3.7-1.8-5.1-.4-1.9 1.8-1.8 5.2.1 8 .9 1.4 2.1 3 3.5 3.4.6.2 1.1-.1 1.5-.1s.9.3 1.5.1c1.4-.4 2.6-2 3.5-3.4 1.9-2.8 2-6.2.1-8-1.4-1.4-3.7-1.1-5.1.4zm.9-.9c1.3-.3 2.4-1.4 2.7-3-1.6.1-3 1.3-2.7 3z"
+    />
+  ),
+  veggie: (
+    <path
+      fillRule="evenodd"
+      clipRule="evenodd"
+      d="M4.8 19.2C4.8 11 10.4 5.4 19.4 5.4c.3 0 .6 0 .8.1.1 1.7.1 3.2-.1 4.6-1.7-1-3.7-1.4-5.9-1.1 2.4.3 4.3 1.2 5.6 2.6-1.2 4.9-4.9 8-10 8-1.4 0-2.8-.2-4-.6l1.7-1.7c1.6-1.6 3.4-2.9 5.4-3.8-2.6.7-4.9 2.1-6.8 4l-1.5 1.5c-.1-.5-.1-.9-.1-1.3z"
+    />
   ),
   meat: (
-    <>
-      <path strokeLinecap="round" strokeLinejoin="round" d="M15.2 9.3a4 4 0 10-5.1 5.1l-1.4 1.4" />
-      <path strokeLinecap="round" strokeLinejoin="round" d="M8.7 15.8l-1.9.3.3-1.9" />
-    </>
+    <path
+      fillRule="evenodd"
+      clipRule="evenodd"
+      d="M4.6 11.2c0-3.7 3.4-6.4 7.6-6.4 4.6 0 7.7 2.8 7.7 6 0 1.6-.7 2.6-1.6 3.6-.8.9-1.2 1.6-1.4 2.8-.3 1.7-1.6 2.9-3.4 3-2 .2-3.4-.8-5.2-1.6-2.3-1-3.7-1.9-3.7-4 0-.5.1-1 .3-1.4-.4-1.1-.6-2.4-.6-3zm5.9-1.3a1.6 1.6 0 100 3.2 1.6 1.6 0 000-3.2z"
+    />
   ),
   fish: (
-    <>
-      <path
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        d="M16.5 12c-2 2.3-4.9 3.6-7.6 3.6-1.2 0-2.4-.3-3.4-.8.6-.9 1-1.9 1-2.8s-.4-1.9-1-2.8c1-.5 2.2-.8 3.4-.8 2.7 0 5.6 1.3 7.6 3.6z"
-      />
-      <path strokeLinecap="round" strokeLinejoin="round" d="M16.5 12l3-2.2v4.4L16.5 12z" />
-      <path strokeLinecap="round" strokeLinejoin="round" d="M8.5 11.2h.01" />
-    </>
+    <path
+      fillRule="evenodd"
+      clipRule="evenodd"
+      d="M21.8 11.6c-.9-1.5-2-2.6-2.4-3l.7-3c.2-.8-.7-1.4-1.3-.9L16.6 6.6c-1.4-.6-3-.9-4.6-.9-4.2 0-7.8 2.1-10.3 6.3 2.5 4.2 6.1 6.3 10.3 6.3 1.6 0 3.2-.3 4.6-.9l2.2 1.9c.6.5 1.5-.1 1.3-.9l-.7-3c.4-.4 1.5-1.5 2.4-3 .2-.3.2-.5 0-.8zM9 10.7a1.1 1.1 0 110 2.2 1.1 1.1 0 010-2.2z"
+    />
   ),
   milk: (
-    <>
-      <path
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        d="M7.5 9h9v10.2a1.3 1.3 0 01-1.3 1.3H8.8a1.3 1.3 0 01-1.3-1.3V9z"
-      />
-      <path strokeLinecap="round" strokeLinejoin="round" d="M7.5 9l1.6-3.4h5.8L16.5 9" />
-      <path strokeLinecap="round" strokeLinejoin="round" d="M10 13.5h4" />
-    </>
+    <path
+      fillRule="evenodd"
+      clipRule="evenodd"
+      d="M7.3 9.2h9.4v10.3a1.3 1.3 0 01-1.3 1.3H8.6a1.3 1.3 0 01-1.3-1.3V9.2zm.2-1.4 1.6-3.3h5.8l1.6 3.3H7.5zM10 12.7h4v2.2h-4v-2.2z"
+    />
   ),
   wheat: (
-    <>
-      <path strokeLinecap="round" strokeLinejoin="round" d="M12 21V8.5" />
-      <path strokeLinecap="round" strokeLinejoin="round" d="M12 9.2c0-2 1.5-3.6 3.6-3.6.1 2-1.4 3.6-3.6 3.6z" />
-      <path strokeLinecap="round" strokeLinejoin="round" d="M12 9.2c0-2-1.5-3.6-3.6-3.6-.1 2 1.4 3.6 3.6 3.6z" />
-      <path strokeLinecap="round" strokeLinejoin="round" d="M12 13.4c0-2 1.5-3.6 3.6-3.6.1 2-1.4 3.6-3.6 3.6z" />
-      <path strokeLinecap="round" strokeLinejoin="round" d="M12 13.4c0-2-1.5-3.6-3.6-3.6-.1 2 1.4 3.6 3.6 3.6z" />
-      <path strokeLinecap="round" strokeLinejoin="round" d="M12 17.6c0-2 1.5-3.6 3.6-3.6.1 2-1.4 3.6-3.6 3.6z" />
-      <path strokeLinecap="round" strokeLinejoin="round" d="M12 17.6c0-2-1.5-3.6-3.6-3.6-.1 2 1.4 3.6 3.6 3.6z" />
-    </>
+    <path
+      fillRule="evenodd"
+      clipRule="evenodd"
+      d="M3.4 13.2C3.4 9.5 7.3 7 12 7s8.6 2.5 8.6 6.2v3.2a1.3 1.3 0 01-1.3 1.3H4.7a1.3 1.3 0 01-1.3-1.3v-3.2zM7.5 10.2a.9.9 0 100 1.8.9.9 0 000-1.8zm4.5 0a.9.9 0 100 1.8.9.9 0 000-1.8zm4.5 0a.9.9 0 100 1.8.9.9 0 000-1.8z"
+    />
   ),
   can: (
-    <>
-      <path
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        d="M6 7.5C6 6.4 8.7 5.5 12 5.5s6 .9 6 2-2.7 2-6 2-6-.9-6-2z"
-      />
-      <path strokeLinecap="round" strokeLinejoin="round" d="M6 7.5v9c0 1.1 2.7 2 6 2s6-.9 6-2v-9" />
-    </>
+    <path
+      fillRule="evenodd"
+      clipRule="evenodd"
+      d="M6 7.4C6 6.2 8.7 5.2 12 5.2s6 1 6 2.2v9.2c0 1.2-2.7 2.2-6 2.2s-6-1-6-2.2V7.4zm6-1.3c-2.6 0-4.3.8-4.3 1.5S9.4 9.1 12 9.1s4.3-.8 4.3-1.5S14.6 6.1 12 6.1z"
+    />
   ),
   candy: (
     <>
-      <path strokeLinecap="round" strokeLinejoin="round" d="M15.5 12a3.5 3.5 0 11-7 0 3.5 3.5 0 017 0z" />
-      <path strokeLinecap="round" strokeLinejoin="round" d="M8.5 12L5 9.3v5.4L8.5 12z" />
-      <path strokeLinecap="round" strokeLinejoin="round" d="M15.5 12L19 9.3v5.4L15.5 12z" />
+      <path d="M12 8.4a3.6 3.6 0 110 7.2 3.6 3.6 0 010-7.2z" />
+      <path
+        fillRule="evenodd"
+        clipRule="evenodd"
+        d="M8.5 12 5 9.3c-.5-.4-1.2 0-1.2.6v4.2c0 .6.7 1 1.2.6L8.5 12zm7 0 3.5-2.7c.5-.4 1.2 0 1.2.6v4.2c0 .6-.7 1-1.2.6L15.5 12z"
+      />
     </>
   ),
   wineglass: (
-    <>
-      <path strokeLinecap="round" strokeLinejoin="round" d="M8 4h8l-.9 6.2a3.2 3.2 0 01-6.2 0L8 4z" />
-      <path strokeLinecap="round" strokeLinejoin="round" d="M12 13.4V19" />
-      <path strokeLinecap="round" strokeLinejoin="round" d="M9 19h6" />
-    </>
+    <path d="M7.4 4h9.2l-1 6.6a3.6 3.6 0 01-7.2 0L7.4 4zM11 13.4h2v4.5h-2v-4.5zM8.5 18h7v1.7h-7V18z" />
   ),
   bottle: (
-    <>
-      <path
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        d="M10 3h4v2.8l1.4 2.4c.4.6.6 1.3.6 2v8.6a1.8 1.8 0 01-1.8 1.8H9.8A1.8 1.8 0 018 19.8v-8.6c0-.7.2-1.4.6-2L10 5.8V3z"
-      />
-      <path strokeLinecap="round" strokeLinejoin="round" d="M9 13h6" />
-    </>
+    <path
+      fillRule="evenodd"
+      clipRule="evenodd"
+      d="M9.8 2.8h4.4v2.9l1.5 2.6c.3.6.5 1.2.5 1.9v9.3a1.7 1.7 0 01-1.7 1.7H9.5a1.7 1.7 0 01-1.7-1.7v-9.3c0-.7.2-1.3.5-1.9l1.5-2.6V2.8zm-.3 9.9h5v1.8h-5v-1.8z"
+    />
   ),
   snowflake: (
     <path
       strokeLinecap="round"
       strokeLinejoin="round"
-      d="M12 3v18M3.3 7.5l17.4 10M20.7 7.5L3.3 17.5M12 3l-2.2 2.2M12 3l2.2 2.2M12 21l-2.2-2.2M12 21l2.2-2.2"
+      d="M12 3v18M4.2 7.5l15.6 9M19.8 7.5l-15.6 9M12 6.2l-2.3-1.6M12 6.2l2.3-1.6M12 17.8l-2.3 1.6M12 17.8l2.3 1.6M4.7 9.7l.4-2.7M4.7 9.7l-2.6.7M19.3 9.7l-.4-2.7M19.3 9.7l2.6.7M4.7 14.3l.4 2.7M4.7 14.3l-2.6-.7M19.3 14.3l-.4 2.7M19.3 14.3l2.6-.7"
     />
   ),
 }
 
+/** Catégories d'aliments rendues en aplat (fill) plutôt qu'en trait. */
+const FILLED_ICONS = new Set<IconName>([
+  'apple',
+  'veggie',
+  'meat',
+  'fish',
+  'milk',
+  'wheat',
+  'can',
+  'candy',
+  'wineglass',
+  'bottle',
+])
+
 /** Icône représentative pour chaque catégorie d'aliment. */
 const CATEGORY_ICON: Record<Category, IconName> = {
   fruits: 'apple',
-  legumes: 'leaf',
+  legumes: 'veggie',
   viandes: 'meat',
   poissons: 'fish',
   laitiers: 'milk',
@@ -347,6 +348,14 @@ export function Icon({ name, width = 2, className }: IconProps) {
     return (
       <svg className={className} fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">
         <path d="M11.645 20.91l-.007-.003-.022-.012a15.247 15.247 0 01-.383-.218 25.18 25.18 0 01-4.244-3.17C4.688 15.36 2.25 12.174 2.25 8.25 2.25 5.322 4.714 3 7.688 3A5.5 5.5 0 0112 5.052 5.5 5.5 0 0116.313 3c2.973 0 5.437 2.322 5.437 5.25 0 3.925-2.438 7.111-4.739 9.256a25.175 25.175 0 01-4.244 3.17 15.247 15.247 0 01-.383.219l-.022.012-.007.004-.003.001a.752.752 0 01-.704 0l-.003-.001z" />
+      </svg>
+    )
+  }
+  // Icônes de catégorie : aplat de couleur (style sticker).
+  if (FILLED_ICONS.has(name)) {
+    return (
+      <svg className={className} fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+        {paths[name]}
       </svg>
     )
   }
