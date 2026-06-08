@@ -445,6 +445,8 @@ button { font-family: inherit; }
 .form-input,
 .form-select {
   width: 100%;
+  min-width: 0;
+  max-width: 100%;
   height: 50px;
   background: var(--surface);
   border: 1px solid var(--border);
@@ -454,6 +456,13 @@ button { font-family: inherit; }
   font-family: inherit;
   color: var(--fg);
   transition: border-color 0.15s ease;
+}
+
+/* iOS : empêche l'input date de dépasser la largeur du conteneur. */
+input[type='date'].form-input {
+  -webkit-appearance: none;
+  appearance: none;
+  display: block;
 }
 .form-input:focus,
 .form-select:focus { outline: none; border-color: var(--fg); }
