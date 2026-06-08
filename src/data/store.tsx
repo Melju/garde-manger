@@ -72,6 +72,8 @@ interface StoreValue {
 
   // Recettes
   addRecipe(input: RecipeInput): Promise<Recipe>
+  /** Génère une recette via Claude (edge function) à partir du stock. */
+  generateRecipe(constraints?: string): Promise<Recipe>
   toggleFavorite(id: string): Promise<void>
   prepareRecipe(recipe: Recipe): Promise<void>
 
@@ -326,6 +328,30 @@ export function StoreProvider({ children }: { children: ReactNode }) {
         await repo.saveShopCatalog(next)
       },
       async addRecipe(input) {
+        const recipe: Recipe = { ...input, id: newId() }
+        const next = [recipe, ...recipes]
+        setRecipes(next)
+        await repo.saveRecipes(next)
+        return recipe
+      },
+      async generateRecipe(constraints) {
+        if (!supabase) throw new Error('Connecte-toi pour utiliser la génération IA')
+        const ingredients = products.map((p) => p.name)
+        const { data, error } = await supabase.functions.invoke('recipe', {
+          body: { ingredients, constraints },
+        })
+        if (error) throw new Error(error.message || 'Génération impossible')
+        const r = (data as any)?.recipe
+        if (!r?.title) throw new Error((data as any)?.error || 'Réponse invalide')
+        const input: RecipeInput = {
+          title: r.title,
+          timeMin: Number(r.timeMin) || 0,
+          cuisine: r.cuisine || undefined,
+          tags: Array.isArray(r.tags) ? [...new Set([...r.tags, 'ia'])] : ['ia'],
+          favorite: false,
+          ingredients: Array.isArray(r.ingredients) ? r.ingredients : [],
+          steps: Array.isArray(r.steps) ? r.steps : undefined,
+        }
         const recipe: Recipe = { ...input, id: newId() }
         const next = [recipe, ...recipes]
         setRecipes(next)

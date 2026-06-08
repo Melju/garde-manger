@@ -13,9 +13,24 @@ interface RecipesScreenProps {
 type Filter = 'toutes' | 'perso' | 'favoris' | 'rapides' | 'vegetarien'
 
 export function RecipesScreen({ onOpenRecipe, onOpenFamily }: RecipesScreenProps) {
-  const { recipes, products, family, toggleFavorite } = useStore()
+  const { recipes, products, family, toggleFavorite, generateRecipe } = useStore()
   const toast = useToast()
   const [filter, setFilter] = useState<Filter>('toutes')
+  const [generating, setGenerating] = useState(false)
+
+  async function handleGenerate() {
+    if (generating) return
+    setGenerating(true)
+    toast('Claude cuisine une idée…')
+    try {
+      const recipe = await generateRecipe()
+      onOpenRecipe(recipe)
+    } catch (e) {
+      toast(e instanceof Error ? e.message : 'Génération impossible')
+    } finally {
+      setGenerating(false)
+    }
+  }
 
   const filtered = useMemo(() => {
     return recipes.filter((r) => {
@@ -109,13 +124,13 @@ export function RecipesScreen({ onOpenRecipe, onOpenFamily }: RecipesScreenProps
           )
         })}
 
-        <div className="ai-suggest-card" onClick={() => toast('Suggestion IA bientôt disponible')}>
+        <div className={`ai-suggest-card${generating ? ' busy' : ''}`} onClick={handleGenerate}>
           <div className="ai-icon">
             <Icon name="sparkles" />
           </div>
           <div>
-            <div className="ai-title">Génère une recette créative</div>
-            <div className="ai-desc">Basée sur tes ingrédients disponibles</div>
+            <div className="ai-title">{generating ? 'Génération en cours…' : 'Génère une recette créative'}</div>
+            <div className="ai-desc">Basée sur tes ingrédients disponibles (Claude)</div>
           </div>
         </div>
       </div>
