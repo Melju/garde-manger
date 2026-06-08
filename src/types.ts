@@ -117,6 +117,15 @@ export type ProductInput = Omit<Product, 'id' | 'createdAt' | 'updatedAt'>
 /** Données saisies pour un article de courses. */
 export type ShoppingItemInput = Omit<ShoppingItem, 'id' | 'createdAt' | 'checked'>
 
+/** Article détecté sur un ticket de caisse (scan Claude Vision). */
+export interface ReceiptItem {
+  name: string
+  quantity: number
+  unit: string
+  price: number | null
+  category: Category
+}
+
 /**
  * Article appris pour les courses (catégorie, unité, dernière quantité, fréquence).
  * Partagé au sein du foyer en mode cloud.

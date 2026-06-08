@@ -20,6 +20,7 @@ import type {
   ProductInput,
   Recipe,
   RecipeInput,
+  ReceiptItem,
   Settings,
   ShopCatalogEntry,
   ShoppingItem,
@@ -75,6 +76,8 @@ interface StoreValue {
   addRecipe(input: RecipeInput): Promise<Recipe>
   /** Génère une recette via Claude (edge function) à partir du stock. */
   generateRecipe(constraints?: string): Promise<Recipe>
+  /** Analyse la photo d'un ticket de caisse (Claude Vision) → articles détectés. */
+  scanReceipt(image: string, mediaType: string): Promise<ReceiptItem[]>
   toggleFavorite(id: string): Promise<void>
   prepareRecipe(recipe: Recipe): Promise<void>
 
@@ -377,6 +380,16 @@ export function StoreProvider({ children }: { children: ReactNode }) {
         setRecipes(next)
         await repo.saveRecipes(next)
         return recipe
+      },
+      async scanReceipt(image, mediaType) {
+        if (!supabase) throw new Error('Connecte-toi pour scanner un ticket')
+        const { data, error } = await supabase.functions.invoke('receipt', {
+          body: { image, mediaType },
+        })
+        if (error) throw new Error(error.message || 'Analyse impossible')
+        const items = (data as any)?.items
+        if (!Array.isArray(items)) throw new Error((data as any)?.error || 'Réponse invalide')
+        return items as ReceiptItem[]
       },
       async toggleFavorite(id) {
         const next = recipes.map((r) => (r.id === id ? { ...r, favorite: !r.favorite } : r))

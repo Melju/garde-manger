@@ -32,9 +32,16 @@ export async function callClaude(opts: {
   tier?: Tier
   maxTokens?: number
   system?: string
+  /** Images jointes (vision) : data base64 (sans préfixe) + type MIME. */
+  images?: { data: string; mediaType: string }[]
 }): Promise<ClaudeResult> {
   if (!KEY) return { ok: false, status: 500, detail: 'Clé API non configurée côté serveur' }
   const model = modelFor(opts.tier ?? 'smart')
+  const content: unknown[] = []
+  for (const img of opts.images ?? []) {
+    content.push({ type: 'image', source: { type: 'base64', media_type: img.mediaType, data: img.data } })
+  }
+  content.push({ type: 'text', text: opts.prompt })
   let resp: Response
   try {
     resp = await fetch('https://api.anthropic.com/v1/messages', {
@@ -48,7 +55,7 @@ export async function callClaude(opts: {
         model,
         max_tokens: opts.maxTokens ?? 1024,
         ...(opts.system ? { system: opts.system } : {}),
-        messages: [{ role: 'user', content: opts.prompt }],
+        messages: [{ role: 'user', content }],
       }),
     })
   } catch (e) {
