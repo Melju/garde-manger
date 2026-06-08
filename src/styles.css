@@ -281,7 +281,7 @@ button { font-family: inherit; }
   z-index: 2;
   transition: transform 0.28s cubic-bezier(0.22, 1, 0.36, 1);
 }
-.swipe-wrapper.swiped-left .product-item { transform: translateX(-160px); }
+.swipe-wrapper.swiped-left .product-item { transform: translateX(-216px); }
 .swipe-wrapper.swiped-right .product-item { transform: translateX(120px); }
 .swipe-actions {
   position: absolute;
@@ -290,7 +290,7 @@ button { font-family: inherit; }
   display: flex;
   z-index: 1;
 }
-.swipe-actions.right { right: 0; width: 160px; }
+.swipe-actions.right { right: 0; width: 216px; }
 .swipe-actions.left { left: 0; width: 120px; }
 .swipe-qty-picker { display: flex; flex: 1; background: var(--danger); }
 .qty-btn {
@@ -328,99 +328,73 @@ button { font-family: inherit; }
 }
 .swipe-hint svg { width: 16px; height: 16px; }
 
-/* Feuille modale + molette (sélection de portion / quantité) */
-.sheet-overlay {
-  position: fixed;
-  inset: 0;
-  z-index: 400;
-  background: oklch(0.2 0.02 220 / 0.45);
+/* Molette « réglette » intégrée dans la barre de swipe */
+.swipe-wheel {
   display: flex;
-  align-items: flex-end;
-  justify-content: center;
-  animation: sheet-fade 0.2s ease;
-}
-@keyframes sheet-fade { from { opacity: 0; } to { opacity: 1; } }
-.sheet {
+  align-items: stretch;
   width: 100%;
-  max-width: 420px;
-  background: var(--surface);
-  border-radius: 22px 22px 0 0;
-  padding: 10px 20px calc(20px + env(safe-area-inset-bottom));
-  box-shadow: 0 -10px 30px oklch(0.2 0.02 220 / 0.18);
-  animation: sheet-up 0.28s cubic-bezier(0.22, 1, 0.36, 1);
+  background: var(--danger);
 }
-@keyframes sheet-up { from { transform: translateY(100%); } to { transform: translateY(0); } }
-.sheet-handle {
-  width: 40px;
-  height: 4px;
-  border-radius: 2px;
-  background: var(--border);
-  margin: 0 auto 14px;
-}
-.sheet-head { text-align: center; margin-bottom: 8px; }
-.sheet-title { font-weight: 700; font-size: 17px; }
-.sheet-sub { font-size: 13px; color: var(--muted); margin-top: 2px; }
-
-.wheel {
+.sw-window {
   position: relative;
-  height: 240px; /* 5 crans de 48px */
-  margin: 8px 0 18px;
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
 }
-.wheel-list {
+/* Bande de sélection centrale */
+.sw-center {
+  position: absolute;
+  top: 9px;
+  bottom: 9px;
+  left: 50%;
+  width: 48px;
+  transform: translateX(-50%);
+  border-radius: 10px;
+  background: oklch(0 0 0 / 0.2);
+  pointer-events: none;
+  z-index: 0;
+}
+.sw-track {
+  position: relative;
+  z-index: 1;
   height: 100%;
-  overflow-y: scroll;
-  scroll-snap-type: y mandatory;
-  padding: 96px 0; /* 2 crans en haut/bas pour centrer */
+  display: flex;
+  align-items: center;
+  overflow-x: scroll;
+  scroll-snap-type: x mandatory;
+  padding: 0 calc(50% - 24px); /* centre le premier/dernier cran */
   scrollbar-width: none;
   -webkit-overflow-scrolling: touch;
 }
-.wheel-list::-webkit-scrollbar { display: none; }
-.wheel-item {
-  height: 48px;
-  width: 100%;
+.sw-track::-webkit-scrollbar { display: none; }
+.sw-item {
+  flex: 0 0 48px;
+  width: 48px;
   border: none;
   background: transparent;
+  color: #fff;
   font-family: inherit;
-  font-size: 20px;
-  font-weight: 600;
-  color: var(--muted);
+  font-weight: 700;
+  font-size: 15px;
   opacity: 0.5;
   scroll-snap-align: center;
   cursor: pointer;
-  transition: opacity 0.15s ease, color 0.15s ease, transform 0.15s ease;
+  transition: opacity 0.15s ease, transform 0.15s ease;
 }
-.wheel-item.active {
-  opacity: 1;
-  color: var(--brand);
-  font-size: 24px;
-  transform: scale(1.02);
+.sw-item.active { opacity: 1; transform: scale(1.28); }
+.sw-go {
+  flex: 0 0 56px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  background: oklch(0 0 0 / 0.18);
+  color: #fff;
+  cursor: pointer;
+  transition: background 0.15s ease;
 }
-/* Bande de sélection centrale */
-.wheel-selection {
-  position: absolute;
-  top: 96px;
-  left: 0;
-  right: 0;
-  height: 48px;
-  border-top: 1px solid var(--border);
-  border-bottom: 1px solid var(--border);
-  background: var(--accent-soft);
-  border-radius: 10px;
-  pointer-events: none;
-}
-/* Dégradés haut/bas pour l'effet molette */
-.wheel-mask {
-  position: absolute;
-  inset: 0;
-  pointer-events: none;
-  z-index: 2;
-  background: linear-gradient(
-    var(--surface) 0%,
-    oklch(1 0 0 / 0) 40%,
-    oklch(1 0 0 / 0) 60%,
-    var(--surface) 100%
-  );
-}
+.sw-go:active { background: oklch(0 0 0 / 0.3); }
+.sw-go svg { width: 24px; height: 24px; }
 
 /* Bottom nav */
 .bottom-nav {
