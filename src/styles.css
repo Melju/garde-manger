@@ -485,7 +485,8 @@ button { font-family: inherit; }
 input[type='date'].form-input {
   -webkit-appearance: none;
   appearance: none;
-  display: block;
+  display: flex;
+  align-items: center;
   text-align: left;
 }
 input[type='date'].form-input::-webkit-date-and-time-value {
