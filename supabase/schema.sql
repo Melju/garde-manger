@@ -128,6 +128,7 @@ create table if not exists products (
   expiry_date  date,
   price        numeric,
   barcode      text,
+  storage      text,
   created_at   timestamptz not null default now(),
   updated_at   timestamptz not null default now()
 );

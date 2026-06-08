@@ -2,7 +2,15 @@ import { useMemo, useState } from 'react'
 import { useStore } from '../data/store'
 import { useToast } from '../components/Toast'
 import { Icon } from '../components/Icon'
-import { CATEGORIES, type Category, type Product, type ProductInput } from '../types'
+import {
+  CATEGORIES,
+  STORAGES,
+  defaultStorage,
+  type Category,
+  type Product,
+  type ProductInput,
+  type Storage,
+} from '../types'
 import { estimateShelfLife, estimatedExpiryISO, durationLabel } from '../lib/shelfLife'
 
 interface ProductFormScreenProps {
@@ -25,14 +33,17 @@ export function ProductFormScreen({ product, initial, onClose }: ProductFormScre
   const [size, setSize] = useState(product?.size ?? initial?.size ?? '')
   const [expiryDate, setExpiryDate] = useState(product?.expiryDate ?? initial?.expiryDate ?? '')
   const [price, setPrice] = useState(product?.price != null ? String(product.price) : '')
+  const [storage, setStorage] = useState<Storage>(
+    product?.storage ?? initial?.storage ?? defaultStorage(product?.category ?? initial?.category ?? 'frais'),
+  )
   const barcode = product?.barcode ?? initial?.barcode
 
   const canSave = name.trim().length > 0 && quantity > 0
 
-  // Estimation de péremption d'après le type d'aliment (si pas de date saisie).
-  const estimate = useMemo(() => estimateShelfLife(name, category), [name, category])
+  // Estimation de péremption d'après le type d'aliment ET l'emplacement.
+  const estimate = useMemo(() => estimateShelfLife(name, storage), [name, storage])
   function applyEstimate() {
-    const iso = estimatedExpiryISO(name, category)
+    const iso = estimatedExpiryISO(name, storage)
     if (iso) setExpiryDate(iso)
   }
 
@@ -47,6 +58,7 @@ export function ProductFormScreen({ product, initial, onClose }: ProductFormScre
       expiryDate: expiryDate || undefined,
       price: price ? Number(price.replace(',', '.')) || undefined : undefined,
       barcode,
+      storage,
     }
     if (isEdit && product) {
       await updateProduct(product.id, input)
@@ -119,6 +131,22 @@ export function ProductFormScreen({ product, initial, onClose }: ProductFormScre
             <option key={c.id} value={c.id}>{c.label}</option>
           ))}
         </select>
+      </div>
+
+      <div className="form-section">
+        <label className="form-label">Emplacement</label>
+        <div className="diet-options">
+          {STORAGES.map((s) => (
+            <button
+              key={s.id}
+              type="button"
+              className={`diet-option${storage === s.id ? ' active' : ''}`}
+              onClick={() => setStorage(s.id)}
+            >
+              {s.label}
+            </button>
+          ))}
+        </div>
       </div>
 
       <div className="form-section">

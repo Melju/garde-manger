@@ -1,4 +1,4 @@
-import type { Category } from '../types'
+import type { Storage } from '../types'
 import { addDays, toISODate } from './dates'
 
 /**
@@ -68,37 +68,58 @@ export interface ShelfEstimate {
   group: string
 }
 
+// Durée au congélateur (jours) selon le groupe d'aliments.
+const FREEZER_DAYS: Record<string, number> = {
+  Fruits: 180,
+  Légumes: 240,
+  Viandes: 180,
+  Poissons: 120,
+  'Produits laitiers': 90,
+  Boulangerie: 90,
+  Épicerie: 540,
+}
+
+const PRODUCE = new Set(['Fruits', 'Légumes'])
+const PERISHABLE = new Set(['Viandes', 'Poissons', 'Produits laitiers'])
+
 /**
- * Estime la durée de conservation d'un produit d'après son nom (et, en secours,
- * sa catégorie de rangement). Renvoie null si rien ne correspond.
+ * Estime la durée de conservation d'un produit d'après son nom ET son
+ * emplacement (placard / frigo / congélateur). Renvoie null si rien ne correspond.
  */
-export function estimateShelfLife(name: string, category?: Category): ShelfEstimate | null {
+export function estimateShelfLife(name: string, storage: Storage = 'placard'): ShelfEstimate | null {
   const n = norm(name)
-  if (n.trim().length < 2) return null
+  if (n.trim().length < 2) {
+    // Sans nom reconnu, estimation grossière par emplacement.
+    if (storage === 'congelateur') return null
+    return null
+  }
 
   // Cherche le mot-clé le plus long contenu dans le nom (plus spécifique).
   let best: ShelfEntry | null = null
   for (const e of ALL) {
     if (n.includes(e.kw) && (!best || e.kw.length > best.kw.length)) best = e
   }
+  if (!best) return null
 
-  if (best) {
-    let days = best.days
-    // Le congélateur prolonge fortement la conservation.
-    if (category === 'surgeles') days = Math.max(days, 180)
-    return { days, group: best.group }
+  const group = best.group
+  let days = best.days
+
+  if (storage === 'congelateur') {
+    days = Math.max(days, FREEZER_DAYS[group] ?? 180)
+  } else if (storage === 'frigo') {
+    // Le froid prolonge surtout fruits et légumes ; les autres ont déjà une base « frigo ».
+    if (PRODUCE.has(group)) days = Math.round(days * 2.2)
+  } else {
+    // Placard / température ambiante : risqué pour les denrées qui exigent le froid.
+    if (PERISHABLE.has(group)) days = Math.max(1, Math.round(days / 3))
   }
 
-  // Pas de correspondance : estimation par catégorie de rangement.
-  if (category === 'conserves') return { days: 720, group: 'Conserves' }
-  if (category === 'surgeles') return { days: 300, group: 'Surgelés' }
-  if (category === 'epicerie') return { days: 365, group: 'Épicerie' }
-  return null
+  return { days, group }
 }
 
 /** Date ISO estimée de péremption (aujourd'hui + durée estimée). */
-export function estimatedExpiryISO(name: string, category?: Category): string | null {
-  const est = estimateShelfLife(name, category)
+export function estimatedExpiryISO(name: string, storage: Storage = 'placard'): string | null {
+  const est = estimateShelfLife(name, storage)
   if (!est) return null
   return toISODate(addDays(new Date(), est.days))
 }

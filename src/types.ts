@@ -17,6 +17,28 @@ export const CATEGORY_LABELS: Record<Category, string> = {
   surgeles: 'Surgelés',
 }
 
+/** Mode de conservation / emplacement. */
+export type Storage = 'placard' | 'frigo' | 'congelateur'
+
+export const STORAGES: { id: Storage; label: string }[] = [
+  { id: 'placard', label: 'Placard' },
+  { id: 'frigo', label: 'Réfrigérateur' },
+  { id: 'congelateur', label: 'Congélateur' },
+]
+
+export const STORAGE_LABELS: Record<Storage, string> = {
+  placard: 'Placard',
+  frigo: 'Réfrigérateur',
+  congelateur: 'Congélateur',
+}
+
+/** Emplacement par défaut déduit de la catégorie. */
+export function defaultStorage(category: Category): Storage {
+  if (category === 'surgeles') return 'congelateur'
+  if (category === 'frais') return 'frigo'
+  return 'placard'
+}
+
 /** Un produit présent dans le garde-manger. */
 export interface Product {
   id: string
@@ -34,6 +56,8 @@ export interface Product {
   price?: number
   /** Code-barres EAN/UPC, optionnel (renseigné via le scan). */
   barcode?: string
+  /** Emplacement de conservation (influe sur l'estimation de péremption). */
+  storage?: Storage
   /** Horodatages ISO. */
   createdAt: string
   updatedAt: string
