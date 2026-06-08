@@ -49,6 +49,8 @@ interface StoreValue {
   loading: boolean
   /** true si les données sont synchronisées dans le cloud (connecté + foyer). */
   cloudMode: boolean
+  /** true si le cloud est injoignable et qu'on affiche le dernier instantané (lecture seule). */
+  offline: boolean
   /** Copie les produits/courses du stockage local de cet appareil vers le cloud. */
   importLocalData(): Promise<number>
   /** Complète les infos manquantes (photo, Nutri-Score, allergènes…) des produits ayant un code-barres, via Open Food Facts. */
@@ -126,8 +128,10 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     lowStockThreshold: 1,
   })
   const [loading, setLoading] = useState(true)
+  const [offline, setOffline] = useState(false)
 
   const auth = useAuth()
+  const cloud = Boolean(supabase && auth.householdId)
   // Cloud (Supabase) si connecté avec un foyer, sinon stockage local.
   const repo = useMemo<Repository>(
     () => (supabase && auth.householdId ? new SupabaseRepository(supabase, auth.householdId) : localRepo),
@@ -135,29 +139,63 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   )
 
   const loadAll = useCallback(async () => {
-    const [p, s, r, f, m, h, e, b, st, sc] = await Promise.all([
-      repo.listProducts(),
-      repo.listShopping(),
-      repo.getRecipes(),
-      repo.getFamily(),
-      repo.getMealPlan(),
-      repo.getHistory(),
-      repo.getExpenses(),
-      repo.getBudget(),
-      repo.getSettings(),
-      repo.getShopCatalog(),
-    ])
-    setProducts(p)
-    setShopping(s)
-    setRecipes(r)
-    setFamily(f)
-    setMealPlan(m)
-    setHistory(h)
-    setExpenses(e)
-    setBudget(b)
-    setSettings(st)
-    setShopCatalog(sc)
-  }, [repo])
+    try {
+      const [p, s, r, f, m, h, e, b, st, sc] = await Promise.all([
+        repo.listProducts(),
+        repo.listShopping(),
+        repo.getRecipes(),
+        repo.getFamily(),
+        repo.getMealPlan(),
+        repo.getHistory(),
+        repo.getExpenses(),
+        repo.getBudget(),
+        repo.getSettings(),
+        repo.getShopCatalog(),
+      ])
+      setProducts(p)
+      setShopping(s)
+      setRecipes(r)
+      setFamily(f)
+      setMealPlan(m)
+      setHistory(h)
+      setExpenses(e)
+      setBudget(b)
+      setSettings(st)
+      setShopCatalog(sc)
+      setOffline(false)
+      if (cloud) {
+        try {
+          localStorage.setItem(
+            'gm.cloudcache',
+            JSON.stringify({ p, s, r, f, m, h, e, b, st, sc }),
+          )
+        } catch { /* quota : on ignore */ }
+      }
+    } catch (err) {
+      // Cloud injoignable : on retombe sur le dernier instantané connu (lecture seule).
+      if (cloud) {
+        try {
+          const raw = localStorage.getItem('gm.cloudcache')
+          if (raw) {
+            const c = JSON.parse(raw)
+            setProducts(c.p ?? [])
+            setShopping(c.s ?? [])
+            setRecipes(c.r ?? [])
+            setFamily(c.f ?? [])
+            setMealPlan(c.m ?? {})
+            setHistory(c.h ?? [])
+            setExpenses(c.e ?? [])
+            setBudget(c.b ?? { monthlyLimit: 400 })
+            setSettings(c.st ?? { notifExpiry: true, notifLowStock: true, lowStockThreshold: 1 })
+            setShopCatalog(c.sc ?? [])
+            setOffline(true)
+            return
+          }
+        } catch { /* pas de cache : on relaie l'erreur */ }
+      }
+      throw err
+    }
+  }, [repo, cloud])
 
   useEffect(() => {
     setLoading(true)
@@ -193,6 +231,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       settings,
       loading,
       cloudMode: Boolean(supabase && auth.householdId),
+      offline,
 
       async importLocalData() {
         if (!(supabase && auth.householdId)) return 0
@@ -456,7 +495,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
         await loadAll()
       },
     }
-  }, [repo, products, shopping, recipes, family, mealPlan, history, expenses, shopCatalog, budget, settings, loading, loadAll])
+  }, [repo, products, shopping, recipes, family, mealPlan, history, expenses, shopCatalog, budget, settings, loading, offline, loadAll])
 
   return <StoreContext.Provider value={value}>{children}</StoreContext.Provider>
 }

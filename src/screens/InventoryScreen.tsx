@@ -22,7 +22,7 @@ export function InventoryScreen({
   onOpenNotifications,
   onOpenBudget,
 }: InventoryScreenProps) {
-  const { products, adjustQuantity, wasteProduct, updateProduct, expenses, budget, cloudMode } = useStore()
+  const { products, adjustQuantity, wasteProduct, updateProduct, expenses, budget, cloudMode, offline } = useStore()
   const spent = useMemo(() => budgetSummary(expenses, budget).spent, [expenses, budget])
   const toast = useToast()
   const [search, setSearch] = useState('')
@@ -70,8 +70,8 @@ export function InventoryScreen({
           <h1 className="logo">Miamm</h1>
           <p className="sub-mode">
             {products.length} produits ·{' '}
-            <Icon name={cloudMode ? 'cloud' : 'phone'} />
-            {cloudMode ? 'synchronisé' : 'local'}
+            <Icon name={offline ? 'cloud' : cloudMode ? 'cloud' : 'phone'} />
+            {offline ? 'hors-ligne' : cloudMode ? 'synchronisé' : 'local'}
           </p>
         </div>
         <div className="header-actions">

@@ -51,30 +51,27 @@ function write<T>(key: string, value: T): void {
   localStorage.setItem(key, JSON.stringify(value))
 }
 
-/** Écrit la valeur produite par `factory` seulement si la clé est absente. */
-function seedIfMissing<T>(key: string, factory: () => T): void {
-  if (localStorage.getItem(key) == null) write(key, factory())
-}
-
 /**
  * Implémentation du Repository basée sur LocalStorage.
  * Les méthodes sont asynchrones pour rester compatibles avec un futur backend (Supabase).
  */
 export class LocalStorageRepository implements Repository {
   constructor() {
-    // Seed par collection : on n'écrit que les clés absentes. Cela amorce un
-    // nouvel utilisateur ET complète les comptes existants avec les nouvelles
-    // collections (recettes, famille…) sans écraser le stock déjà saisi.
-    seedIfMissing(PRODUCTS_KEY, seedProducts)
-    seedIfMissing(SHOPPING_KEY, seedShopping)
-    seedIfMissing(RECIPES_KEY, seedRecipes)
-    seedIfMissing(FAMILY_KEY, seedFamily)
-    seedIfMissing(MEALPLAN_KEY, seedMealPlan)
-    seedIfMissing(HISTORY_KEY, seedHistory)
-    seedIfMissing(EXPENSES_KEY, seedExpenses)
-    seedIfMissing(BUDGET_KEY, seedBudget)
-    seedIfMissing(SETTINGS_KEY, seedSettings)
-    localStorage.setItem(SEEDED_KEY, '2')
+    // Plus de données démo : le local démarre vide. Il sert de stockage hors-ligne
+    // et de filet de secours quand le cloud n'est pas disponible.
+    // Nettoyage unique des anciennes données démo amorcées par les versions ≤ 2.
+    if (localStorage.getItem(SEEDED_KEY) !== 'clean') {
+      const wasSeeded = localStorage.getItem(SEEDED_KEY)
+      if (wasSeeded === '1' || wasSeeded === '2') {
+        for (const k of [
+          PRODUCTS_KEY, SHOPPING_KEY, RECIPES_KEY, FAMILY_KEY,
+          MEALPLAN_KEY, HISTORY_KEY, EXPENSES_KEY, BUDGET_KEY, SETTINGS_KEY,
+        ]) {
+          localStorage.removeItem(k)
+        }
+      }
+      localStorage.setItem(SEEDED_KEY, 'clean')
+    }
   }
 
   private seedAll() {
