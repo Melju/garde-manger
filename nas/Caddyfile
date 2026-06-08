@@ -1,13 +1,11 @@
-# Reverse-proxy HTTPS vers PocketBase.
-# Caddy obtient et renouvelle automatiquement le certificat Let's Encrypt
-# pour le domaine défini dans .env (GM_DOMAIN), tant que les ports 80 et 443
-# sont accessibles depuis Internet (redirection sur la box vers le NAS).
+# Reverse-proxy HTTPS vers le gateway Supabase (Kong).
+# Kong sert à la fois l'API (/rest, /auth, /storage…) et le Studio (avec auth).
+# Caddy obtient/renouvelle le certificat Let's Encrypt automatiquement
+# (ports 80 + 443 doivent être redirigés depuis la box vers le NAS).
 
 {$GM_DOMAIN} {
 	encode zstd gzip
-	reverse_proxy pocketbase:8090
-
-	# E-mail utilisé par Let's Encrypt pour les notifications d'expiration.
+	reverse_proxy kong:8000
 	tls {$GM_EMAIL}
 
 	log {

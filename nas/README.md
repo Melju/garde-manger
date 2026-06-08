@@ -1,90 +1,110 @@
-# Backend Garde-Manger sur NAS UGREEN (PocketBase + Caddy)
+# Backend Garde-Manger — Supabase auto-hébergé sur NAS UGREEN
 
-Ce dossier met en place la base de données et l'API du garde-manger, auto-hébergées
-sur ton NAS, accessibles depuis Internet en HTTPS.
+On installe **Supabase** (Postgres + Auth + API + Studio) avec son compose officiel,
+et on met **Caddy** devant pour le HTTPS. Domaine requis (tu en as un).
 
-- **PocketBase** : base de données + authentification + API REST + interface admin.
-- **Caddy** : reverse-proxy qui gère le certificat HTTPS automatiquement.
+> Le code de l'app (`SupabaseRepository`) marchera ensuite à l'identique, et resterait
+> compatible avec Supabase Cloud si tu migrais un jour.
 
 ---
 
 ## 1. Pré-requis
 
-- NAS UGREEN avec **Docker** activé (UGOS Pro → app *Docker*).
-- Un **nom de domaine** (tu en as un) qui pointe vers ton IP publique.
-- Accès à la **box** pour rediriger les ports **80** et **443** vers le NAS.
+- NAS UGREEN, **Docker** activé, **≥ 4 Go de RAM libres** (tu as 8 Go : OK).
+- **Git** dispo (ou téléchargement zip du dépôt Supabase).
+- Domaine `gardemanger.tondomaine.fr` → ton **IP publique** (DNS/DDNS).
+- Box : rediriger **TCP 80 + 443** vers l'IP locale du NAS.
 
-## 2. DNS + redirection de ports
+## 2. Installer Supabase (compose officiel)
 
-1. Crée un enregistrement **A** (ou CNAME via DDNS) :
-   `gardemanger.tondomaine.fr` → ton **IP publique**.
-   - Si ton IP change, configure un **DDNS** (souvent intégré au NAS UGREEN, ou via ton registrar).
-2. Sur ta **box**, redirige les ports **TCP 80** et **TCP 443** vers l'**IP locale du NAS**.
-   - ⚠️ Si le NAS utilise déjà 80/443 pour son interface, change ces ports d'admin du NAS,
-     ou dis-le-moi (on basculera Caddy sur un challenge DNS, sans ouvrir le port 80).
-
-## 3. Déposer les fichiers sur le NAS
-
-Copie ce dossier `nas/` dans un dossier partagé du NAS, par ex. `/volume1/docker/garde-manger/`.
-Puis crée le fichier `.env` :
+En SSH sur le NAS, dans un dossier de travail (ex. `/volume1/docker/`) :
 
 ```bash
+git clone --depth 1 https://github.com/supabase/supabase
+cd supabase/docker
 cp .env.example .env
-# édite .env : mets ton vrai domaine et ton e-mail
 ```
 
-## 4. Lancer
+## 3. Régler le `.env` de Supabase
 
-Via l'app **Docker** d'UGOS (Projets → créer depuis un `docker-compose.yml`),
-ou en SSH dans le dossier :
+Édite `supabase/docker/.env` et **remplace** ces valeurs par celles de
+`secrets.generated.env` (que je t'ai préparées) :
+
+```
+POSTGRES_PASSWORD=...        # depuis secrets.generated.env
+JWT_SECRET=...
+ANON_KEY=...
+SERVICE_ROLE_KEY=...
+SECRET_KEY_BASE=...
+VAULT_ENC_KEY=...
+DASHBOARD_USERNAME=admin
+DASHBOARD_PASSWORD=...
+```
+
+Puis règle les URLs publiques et les redirections d'auth :
+
+```
+API_EXTERNAL_URL=https://gardemanger.tondomaine.fr
+SUPABASE_PUBLIC_URL=https://gardemanger.tondomaine.fr
+# URL de l'app (où le lien magique renvoie l'utilisateur) :
+SITE_URL=https://melju.github.io/garde-manger/
+ADDITIONAL_REDIRECT_URLS=http://localhost:5173,https://<ton-app>.vercel.app
+```
+
+Et le **SMTP** (pour les liens magiques), ex. Brevo :
+
+```
+SMTP_ADMIN_EMAIL=ton@email
+SMTP_HOST=smtp-relay.brevo.com
+SMTP_PORT=587
+SMTP_USER=<login SMTP Brevo>
+SMTP_PASS=<clé SMTP Brevo>
+SMTP_SENDER_NAME=Garde-Manger
+ENABLE_EMAIL_AUTOCONFIRM=false
+```
+
+## 4. Démarrer Supabase
+
+```bash
+docker compose pull
+docker compose up -d
+docker compose ps      # tout doit être "healthy" (laisse 1-2 min)
+```
+
+> Si le conteneur **analytics**/**vector** pose problème (RAM/clé Logflare), dis-le-moi :
+> on peut le retirer du compose, Supabase fonctionne sans.
+
+## 5. Démarrer Caddy (ce dossier `nas/`)
+
+1. Copie ce dossier `nas/` sur le NAS (ex. `/volume1/docker/garde-manger-caddy/`).
+2. Vérifie le **nom du réseau** Supabase : `docker network ls` (souvent `supabase_default`).
+3. `cp .env.example .env` puis renseigne `GM_DOMAIN`, `GM_EMAIL`, `SUPABASE_NETWORK`.
+4. Lance :
 
 ```bash
 docker compose up -d
 ```
 
-Caddy va demander le certificat HTTPS (quelques secondes). Vérifie ensuite :
+Vérifie (depuis l'extérieur) :
 
 ```
-https://gardemanger.tondomaine.fr/api/health   →  doit répondre {"code":200,...}
+https://gardemanger.tondomaine.fr/auth/v1/health   →  doit répondre OK
 ```
 
-## 5. Créer le compte admin PocketBase
+Le **Studio** (admin Supabase) est sur `https://gardemanger.tondomaine.fr`
+(identifiants = DASHBOARD_USERNAME / DASHBOARD_PASSWORD).
 
-Ouvre l'interface admin :
+## 6. Me transmettre
 
-```
-https://gardemanger.tondomaine.fr/_/
-```
+- l'**URL** : `https://gardemanger.tondomaine.fr`
+- la confirmation que **Studio s'ouvre** et que le **SMTP** est testé (Studio → Authentication → Emails).
 
-Crée le **compte administrateur** (e-mail + mot de passe). C'est le compte technique
-de gestion de la base (différent des comptes famille).
-
-## 6. Configurer l'envoi d'e-mails (SMTP) — pour la connexion par code
-
-Dans l'admin → **Settings → Mail settings** :
-
-- Active **Use SMTP mail server**.
-- Exemple avec **Brevo** (que tu utilises déjà) :
-  - SMTP host : `smtp-relay.brevo.com`
-  - Port : `587`
-  - Username : ton login SMTP Brevo
-  - Password : ta **clé SMTP** Brevo
-  - Sender : un e-mail vérifié sur ton domaine
-- Clique **Send test email** pour vérifier.
-
-## 7. Me transmettre
-
-Quand l'API répond en HTTPS, donne-moi :
-
-1. l'**URL** : `https://gardemanger.tondomaine.fr`
-2. confirme que le **compte admin** est créé et le **SMTP** testé.
-
-Je créerai alors le schéma (foyers, produits, recettes, famille…) directement via l'API,
-puis je brancherai l'application (connexion + synchro) et je déploierai.
+Je créerai alors le schéma (foyers + code d'invitation, produits, recettes, famille…) avec
+la **RLS** par foyer, puis je brancherai l'app et je déploierai. L'`ANON_KEY` (publique)
+ira dans la config de l'app.
 
 ---
 
 ### Sauvegardes
-
-Toute la base tient dans le dossier **`pb_data/`**. Pour sauvegarder, il suffit de copier
-ce dossier (ou d'utiliser la sauvegarde intégrée : admin → Settings → Backups).
+Les données Postgres sont dans `supabase/docker/volumes/db/`. Sauvegarde régulière
+recommandée (ou `pg_dump` planifié).

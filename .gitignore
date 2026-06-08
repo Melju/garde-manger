@@ -6,9 +6,9 @@ dist-ssr
 .vscode/*
 !.vscode/extensions.json
 
-# Runtime du backend NAS (ne pas versionner)
+# Runtime + secrets du backend NAS (ne JAMAIS versionner)
 nas/.env
-nas/pb_data/
-nas/pb_migrations/
+nas/secrets.generated.env
 nas/caddy_data/
 nas/caddy_config/
+nas/volumes/
