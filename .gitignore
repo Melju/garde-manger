@@ -9,6 +9,7 @@ dist-ssr
 # Runtime + secrets du backend NAS (ne JAMAIS versionner)
 nas/.env
 nas/secrets.generated.env
+nas/supabase.env
 nas/caddy_data/
 nas/caddy_config/
 nas/volumes/
