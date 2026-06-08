@@ -13,7 +13,7 @@ interface ProductFormScreenProps {
 }
 
 export function ProductFormScreen({ product, initial, onClose }: ProductFormScreenProps) {
-  const { addProduct, updateProduct, removeProduct } = useStore()
+  const { addProduct, updateProduct, removeProduct, adjustQuantity, wasteProduct } = useStore()
   const toast = useToast()
   const isEdit = product !== null
 
@@ -23,6 +23,7 @@ export function ProductFormScreen({ product, initial, onClose }: ProductFormScre
   const [unit, setUnit] = useState(product?.unit ?? initial?.unit ?? '')
   const [size, setSize] = useState(product?.size ?? initial?.size ?? '')
   const [expiryDate, setExpiryDate] = useState(product?.expiryDate ?? initial?.expiryDate ?? '')
+  const [price, setPrice] = useState(product?.price != null ? String(product.price) : '')
   const barcode = product?.barcode ?? initial?.barcode
 
   const canSave = name.trim().length > 0 && quantity > 0
@@ -36,6 +37,7 @@ export function ProductFormScreen({ product, initial, onClose }: ProductFormScre
       unit: unit.trim() || undefined,
       size: size.trim() || undefined,
       expiryDate: expiryDate || undefined,
+      price: price ? Number(price.replace(',', '.')) || undefined : undefined,
       barcode,
     }
     if (isEdit && product) {
@@ -53,6 +55,21 @@ export function ProductFormScreen({ product, initial, onClose }: ProductFormScre
     if (!confirm(`Supprimer « ${product.name} » ?`)) return
     await removeProduct(product.id)
     toast('Produit supprimé')
+    onClose()
+  }
+
+  async function handleConsume() {
+    if (!product) return
+    await adjustQuantity(product.id, -1)
+    toast('1 consommé')
+    onClose()
+  }
+
+  async function handleWaste() {
+    if (!product) return
+    if (!confirm(`Marquer « ${product.name} » comme jeté ?`)) return
+    await wasteProduct(product.id)
+    toast('Produit jeté')
     onClose()
   }
 
@@ -140,6 +157,19 @@ export function ProductFormScreen({ product, initial, onClose }: ProductFormScre
         />
       </div>
 
+      <div className="form-section">
+        <label className="form-label" htmlFor="price">Prix unitaire en € (optionnel)</label>
+        <input
+          id="price"
+          type="text"
+          inputMode="decimal"
+          className="form-input"
+          placeholder="Ex : 2.50 — alimente le budget"
+          value={price}
+          onChange={(e) => setPrice(e.target.value)}
+        />
+      </div>
+
       <div className="btn-row" style={{ marginBottom: 16 }}>
         <button className="btn-primary" disabled={!canSave} onClick={handleSave}>
           {isEdit ? 'Enregistrer' : 'Ajouter au stock'}
@@ -147,11 +177,21 @@ export function ProductFormScreen({ product, initial, onClose }: ProductFormScre
       </div>
 
       {isEdit && (
-        <div className="btn-row">
-          <button className="btn-secondary btn-danger" onClick={handleDelete}>
-            Supprimer le produit
-          </button>
-        </div>
+        <>
+          <div className="btn-row" style={{ marginBottom: 12 }}>
+            <button className="btn-secondary" onClick={handleConsume}>
+              Consommer 1
+            </button>
+            <button className="btn-secondary btn-danger" onClick={handleWaste}>
+              Jeter (périmé)
+            </button>
+          </div>
+          <div className="btn-row">
+            <button className="btn-secondary btn-danger" onClick={handleDelete}>
+              Supprimer le produit
+            </button>
+          </div>
+        </>
       )}
     </div>
   )

@@ -5,18 +5,29 @@ import { Icon } from '../components/Icon'
 import { ProductItem } from '../components/ProductItem'
 import { CATEGORIES, type Category, type Product } from '../types'
 import { expiryLabel, priorityProducts, urgentCount } from '../lib/expiry'
+import { budgetSummary } from '../lib/analytics'
 
 interface InventoryScreenProps {
   onAdd: () => void
   onScan: () => void
   onEdit: (product: Product) => void
-  onOpenShopping: () => void
+  onOpenStats: () => void
+  onOpenNotifications: () => void
+  onOpenBudget: () => void
 }
 
 type Filter = 'tout' | Category
 
-export function InventoryScreen({ onAdd, onScan, onEdit, onOpenShopping }: InventoryScreenProps) {
-  const { products, adjustQuantity } = useStore()
+export function InventoryScreen({
+  onAdd,
+  onScan,
+  onEdit,
+  onOpenStats,
+  onOpenNotifications,
+  onOpenBudget,
+}: InventoryScreenProps) {
+  const { products, adjustQuantity, expenses, budget } = useStore()
+  const spent = useMemo(() => budgetSummary(expenses, budget).spent, [expenses, budget])
   const toast = useToast()
   const [search, setSearch] = useState('')
   const [filter, setFilter] = useState<Filter>('tout')
@@ -58,17 +69,17 @@ export function InventoryScreen({ onAdd, onScan, onEdit, onOpenShopping }: Inven
       </header>
 
       <div className="stats-strip">
-        <div className="stat-box">
+        <div className="stat-box" onClick={onOpenStats}>
           <div className="value">{products.length}</div>
           <div className="label">Produits</div>
         </div>
-        <div className={`stat-box${urgent > 0 ? ' alert' : ''}`}>
+        <div className={`stat-box${urgent > 0 ? ' alert' : ''}`} onClick={onOpenNotifications}>
           <div className="value">{urgent}</div>
           <div className="label">Urgent</div>
         </div>
-        <div className="stat-box" onClick={onOpenShopping}>
-          <div className="value">{priority.length}</div>
-          <div className="label">À surveiller</div>
+        <div className="stat-box" onClick={onOpenBudget}>
+          <div className="value">{spent}€</div>
+          <div className="label">Ce mois</div>
         </div>
       </div>
 

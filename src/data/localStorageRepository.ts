@@ -1,9 +1,38 @@
-import type { Product, ProductInput, ShoppingItem, ShoppingItemInput } from '../types'
+import type {
+  BudgetConfig,
+  Expense,
+  FamilyMember,
+  HistoryEntry,
+  MealPlan,
+  Product,
+  ProductInput,
+  Recipe,
+  Settings,
+  ShoppingItem,
+  ShoppingItemInput,
+} from '../types'
 import { newId, type Repository } from './repository'
-import { seedProducts, seedShopping } from './seed'
+import {
+  seedBudget,
+  seedExpenses,
+  seedFamily,
+  seedHistory,
+  seedMealPlan,
+  seedProducts,
+  seedRecipes,
+  seedSettings,
+  seedShopping,
+} from './seed'
 
 const PRODUCTS_KEY = 'gm.products'
 const SHOPPING_KEY = 'gm.shopping'
+const RECIPES_KEY = 'gm.recipes'
+const FAMILY_KEY = 'gm.family'
+const MEALPLAN_KEY = 'gm.mealplan'
+const HISTORY_KEY = 'gm.history'
+const EXPENSES_KEY = 'gm.expenses'
+const BUDGET_KEY = 'gm.budget'
+const SETTINGS_KEY = 'gm.settings'
 const SEEDED_KEY = 'gm.seeded'
 
 function read<T>(key: string, fallback: T): T {
@@ -20,18 +49,46 @@ function write<T>(key: string, value: T): void {
   localStorage.setItem(key, JSON.stringify(value))
 }
 
+/** Écrit la valeur produite par `factory` seulement si la clé est absente. */
+function seedIfMissing<T>(key: string, factory: () => T): void {
+  if (localStorage.getItem(key) == null) write(key, factory())
+}
+
 /**
  * Implémentation du Repository basée sur LocalStorage.
  * Les méthodes sont asynchrones pour rester compatibles avec un futur backend (Supabase).
  */
 export class LocalStorageRepository implements Repository {
   constructor() {
-    // Chargement du jeu de démonstration au tout premier lancement uniquement.
-    if (!localStorage.getItem(SEEDED_KEY)) {
-      write(PRODUCTS_KEY, seedProducts())
-      write(SHOPPING_KEY, seedShopping())
-      localStorage.setItem(SEEDED_KEY, '1')
-    }
+    // Seed par collection : on n'écrit que les clés absentes. Cela amorce un
+    // nouvel utilisateur ET complète les comptes existants avec les nouvelles
+    // collections (recettes, famille…) sans écraser le stock déjà saisi.
+    seedIfMissing(PRODUCTS_KEY, seedProducts)
+    seedIfMissing(SHOPPING_KEY, seedShopping)
+    seedIfMissing(RECIPES_KEY, seedRecipes)
+    seedIfMissing(FAMILY_KEY, seedFamily)
+    seedIfMissing(MEALPLAN_KEY, seedMealPlan)
+    seedIfMissing(HISTORY_KEY, seedHistory)
+    seedIfMissing(EXPENSES_KEY, seedExpenses)
+    seedIfMissing(BUDGET_KEY, seedBudget)
+    seedIfMissing(SETTINGS_KEY, seedSettings)
+    localStorage.setItem(SEEDED_KEY, '2')
+  }
+
+  private seedAll() {
+    write(PRODUCTS_KEY, seedProducts())
+    write(SHOPPING_KEY, seedShopping())
+    write(RECIPES_KEY, seedRecipes())
+    write(FAMILY_KEY, seedFamily())
+    write(MEALPLAN_KEY, seedMealPlan())
+    write(HISTORY_KEY, seedHistory())
+    write(EXPENSES_KEY, seedExpenses())
+    write(BUDGET_KEY, seedBudget())
+    write(SETTINGS_KEY, seedSettings())
+  }
+
+  async resetDemo(): Promise<void> {
+    this.seedAll()
   }
 
   async listProducts(): Promise<Product[]> {
@@ -112,5 +169,54 @@ export class LocalStorageRepository implements Repository {
   async clearCheckedShopping(): Promise<void> {
     const items = await this.listShopping()
     write(SHOPPING_KEY, items.filter((it) => !it.checked))
+  }
+
+  async getRecipes(): Promise<Recipe[]> {
+    return read<Recipe[]>(RECIPES_KEY, [])
+  }
+  async saveRecipes(recipes: Recipe[]): Promise<void> {
+    write(RECIPES_KEY, recipes)
+  }
+
+  async getFamily(): Promise<FamilyMember[]> {
+    return read<FamilyMember[]>(FAMILY_KEY, [])
+  }
+  async saveFamily(members: FamilyMember[]): Promise<void> {
+    write(FAMILY_KEY, members)
+  }
+
+  async getMealPlan(): Promise<MealPlan> {
+    return read<MealPlan>(MEALPLAN_KEY, {})
+  }
+  async saveMealPlan(plan: MealPlan): Promise<void> {
+    write(MEALPLAN_KEY, plan)
+  }
+
+  async getHistory(): Promise<HistoryEntry[]> {
+    return read<HistoryEntry[]>(HISTORY_KEY, [])
+  }
+  async saveHistory(entries: HistoryEntry[]): Promise<void> {
+    write(HISTORY_KEY, entries)
+  }
+
+  async getExpenses(): Promise<Expense[]> {
+    return read<Expense[]>(EXPENSES_KEY, [])
+  }
+  async saveExpenses(expenses: Expense[]): Promise<void> {
+    write(EXPENSES_KEY, expenses)
+  }
+
+  async getBudget(): Promise<BudgetConfig> {
+    return read<BudgetConfig>(BUDGET_KEY, { monthlyLimit: 400 })
+  }
+  async saveBudget(config: BudgetConfig): Promise<void> {
+    write(BUDGET_KEY, config)
+  }
+
+  async getSettings(): Promise<Settings> {
+    return read<Settings>(SETTINGS_KEY, { notifExpiry: true, notifLowStock: true, lowStockThreshold: 1 })
+  }
+  async saveSettings(settings: Settings): Promise<void> {
+    write(SETTINGS_KEY, settings)
   }
 }
