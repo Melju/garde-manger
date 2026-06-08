@@ -15,6 +15,8 @@ import { MoreScreen } from './screens/MoreScreen'
 import { SettingsScreen } from './screens/SettingsScreen'
 import { AccountScreen } from './screens/AccountScreen'
 import { Icon } from './components/Icon'
+import { Fab } from './components/Fab'
+import { useToast } from './components/Toast'
 import { useStore } from './data/store'
 import type { FamilyMember, Product, ProductInput, Recipe } from './types'
 
@@ -42,6 +44,7 @@ type Route =
 
 export function App() {
   const { loading } = useStore()
+  const toast = useToast()
   const [tab, setTab] = useState<Tab>('inventory')
   const [stack, setStack] = useState<Route[]>([])
 
@@ -66,8 +69,6 @@ export function App() {
     <div className="app">
       {tab === 'inventory' && (
         <InventoryScreen
-          onAdd={() => push({ name: 'product-form', product: null })}
-          onScan={() => push({ name: 'scan' })}
           onEdit={(product) => push({ name: 'product-form', product })}
           onOpenStats={() => push({ name: 'stats' })}
           onOpenNotifications={() => push({ name: 'notifications' })}
@@ -93,6 +94,12 @@ export function App() {
           onAccount={() => push({ name: 'account' })}
         />
       )}
+
+      <Fab
+        onScanBarcode={() => push({ name: 'scan' })}
+        onManual={() => push({ name: 'product-form', product: null })}
+        onScanTicket={() => toast('Scan de ticket — bientôt disponible')}
+      />
 
       <nav className="bottom-nav">
         <NavButton tab="inventory" current={tab} icon="box" label="Stock" onClick={goTab} />

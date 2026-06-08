@@ -8,8 +8,6 @@ import { expiryLabel, priorityProducts, urgentCount } from '../lib/expiry'
 import { budgetSummary } from '../lib/analytics'
 
 interface InventoryScreenProps {
-  onAdd: () => void
-  onScan: () => void
   onEdit: (product: Product) => void
   onOpenStats: () => void
   onOpenNotifications: () => void
@@ -19,8 +17,6 @@ interface InventoryScreenProps {
 type Filter = 'tout' | Category
 
 export function InventoryScreen({
-  onAdd,
-  onScan,
   onEdit,
   onOpenStats,
   onOpenNotifications,
@@ -61,11 +57,9 @@ export function InventoryScreen({
           </p>
         </div>
         <div className="header-actions">
-          <button className="icon-btn" onClick={onScan} aria-label="Scanner un code-barres">
-            <Icon name="scan" />
-          </button>
-          <button className="icon-btn" onClick={onAdd} aria-label="Ajouter un produit">
-            <Icon name="plus" />
+          <button className="icon-btn" onClick={onOpenNotifications} aria-label="Notifications">
+            <Icon name="bell" />
+            {urgent > 0 && <span className="notif-badge">{urgent}</span>}
           </button>
         </div>
       </header>

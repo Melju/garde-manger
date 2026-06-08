@@ -1128,6 +1128,88 @@ button { font-family: inherit; }
 .switch input:checked + .slider { background: var(--success); }
 .switch input:checked + .slider::before { transform: translateX(18px); }
 
+/* ===== FAB (bouton flottant d'ajout) ===== */
+.fab {
+  position: fixed;
+  bottom: calc(90px + env(safe-area-inset-bottom));
+  right: calc(50% - 210px + 20px);
+  width: 56px;
+  height: 56px;
+  background: var(--fg);
+  color: var(--surface);
+  border: none;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
+  z-index: 200;
+  transition: transform 0.2s ease;
+}
+.fab:hover { transform: scale(1.05); }
+.fab.open { transform: rotate(45deg); }
+.fab svg { width: 26px; height: 26px; }
+
+.fab-menu {
+  position: fixed;
+  bottom: calc(160px + env(safe-area-inset-bottom));
+  right: calc(50% - 210px + 20px);
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  z-index: 199;
+  opacity: 0;
+  pointer-events: none;
+  transform: translateY(20px);
+  transition: all 0.25s ease;
+}
+.fab-menu.open { opacity: 1; pointer-events: auto; transform: translateY(0); }
+
+@media (max-width: 460px) {
+  .fab { right: 20px; }
+  .fab-menu { right: 20px; }
+}
+
+.fab-option {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 16px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  cursor: pointer;
+  white-space: nowrap;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+  transition: all 0.15s ease;
+}
+.fab-option:hover { border-color: var(--fg); transform: translateX(-4px); }
+.fab-option.soon { opacity: 0.6; }
+.fab-option-icon {
+  width: 40px;
+  height: 40px;
+  background: var(--accent-soft);
+  border-radius: var(--radius-sm);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+.fab-option-icon svg { width: 20px; height: 20px; color: var(--fg); }
+.fab-option-text { font-weight: 500; font-size: 14px; }
+
+.fab-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.3);
+  z-index: 198;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.25s ease;
+}
+.fab-backdrop.open { opacity: 1; pointer-events: auto; }
+
 /* Fade entre écrans */
 .screen-fade { animation: fadeIn 0.2s ease; }
 @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
