@@ -66,7 +66,7 @@ export function AccountScreen({ onBack }: AccountScreenProps) {
           <div className="form-section">
             <div className="setting-row">
               <div className="setting-text">
-                <div className="setting-title">Vérifie tes e-mails 📧</div>
+                <div className="setting-title">Vérifie tes e-mails</div>
                 <div className="setting-desc">
                   Un lien de connexion a été envoyé à {email}. Ouvre-le sur cet appareil pour te
                   connecter.
@@ -156,7 +156,7 @@ export function AccountScreen({ onBack }: AccountScreenProps) {
       <div className="form-section">
         <div className="setting-row">
           <div className="setting-text">
-            <div className="setting-title">Connecté ☁️</div>
+            <div className="setting-title">Connecté</div>
             <div className="setting-desc">{auth.user.email}</div>
           </div>
         </div>

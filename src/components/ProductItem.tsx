@@ -2,6 +2,7 @@ import { useRef, useState } from 'react'
 import type { Product } from '../types'
 import { categoryLabel } from '../types'
 import { expiryLabel, expiryStatus } from '../lib/expiry'
+import { categoryColor } from '../lib/categoryColors'
 import { Icon } from './Icon'
 
 interface ProductItemProps {
@@ -20,6 +21,7 @@ export function ProductItem({ product, onSelect, onRemoveQty }: ProductItemProps
   const moved = useRef(false)
 
   const status = expiryStatus(product)
+  const col = categoryColor(product.category)
 
   function onPointerDown(e: React.PointerEvent) {
     startX.current = e.clientX
@@ -60,8 +62,8 @@ export function ProductItem({ product, onSelect, onRemoveQty }: ProductItemProps
         onPointerUp={onPointerUp}
         onClick={handleClick}
       >
-        <div className="product-icon">
-          <Icon name="box" width={1.5} />
+        <div className="product-icon" style={{ background: col.bg, color: col.fg }}>
+          <Icon name="box" width={1.7} />
         </div>
         <div className="product-info">
           <div className="product-name">{product.name}</div>

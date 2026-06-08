@@ -88,7 +88,7 @@ export function SettingsScreen({ onBack }: SettingsScreenProps) {
 
       <div className="form-section">
         <p style={{ color: 'var(--muted)', fontSize: 13, textAlign: 'center' }}>
-          Garde-Manger · version 0.2
+          Miamm · version 0.3
         </p>
       </div>
     </div>

@@ -51,9 +51,11 @@ export function InventoryScreen({
     <div className="screen-fade">
       <header className="header">
         <div className="header-left">
-          <h1>Garde-Manger</h1>
-          <p>
-            {products.length} produits · {cloudMode ? '☁️ synchronisé' : '📱 local'}
+          <h1 className="logo">Miamm</h1>
+          <p className="sub-mode">
+            {products.length} produits ·{' '}
+            <Icon name={cloudMode ? 'cloud' : 'phone'} />
+            {cloudMode ? 'synchronisé' : 'local'}
           </p>
         </div>
         <div className="header-actions">
