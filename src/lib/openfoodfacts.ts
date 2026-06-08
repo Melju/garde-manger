@@ -29,8 +29,9 @@ function guessCategory(tags: string[]): Category {
   if (/(fish|poisson|seafood|fruits-de-mer|saumon|thon)/.test(t)) return 'poissons'
   if (/(dairy|cheese|yogurt|yaourt|fromage|lait|crème|creme|milk|butter|beurre|egg|œuf|oeuf)/.test(t)) return 'laitiers'
   if (/(canned|conserve|en-conserve)/.test(t)) return 'conserves'
-  if (/(snack|chips|aperitif|apero)/.test(t)) return 'apero'
-  if (/(candy|sweet|chocolate|chocolat|biscuit|confiserie|dessert)/.test(t)) return 'sucreries'
+  // Sucré AVANT apéro : « biscuits » porte souvent le tag « snacks » (sweet-snacks).
+  if (/(candy|sweet|chocolate|chocolat|biscuit|cookie|gaufre|wafer|cake|gateau|g[aâ]teau|p[aâ]tisserie|confiserie|bonbon|dessert|glace|ice-cream)/.test(t)) return 'sucreries'
+  if (/(chips|crisp|cracker|aperitif|ap[eé]ritif|apero|ap[eé]ro|olive|cacahu|peanut|salty-snack|salted)/.test(t)) return 'apero'
   return 'epicerie'
 }
 
