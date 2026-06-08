@@ -1,61 +1,62 @@
 import { useEffect, useRef } from 'react'
 
-const ITEM_W = 40 // largeur d'un cran (doit correspondre au CSS)
+const ITEM_W = 56 // largeur d'un cran (doit correspondre au CSS)
 
 interface QuantityWheelProps {
+  values: number[]
   value: number
   onChange: (value: number) => void
-  min?: number
-  max?: number
+  /** Libellé d'un cran (ex : « 500 g », « 1 L », « ×3 »). */
+  format: (v: number) => string
 }
 
 /**
- * Roulette horizontale (réglette) pour choisir une quantité, façon dashboard,
- * mais en thème neutre. Reporte la valeur centrale en continu (pas de bouton).
+ * Roulette horizontale (réglette) pour choisir une quantité, thème neutre.
+ * Les paliers et leur libellé sont fournis (adaptatifs : nombre, poids, volume).
  */
-export function QuantityWheel({ value, onChange, min = 1, max = 30 }: QuantityWheelProps) {
+export function QuantityWheel({ values, value, onChange, format }: QuantityWheelProps) {
   const trackRef = useRef<HTMLDivElement>(null)
   const raf = useRef<number | null>(null)
-  const values: number[] = []
-  for (let v = min; v <= max; v++) values.push(v)
 
-  // Recale la position quand la valeur est pilotée de l'extérieur (ex : reset à 1).
+  const index = Math.max(0, values.indexOf(value))
+
+  // Recale la position quand la valeur/les paliers changent de l'extérieur.
   useEffect(() => {
     const el = trackRef.current
     if (!el) return
-    const target = (value - min) * ITEM_W
+    const target = index * ITEM_W
     if (Math.abs(el.scrollLeft - target) > 2) el.scrollTo({ left: target })
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [value])
+  }, [index, values.length])
 
   function onScroll() {
     if (raf.current) cancelAnimationFrame(raf.current)
     raf.current = requestAnimationFrame(() => {
       const el = trackRef.current
       if (!el) return
-      const i = Math.round(el.scrollLeft / ITEM_W)
-      const v = Math.max(min, Math.min(max, min + i))
+      const i = Math.max(0, Math.min(values.length - 1, Math.round(el.scrollLeft / ITEM_W)))
+      const v = values[i]
       if (v !== value) onChange(v)
     })
   }
 
-  function tap(v: number) {
-    onChange(v)
-    trackRef.current?.scrollTo({ left: (v - min) * ITEM_W, behavior: 'smooth' })
+  function tap(i: number) {
+    onChange(values[i])
+    trackRef.current?.scrollTo({ left: i * ITEM_W, behavior: 'smooth' })
   }
 
   return (
     <div className="qwheel">
       <div className="qwheel-center" />
       <div className="qwheel-track" ref={trackRef} onScroll={onScroll}>
-        {values.map((v) => (
+        {values.map((v, i) => (
           <button
             key={v}
             type="button"
             className={`qwheel-item${v === value ? ' active' : ''}`}
-            onClick={() => tap(v)}
+            onClick={() => tap(i)}
           >
-            {v}
+            {format(v)}
           </button>
         ))}
       </div>

@@ -62,6 +62,39 @@ export function portionScale(
   return { values, baseUnit: wi.baseUnit, major }
 }
 
+/**
+ * Échelle d'achat adaptée à l'unité d'un article (roulette des courses).
+ * Renvoie les paliers, l'unité de base de stockage, le formatage et la valeur
+ * par défaut. Les nombres (pièces) vont de 1 à 30.
+ */
+export function buyScale(rawUnit?: string): {
+  values: number[]
+  baseUnit: string
+  format: (v: number) => string
+  defaultValue: number
+} {
+  const fam = rawUnit ? family(rawUnit) : null
+  if (fam === 'mass') {
+    return {
+      values: [50, 100, 150, 200, 250, 300, 400, 500, 750, 1000, 1250, 1500, 2000, 3000],
+      baseUnit: 'g',
+      format: (v) => formatContenance(v, 'g'),
+      defaultValue: 500,
+    }
+  }
+  if (fam === 'volume') {
+    return {
+      values: [100, 200, 250, 330, 500, 750, 1000, 1500, 2000, 3000],
+      baseUnit: 'mL',
+      format: (v) => formatContenance(v, 'mL'),
+      defaultValue: 1000,
+    }
+  }
+  const values: number[] = []
+  for (let v = 1; v <= 30; v++) values.push(v)
+  return { values, baseUnit: '', format: (v) => `×${v}`, defaultValue: 1 }
+}
+
 /** Famille d'unité pour la conversion (mass / volume / null). */
 function family(unit: string): 'mass' | 'volume' | null {
   const u = unit.toLowerCase()

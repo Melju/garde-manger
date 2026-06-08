@@ -1,9 +1,20 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { useStore } from '../data/store'
 import { useToast } from '../components/Toast'
 import { Icon } from '../components/Icon'
 import { QuantityWheel } from '../components/QuantityWheel'
 import { CATEGORIES, categoryLabel, type Category, type ShoppingItem } from '../types'
+import { buyScale, formatContenance, parseContenance } from '../lib/contenance'
+import { guessCategoryFromName } from '../lib/categoryGuess'
+import { loadShopCatalog, recordShopItem } from '../lib/shoppingCatalog'
+
+interface KnownItem {
+  name: string
+  category: Category
+  unit: string
+  qty?: number
+  count: number
+}
 
 export function ShoppingScreen() {
   const {
@@ -18,18 +29,20 @@ export function ShoppingScreen() {
   const toast = useToast()
 
   const [name, setName] = useState('')
-  const [category, setCategory] = useState<Category>('autre')
   const [qty, setQty] = useState(1)
   const [browseAll, setBrowseAll] = useState(false)
 
   const remaining = shopping.filter((it) => !it.checked).length
 
-  // Catalogue « déjà acheté » : produits en stock + noms tirés de l'historique.
-  const catalog = useMemo(() => {
-    const map = new Map<string, { name: string; category: Category }>()
+  // Connaissance des articles : produits + historique + apprentissage (localStorage).
+  // `lookup` sert à deviner unité/catégorie ; `catalog` (trié par fréquence) à l'affichage.
+  const { lookup, catalog } = useMemo(() => {
+    const map = new Map<string, KnownItem>()
     for (const p of products) {
       const k = p.name.trim().toLowerCase()
-      if (k && !map.has(k)) map.set(k, { name: p.name.trim(), category: p.category })
+      if (k && !map.has(k)) {
+        map.set(k, { name: p.name.trim(), category: p.category, unit: parseContenance(p.size)?.unit ?? '', count: 0 })
+      }
     }
     for (const h of history) {
       if (h.kind === 'prepare') continue
@@ -37,20 +50,39 @@ export function ShoppingScreen() {
       if (!m) continue
       const nm = m[1].trim()
       const k = nm.toLowerCase()
-      if (k && !map.has(k)) map.set(k, { name: nm, category: 'autre' })
+      if (k && !map.has(k)) map.set(k, { name: nm, category: 'autre', unit: '', count: 0 })
+    }
+    // L'apprentissage prime (catégorie/unité/quantité mémorisées + fréquence).
+    const learned = loadShopCatalog()
+    for (const k of Object.keys(learned)) {
+      const e = learned[k]
+      map.set(k, { name: e.name, category: e.category, unit: e.unit, qty: e.qty, count: e.count })
     }
     const inList = new Set(shopping.map((it) => it.name.trim().toLowerCase()))
-    return [...map.values()].filter((it) => !inList.has(it.name.toLowerCase()))
+    const catalog = [...map.values()]
+      .filter((it) => !inList.has(it.name.toLowerCase()))
+      .sort((a, b) => b.count - a.count || a.name.localeCompare(b.name))
+    return { lookup: map, catalog }
   }, [products, history, shopping])
 
-  // Suggestions filtrées par la saisie (autocomplétion).
   const typed = name.trim().toLowerCase()
+
+  // Brouillon courant : unité + catégorie devinées depuis l'article.
+  const match = typed ? lookup.get(typed) : undefined
+  const draftCategory: Category = match?.category ?? (typed ? guessCategoryFromName(name) : 'autre')
+  const rawUnit = match?.unit ?? ''
+  const scale = useMemo(() => buyScale(rawUnit), [rawUnit])
+
+  // La roulette s'adapte : on recale la quantité par défaut quand l'unité change.
+  useEffect(() => {
+    setQty(scale.defaultValue)
+  }, [scale.baseUnit])
+
   const suggestions = useMemo(() => {
     if (!typed) return []
     return catalog.filter((it) => it.name.toLowerCase().includes(typed)).slice(0, 6)
   }, [catalog, typed])
 
-  // Regroupement par catégorie, dans l'ordre défini.
   const grouped = useMemo(() => {
     const map = new Map<Category, ShoppingItem[]>()
     for (const it of shopping) {
@@ -63,23 +95,41 @@ export function ShoppingScreen() {
     )
   }, [shopping])
 
+  function qtyLabel(quantity: number, unit?: string) {
+    return unit ? formatContenance(quantity, unit) : `×${quantity}`
+  }
+
   async function handleAdd() {
     const trimmed = name.trim()
     if (!trimmed) return
-    await addShoppingItem({ name: trimmed, category, quantity: qty, source: 'manuel' })
+    await addShoppingItem({
+      name: trimmed,
+      category: draftCategory,
+      quantity: qty,
+      unit: scale.baseUnit || undefined,
+      source: 'manuel',
+    })
+    recordShopItem(trimmed, draftCategory, rawUnit, qty)
     setName('')
-    setQty(1)
-    toast('Ajouté à la liste')
+    toast(`${trimmed} · ${qtyLabel(qty, scale.baseUnit || undefined)}`)
   }
 
-  async function quickAdd(item: { name: string; category: Category }) {
-    await addShoppingItem({ name: item.name, category: item.category, quantity: qty, source: 'manuel' })
+  // Ajout en 1 tap depuis les suggestions : unité + quantité apprises.
+  async function quickAdd(item: KnownItem) {
+    const s = buyScale(item.unit)
+    const q = item.qty && s.values.includes(item.qty) ? item.qty : s.defaultValue
+    await addShoppingItem({
+      name: item.name,
+      category: item.category,
+      quantity: q,
+      unit: s.baseUnit || undefined,
+      source: 'manuel',
+    })
+    recordShopItem(item.name, item.category, item.unit, q)
     setName('')
-    setQty(1)
-    toast(`${item.name}${qty > 1 ? ` ×${qty}` : ''} ajouté`)
+    toast(`${item.name} · ${qtyLabel(q, s.baseUnit || undefined)}`)
   }
 
-  /** Ajoute à la liste les produits dont le stock est faible (≤ 1) et absents de la liste. */
   async function handleGenerate() {
     const existing = new Set(shopping.map((it) => it.name.toLowerCase()))
     const low = products.filter((p) => p.quantity <= 1 && !existing.has(p.name.toLowerCase()))
@@ -127,30 +177,22 @@ export function ShoppingScreen() {
               if (e.key === 'Enter') handleAdd()
             }}
           />
-          <select
-            className="form-select"
-            style={{ width: 'auto', height: 36, border: 'none', padding: '0 8px', fontSize: 16 }}
-            value={category}
-            onChange={(e) => setCategory(e.target.value as Category)}
-          >
-            {CATEGORIES.map((c) => (
-              <option key={c.id} value={c.id}>{c.label}</option>
-            ))}
-          </select>
-          <button className="icon-btn" onClick={handleAdd} aria-label="Ajouter" style={{ width: 36, height: 36 }}>
+          {name.trim() && (
+            <span className="add-cat-hint">{categoryLabel(draftCategory)}</span>
+          )}
+          <button className="icon-btn" onClick={handleAdd} aria-label="Ajouter" style={{ width: 36, height: 36 }} disabled={!name.trim()}>
             <Icon name="plus" />
           </button>
         </div>
       </div>
 
-      {/* Quantité à acheter (roulette) */}
+      {/* Quantité (roulette adaptative : nombre, poids ou volume) */}
       <div className="qty-row">
         <span className="qty-row-label">Quantité</span>
-        <QuantityWheel value={qty} onChange={setQty} max={30} />
-        <span className="qty-row-value">×{qty}</span>
+        <QuantityWheel values={scale.values} value={qty} onChange={setQty} format={scale.format} />
       </div>
 
-      {/* Autocomplétion pendant la saisie */}
+      {/* Autocomplétion pendant la saisie (1 tap = ajout) */}
       {suggestions.length > 0 && (
         <div className="suggest-list">
           {suggestions.map((it) => (
@@ -163,7 +205,7 @@ export function ShoppingScreen() {
         </div>
       )}
 
-      {/* Panneau « Déjà achetés » repliable (compact) */}
+      {/* Panneau « Déjà achetés » repliable, trié par fréquence */}
       {!typed && catalog.length > 0 && (
         <div className="browse">
           <button className="browse-toggle" onClick={() => setBrowseAll((b) => !b)}>
@@ -173,7 +215,7 @@ export function ShoppingScreen() {
           </button>
           {browseAll && (
             <div className="quick-add-chips">
-              {catalog.map((it) => (
+              {catalog.slice(0, 40).map((it) => (
                 <button key={it.name} className="quick-chip" onClick={() => quickAdd(it)}>
                   <Icon name="plus" width={2.4} />
                   {it.name}
@@ -208,10 +250,7 @@ export function ShoppingScreen() {
                   <Icon name="check" width={3} />
                 </div>
                 <span className="shopping-name">{it.name}</span>
-                <span className="shopping-qty">
-                  ×{it.quantity}
-                  {it.unit ? ` ${it.unit}` : ''}
-                </span>
+                <span className="shopping-qty">{qtyLabel(it.quantity, it.unit)}</span>
                 {it.source === 'auto' && <span className="shopping-source">auto</span>}
                 <button
                   className="shopping-delete"

@@ -588,6 +588,18 @@ button { font-family: inherit; }
 .quick-chip:active { transform: scale(0.96); }
 .quick-chip svg { width: 14px; height: 14px; }
 
+/* Indice de catégorie devinée dans la barre d'ajout */
+.add-cat-hint {
+  flex-shrink: 0;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--brand);
+  background: var(--accent-soft);
+  padding: 3px 8px;
+  border-radius: 999px;
+  white-space: nowrap;
+}
+
 /* Roulette de quantité (réglette neutre) */
 .qty-row {
   display: flex;
@@ -625,7 +637,7 @@ button { font-family: inherit; }
   top: 6px;
   bottom: 6px;
   left: 50%;
-  width: 40px;
+  width: 56px;
   transform: translateX(-50%);
   background: var(--accent-soft);
   border-radius: 9px;
@@ -639,26 +651,27 @@ button { font-family: inherit; }
   align-items: center;
   overflow-x: scroll;
   scroll-snap-type: x mandatory;
-  padding: 0 calc(50% - 20px);
+  padding: 0 calc(50% - 28px);
   scrollbar-width: none;
   -webkit-overflow-scrolling: touch;
 }
 .qwheel-track::-webkit-scrollbar { display: none; }
 .qwheel-item {
-  flex: 0 0 40px;
-  width: 40px;
+  flex: 0 0 56px;
+  width: 56px;
   border: none;
   background: transparent;
   font-family: inherit;
-  font-size: 15px;
+  font-size: 14px;
   font-weight: 600;
   color: var(--muted);
   opacity: 0.5;
   scroll-snap-align: center;
   cursor: pointer;
   transition: opacity 0.15s ease, transform 0.15s ease, color 0.15s ease;
+  white-space: nowrap;
 }
-.qwheel-item.active { opacity: 1; color: var(--brand); transform: scale(1.25); }
+.qwheel-item.active { opacity: 1; color: var(--brand); transform: scale(1.2); }
 
 /* Autocomplétion */
 .suggest-list { padding: 0 20px; margin-bottom: 14px; display: flex; flex-direction: column; gap: 6px; }
