@@ -80,6 +80,8 @@ interface StoreValue {
   generateRecipe(opts?: { constraints?: string; course?: string }): Promise<Recipe>
   /** Analyse la photo d'un ticket de caisse (Claude Vision) → articles détectés. */
   scanReceipt(image: string, mediaType: string): Promise<ReceiptItem[]>
+  /** Transforme une liste tapée en vrac en articles structurés (Claude). */
+  parseBulk(text: string): Promise<ReceiptItem[]>
   toggleFavorite(id: string): Promise<void>
   prepareRecipe(recipe: Recipe): Promise<void>
 
@@ -429,6 +431,14 @@ export function StoreProvider({ children }: { children: ReactNode }) {
         const { data, error } = await supabase.functions.invoke('receipt', {
           body: { image, mediaType },
         })
+        if (error) throw new Error(error.message || 'Analyse impossible')
+        const items = (data as any)?.items
+        if (!Array.isArray(items)) throw new Error((data as any)?.error || 'Réponse invalide')
+        return items as ReceiptItem[]
+      },
+      async parseBulk(text) {
+        if (!supabase) throw new Error('Connecte-toi pour la saisie en lot')
+        const { data, error } = await supabase.functions.invoke('bulk', { body: { text } })
         if (error) throw new Error(error.message || 'Analyse impossible')
         const items = (data as any)?.items
         if (!Array.isArray(items)) throw new Error((data as any)?.error || 'Réponse invalide')

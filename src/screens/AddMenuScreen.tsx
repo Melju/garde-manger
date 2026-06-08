@@ -6,6 +6,7 @@ interface AddMenuScreenProps {
   onBarcode: () => void
   onTicket: () => void
   onTicketEmail: () => void
+  onBulk: () => void
   onManual: () => void
 }
 
@@ -14,6 +15,7 @@ export function AddMenuScreen({
   onBarcode,
   onTicket,
   onTicketEmail,
+  onBulk,
   onManual,
 }: AddMenuScreenProps) {
   const items: { icon: IconName; title: string; desc: string; onClick: () => void; soon?: boolean }[] = [
@@ -35,6 +37,12 @@ export function AddMenuScreen({
       desc: 'Importez depuis e-mail ou application',
       onClick: onTicketEmail,
       soon: true,
+    },
+    {
+      icon: 'sparkles',
+      title: 'Ajouter en lot',
+      desc: 'Tape une liste, Claude la structure',
+      onClick: onBulk,
     },
     {
       icon: 'pencil',

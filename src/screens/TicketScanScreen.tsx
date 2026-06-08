@@ -3,15 +3,12 @@ import { useStore } from '../data/store'
 import { useToast } from '../components/Toast'
 import { PageHeader } from '../components/PageHeader'
 import { Icon } from '../components/Icon'
-import { CATEGORIES, defaultConservation, type Category, type ReceiptItem } from '../types'
+import { ReviewItems } from '../components/ReviewItems'
+import type { ReceiptItem } from '../types'
 
 interface TicketScanScreenProps {
   onClose: () => void
   onAdded: () => void
-}
-
-interface Row extends ReceiptItem {
-  include: boolean
 }
 
 /** Réduit une image à max 1280px de large en JPEG (limite payload + coût). */
@@ -43,11 +40,11 @@ function downscale(file: File): Promise<{ data: string; mediaType: string }> {
 }
 
 export function TicketScanScreen({ onClose, onAdded }: TicketScanScreenProps) {
-  const { scanReceipt, addProduct } = useStore()
+  const { scanReceipt } = useStore()
   const toast = useToast()
   const fileRef = useRef<HTMLInputElement>(null)
   const [busy, setBusy] = useState(false)
-  const [rows, setRows] = useState<Row[] | null>(null)
+  const [items, setItems] = useState<ReceiptItem[] | null>(null)
 
   async function onPick(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0]
@@ -56,13 +53,9 @@ export function TicketScanScreen({ onClose, onAdded }: TicketScanScreenProps) {
     toast('Lecture du ticket…')
     try {
       const { data, mediaType } = await downscale(file)
-      const items = await scanReceipt(data, mediaType)
-      if (items.length === 0) {
-        toast('Aucun article détecté')
-        setRows([])
-      } else {
-        setRows(items.map((it) => ({ ...it, include: true })))
-      }
+      const found = await scanReceipt(data, mediaType)
+      if (found.length === 0) toast('Aucun article détecté')
+      setItems(found)
     } catch (err) {
       toast(err instanceof Error ? err.message : 'Analyse impossible')
     } finally {
@@ -71,46 +64,16 @@ export function TicketScanScreen({ onClose, onAdded }: TicketScanScreenProps) {
     }
   }
 
-  function patch(i: number, p: Partial<Row>) {
-    setRows((r) => (r ? r.map((row, idx) => (idx === i ? { ...row, ...p } : row)) : r))
-  }
-
-  const selected = rows?.filter((r) => r.include) ?? []
-
-  async function addAll() {
-    if (selected.length === 0) return
-    setBusy(true)
-    try {
-      for (const it of selected) {
-        await addProduct({
-          name: it.name,
-          category: it.category,
-          conservation: defaultConservation(it.category),
-          quantity: it.quantity,
-          size: it.unit ? `${it.unit}` : undefined,
-          dateType: 'dlc',
-          price: it.price ?? undefined,
-        })
-      }
-      toast(`${selected.length} produit${selected.length > 1 ? 's' : ''} ajouté${selected.length > 1 ? 's' : ''}`)
-      onAdded()
-    } catch (err) {
-      toast(err instanceof Error ? err.message : 'Ajout impossible')
-    } finally {
-      setBusy(false)
-    }
-  }
-
   return (
     <div className="screen-fade">
       <PageHeader title="Scanner un ticket" onBack={onClose} />
 
-      {!rows ? (
+      {!items ? (
         <div className="ticket-intro">
           <div className="ticket-illus">
             <Icon name="receipt" />
           </div>
-          <p>Prends en photo (ou choisis) la photo de ton ticket de caisse. Claude en extrait les articles, tu valides, et ils sont ajoutés au stock.</p>
+          <p>Prends en photo (ou choisis) ton ticket de caisse. Claude en extrait les articles, tu valides, et ils sont ajoutés au stock.</p>
           <button className="btn-primary" disabled={busy} onClick={() => fileRef.current?.click()}>
             {busy ? 'Analyse en cours…' : 'Prendre / choisir une photo'}
           </button>
@@ -123,62 +86,13 @@ export function TicketScanScreen({ onClose, onAdded }: TicketScanScreenProps) {
             onChange={onPick}
           />
         </div>
-      ) : rows.length === 0 ? (
+      ) : items.length === 0 ? (
         <div className="form-section">
           <p style={{ color: 'var(--muted)' }}>Aucun article détecté sur cette photo.</p>
-          <button className="btn-secondary" onClick={() => setRows(null)}>Réessayer</button>
+          <button className="btn-secondary" onClick={() => setItems(null)}>Réessayer</button>
         </div>
       ) : (
-        <>
-          <div className="form-section" style={{ paddingBottom: 0 }}>
-            <p style={{ color: 'var(--muted)', fontSize: 13 }}>
-              {selected.length} sélectionné{selected.length > 1 ? 's' : ''} · décoche ce que tu ne veux pas, ajuste si besoin.
-            </p>
-          </div>
-          <div className="ticket-list">
-            {rows.map((row, i) => (
-              <div className={`ticket-item${row.include ? '' : ' off'}`} key={i}>
-                <button
-                  className={`check-box${row.include ? ' on' : ''}`}
-                  onClick={() => patch(i, { include: !row.include })}
-                  aria-label="Inclure"
-                >
-                  {row.include && <Icon name="check" width={3} />}
-                </button>
-                <div className="ticket-fields">
-                  <input
-                    className="form-input"
-                    value={row.name}
-                    onChange={(e) => patch(i, { name: e.target.value })}
-                  />
-                  <div className="ticket-sub">
-                    <select
-                      className="form-select"
-                      value={row.category}
-                      onChange={(e) => patch(i, { category: e.target.value as Category })}
-                    >
-                      {CATEGORIES.map((c) => (
-                        <option key={c.id} value={c.id}>{c.label}</option>
-                      ))}
-                    </select>
-                    <div className="qty-stepper small">
-                      <button type="button" onClick={() => patch(i, { quantity: Math.max(1, row.quantity - 1) })}>−</button>
-                      <span>{row.quantity}</span>
-                      <button type="button" onClick={() => patch(i, { quantity: row.quantity + 1 })}>+</button>
-                    </div>
-                    {row.price != null && <span className="ticket-price">{row.price.toFixed(2)}€</span>}
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
-          <div className="btn-row" style={{ margin: '16px 20px' }}>
-            <button className="btn-secondary" onClick={() => setRows(null)} disabled={busy}>Reprendre</button>
-            <button className="btn-primary" onClick={addAll} disabled={busy || selected.length === 0}>
-              {busy ? 'Ajout…' : `Ajouter (${selected.length})`}
-            </button>
-          </div>
-        </>
+        <ReviewItems items={items} onDone={onAdded} onRetry={() => setItems(null)} />
       )}
     </div>
   )

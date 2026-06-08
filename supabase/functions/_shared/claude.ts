@@ -10,7 +10,7 @@ function env(name: string): string | undefined {
 
 const KEY = Deno.env.get('ANTHROPIC_API_KEY')
 const SMART = env('ANTHROPIC_MODEL_SMART') ?? env('ANTHROPIC_MODEL') ?? 'claude-sonnet-4-5'
-const FAST = env('ANTHROPIC_MODEL_FAST') ?? 'claude-3-5-haiku-latest'
+const FAST = env('ANTHROPIC_MODEL_FAST') ?? 'claude-haiku-4-5'
 
 export type Tier = 'smart' | 'fast'
 

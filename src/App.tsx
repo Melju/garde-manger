@@ -16,6 +16,7 @@ import { SettingsScreen } from './screens/SettingsScreen'
 import { AccountScreen } from './screens/AccountScreen'
 import { AddMenuScreen } from './screens/AddMenuScreen'
 import { TicketScanScreen } from './screens/TicketScanScreen'
+import { BulkAddScreen } from './screens/BulkAddScreen'
 import { Icon } from './components/Icon'
 import { Fab } from './components/Fab'
 import { useToast } from './components/Toast'
@@ -35,6 +36,7 @@ type Route =
   | { name: 'product-form'; product: Product | null; initial?: Partial<ProductInput>; fromScan?: boolean }
   | { name: 'scan' }
   | { name: 'ticket-scan' }
+  | { name: 'bulk-add' }
   | { name: 'notifications' }
   | { name: 'stats' }
   | { name: 'budget' }
@@ -138,6 +140,8 @@ export function App() {
         )
       case 'ticket-scan':
         return <TicketScanScreen onClose={back} onAdded={() => goTab('inventory')} />
+      case 'bulk-add':
+        return <BulkAddScreen onClose={back} onAdded={() => goTab('inventory')} />
       case 'notifications':
         return <NotificationsScreen onBack={back} />
       case 'stats':
@@ -170,6 +174,7 @@ export function App() {
             onBack={back}
             onBarcode={() => replace({ name: 'scan' })}
             onManual={() => replace({ name: 'product-form', product: null })}
+            onBulk={() => replace({ name: 'bulk-add' })}
             onTicket={() => replace({ name: 'ticket-scan' })}
             onTicketEmail={() => toast('Ticket par email — bientôt disponible')}
           />
