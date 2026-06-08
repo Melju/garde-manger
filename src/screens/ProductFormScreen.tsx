@@ -14,13 +14,27 @@ import {
 } from '../types'
 import { estimateShelfLife, estimatedExpiryISO, durationLabel } from '../lib/shelfLife'
 
+/** Unités de contenance proposées. */
+const SIZE_UNITS = ['g', 'kg', 'mL', 'cl', 'L', 'pièce', 'pack', 'boîte', 'sachet', 'pot', 'tranches']
+
+/** Sépare une contenance « 400 g » en valeur + unité. */
+function parseSize(s?: string): { value: string; unit: string } {
+  if (!s) return { value: '', unit: '' }
+  const m = s.trim().match(/^([\d.,]+)\s*(.*)$/)
+  if (m) return { value: m[1], unit: m[2].trim() }
+  return { value: '', unit: s.trim() }
+}
+
 interface ProductFormScreenProps {
   product: Product | null
   initial?: Partial<ProductInput>
+  /** Fermeture (annuler / retour). */
   onClose: () => void
+  /** Appelé après un enregistrement réussi (par défaut = onClose). */
+  onSaved?: () => void
 }
 
-export function ProductFormScreen({ product, initial, onClose }: ProductFormScreenProps) {
+export function ProductFormScreen({ product, initial, onClose, onSaved }: ProductFormScreenProps) {
   const { addProduct, updateProduct, removeProduct, adjustQuantity, wasteProduct } = useStore()
   const toast = useToast()
   const isEdit = product !== null
@@ -32,7 +46,9 @@ export function ProductFormScreen({ product, initial, onClose }: ProductFormScre
     product?.conservation ?? initial?.conservation ?? defaultConservation(initCategory),
   )
   const [quantity, setQuantity] = useState(product?.quantity ?? initial?.quantity ?? 1)
-  const [size, setSize] = useState(product?.size ?? initial?.size ?? '')
+  const initSize = parseSize(product?.size ?? initial?.size)
+  const [sizeValue, setSizeValue] = useState(initSize.value)
+  const [sizeUnit, setSizeUnit] = useState(initSize.unit)
   const [dateType, setDateType] = useState<DateType>(product?.dateType ?? initial?.dateType ?? 'dlc')
   const [expiryDate, setExpiryDate] = useState(product?.expiryDate ?? initial?.expiryDate ?? '')
   const [location, setLocation] = useState(product?.location ?? initial?.location ?? '')
@@ -57,12 +73,13 @@ export function ProductFormScreen({ product, initial, onClose }: ProductFormScre
   }
 
   function buildInput(): ProductInput {
+    const sizeStr = [sizeValue.trim(), sizeUnit].filter(Boolean).join(' ').trim()
     return {
       name: name.trim(),
       category,
       conservation,
       quantity,
-      size: size.trim() || undefined,
+      size: sizeStr || undefined,
       dateType,
       expiryDate: expiryDate || undefined,
       location: location.trim() || undefined,
@@ -80,7 +97,7 @@ export function ProductFormScreen({ product, initial, onClose }: ProductFormScre
       await addProduct(buildInput())
       toast('Produit ajouté')
     }
-    onClose()
+    ;(onSaved ?? onClose)()
   }
 
   async function handleConsume() {
@@ -161,29 +178,40 @@ export function ProductFormScreen({ product, initial, onClose }: ProductFormScre
       </div>
 
       <div className="form-section">
+        <label className="form-label">Quantité</label>
+        <div className="qty-stepper">
+          <button type="button" onClick={() => setQuantity((q) => Math.max(1, q - 1))} aria-label="Diminuer">−</button>
+          <input
+            type="number"
+            min={1}
+            value={quantity}
+            onChange={(e) => setQuantity(Math.max(1, Number(e.target.value) || 1))}
+          />
+          <button type="button" onClick={() => setQuantity((q) => q + 1)} aria-label="Augmenter">+</button>
+        </div>
+      </div>
+
+      <div className="form-section">
+        <label className="form-label">Contenance (optionnel)</label>
         <div className="form-row">
-          <div>
-            <label className="form-label">Quantité</label>
-            <div className="qty-stepper">
-              <button type="button" onClick={() => setQuantity((q) => Math.max(1, q - 1))} aria-label="Diminuer">−</button>
-              <input
-                type="number"
-                min={1}
-                value={quantity}
-                onChange={(e) => setQuantity(Math.max(1, Number(e.target.value) || 1))}
-              />
-              <button type="button" onClick={() => setQuantity((q) => q + 1)} aria-label="Augmenter">+</button>
-            </div>
-          </div>
-          <div>
-            <label className="form-label">Contenance</label>
-            <input
-              className="form-input"
-              placeholder="400g, 1L…"
-              value={size}
-              onChange={(e) => setSize(e.target.value)}
-            />
-          </div>
+          <input
+            className="form-input"
+            type="text"
+            inputMode="decimal"
+            placeholder="Ex : 400"
+            value={sizeValue}
+            onChange={(e) => setSizeValue(e.target.value)}
+          />
+          <select
+            className="form-select"
+            value={sizeUnit}
+            onChange={(e) => setSizeUnit(e.target.value)}
+          >
+            <option value="">Unité…</option>
+            {SIZE_UNITS.map((u) => (
+              <option key={u} value={u}>{u}</option>
+            ))}
+          </select>
         </div>
       </div>
 

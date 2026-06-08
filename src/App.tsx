@@ -31,7 +31,7 @@ type Tab = 'inventory' | 'recipes' | 'shopping' | 'more'
 
 /** Sous-pages empilées par-dessus l'onglet courant. */
 type Route =
-  | { name: 'product-form'; product: Product | null; initial?: Partial<ProductInput> }
+  | { name: 'product-form'; product: Product | null; initial?: Partial<ProductInput>; fromScan?: boolean }
   | { name: 'scan' }
   | { name: 'notifications' }
   | { name: 'planning' }
@@ -115,12 +115,21 @@ export function App() {
   function renderRoute(route: Route) {
     switch (route.name) {
       case 'product-form':
-        return <ProductFormScreen product={route.product} initial={route.initial} onClose={back} />
+        return (
+          <ProductFormScreen
+            product={route.product}
+            initial={route.initial}
+            onClose={back}
+            // Produit issu d'un scan : après enregistrement, on revient au scanner
+            // pour enchaîner les codes-barres.
+            onSaved={route.fromScan ? () => replace({ name: 'scan' }) : back}
+          />
+        )
       case 'scan':
         return (
           <Suspense fallback={<div className="scan-screen" />}>
             <ScanScreen
-              onResult={(initial) => replace({ name: 'product-form', product: null, initial })}
+              onResult={(initial) => replace({ name: 'product-form', product: null, initial, fromScan: true })}
               onClose={back}
             />
           </Suspense>
