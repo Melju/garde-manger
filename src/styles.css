@@ -558,6 +558,36 @@ button { font-family: inherit; }
 .generate-list-btn:hover { border-color: var(--fg); color: var(--fg); }
 .generate-list-btn svg { width: 20px; height: 20px; }
 
+/* Ajout rapide d'articles déjà achetés */
+.quick-add { padding: 4px 20px 16px; }
+.quick-add-title {
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--muted);
+  margin-bottom: 10px;
+}
+.quick-add-chips { display: flex; flex-wrap: wrap; gap: 8px; }
+.quick-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 7px 12px 7px 9px;
+  background: var(--accent-soft);
+  color: var(--brand);
+  border: 1px solid transparent;
+  border-radius: 999px;
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s ease, transform 0.1s ease;
+}
+.quick-chip:hover { border-color: var(--brand); }
+.quick-chip:active { transform: scale(0.96); }
+.quick-chip svg { width: 14px; height: 14px; }
+
 /* Form */
 .form-section { padding: 0 20px; margin-bottom: 20px; }
 .form-label {

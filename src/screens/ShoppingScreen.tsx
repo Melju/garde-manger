@@ -8,6 +8,7 @@ export function ShoppingScreen() {
   const {
     shopping,
     products,
+    history,
     addShoppingItem,
     toggleShoppingItem,
     removeShoppingItem,
@@ -19,6 +20,32 @@ export function ShoppingScreen() {
   const [category, setCategory] = useState<Category>('autre')
 
   const remaining = shopping.filter((it) => !it.checked).length
+
+  // Catalogue « déjà acheté » : produits en stock + noms tirés de l'historique.
+  const catalog = useMemo(() => {
+    const map = new Map<string, { name: string; category: Category }>()
+    for (const p of products) {
+      const k = p.name.trim().toLowerCase()
+      if (k && !map.has(k)) map.set(k, { name: p.name.trim(), category: p.category })
+    }
+    for (const h of history) {
+      if (h.kind === 'prepare') continue
+      const m = h.label.match(/^(.*?)\s(ajouté|consommé|jeté)/)
+      if (!m) continue
+      const nm = m[1].trim()
+      const k = nm.toLowerCase()
+      if (k && !map.has(k)) map.set(k, { name: nm, category: 'autre' })
+    }
+    const inList = new Set(shopping.map((it) => it.name.trim().toLowerCase()))
+    return [...map.values()].filter((it) => !inList.has(it.name.toLowerCase()))
+  }, [products, history, shopping])
+
+  // Suggestions filtrées par la saisie (ou les plus récentes si vide).
+  const suggestions = useMemo(() => {
+    const q = name.trim().toLowerCase()
+    const base = q ? catalog.filter((it) => it.name.toLowerCase().includes(q)) : catalog
+    return base.slice(0, 12)
+  }, [catalog, name])
 
   // Regroupement par catégorie, dans l'ordre défini.
   const grouped = useMemo(() => {
@@ -39,6 +66,12 @@ export function ShoppingScreen() {
     await addShoppingItem({ name: trimmed, category, quantity: 1, source: 'manuel' })
     setName('')
     toast('Ajouté à la liste')
+  }
+
+  async function quickAdd(item: { name: string; category: Category }) {
+    await addShoppingItem({ name: item.name, category: item.category, quantity: 1, source: 'manuel' })
+    setName('')
+    toast(`${item.name} ajouté`)
   }
 
   /** Ajoute à la liste les produits dont le stock est faible (≤ 1) et absents de la liste. */
@@ -104,6 +137,26 @@ export function ShoppingScreen() {
           </button>
         </div>
       </div>
+
+      {suggestions.length > 0 && (
+        <div className="quick-add">
+          <div className="quick-add-title">
+            {name.trim() ? 'Suggestions' : 'Déjà achetés'}
+          </div>
+          <div className="quick-add-chips">
+            {suggestions.map((it) => (
+              <button
+                key={it.name}
+                className="quick-chip"
+                onClick={() => quickAdd(it)}
+              >
+                <Icon name="plus" width={2.4} />
+                {it.name}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
 
       <button className="generate-list-btn" onClick={handleGenerate}>
         <Icon name="sparkles" />
