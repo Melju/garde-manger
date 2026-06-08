@@ -458,7 +458,7 @@ button { font-family: inherit; }
 .form-input:focus,
 .form-select:focus { outline: none; border-color: var(--fg); }
 .form-row { display: flex; gap: 12px; }
-.form-row > * { flex: 1; }
+.form-row > * { flex: 1 1 0; min-width: 0; }
 
 /* Stepper de quantité */
 .qty-stepper {

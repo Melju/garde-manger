@@ -19,6 +19,7 @@ import { Icon } from './components/Icon'
 import { Fab } from './components/Fab'
 import { useToast } from './components/Toast'
 import { useStore } from './data/store'
+import { useAuth } from './data/auth'
 import type { FamilyMember, Product, ProductInput, Recipe } from './types'
 
 // Chargé à la demande : la bibliothèque de scan (ZXing) est lourde.
@@ -46,11 +47,14 @@ type Route =
 
 export function App() {
   const { loading } = useStore()
+  const auth = useAuth()
   const toast = useToast()
   const [tab, setTab] = useState<Tab>('inventory')
   const [stack, setStack] = useState<Route[]>([])
 
-  if (loading) return <div className="app" />
+  // On attend que l'auth soit résolue (évite d'afficher « local » un bref instant
+  // avant la bascule en cloud) et que les données soient chargées.
+  if (!auth.ready || loading) return <div className="app" />
 
   const push = (r: Route) => setStack((s) => [...s, r])
   const back = () => setStack((s) => s.slice(0, -1))
