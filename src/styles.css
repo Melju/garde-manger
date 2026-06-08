@@ -57,6 +57,7 @@ button { font-family: inherit; }
   min-height: 100dvh;
   background: var(--bg);
   position: relative;
+  overflow-x: hidden;
   padding-bottom: calc(164px + env(safe-area-inset-bottom));
 }
 
@@ -479,11 +480,20 @@ button { font-family: inherit; }
   transition: border-color 0.15s ease;
 }
 
-/* iOS : l'input date reste dans le conteneur (min/max-width ci-dessus) et
-   garde son apparence native (valeur alignée à gauche + icône calendrier). */
+/* iOS : neutralise la largeur intrinsèque de l'input date (qui débordait),
+   tout en gardant la valeur alignée à gauche. */
 input[type='date'].form-input {
-  text-align: left;
+  -webkit-appearance: none;
+  appearance: none;
   display: block;
+  text-align: left;
+}
+input[type='date'].form-input::-webkit-date-and-time-value {
+  text-align: left;
+  margin: 0;
+}
+input[type='date'].form-input::-webkit-calendar-picker-indicator {
+  margin-left: auto;
 }
 .form-input:focus,
 .form-select:focus { outline: none; border-color: var(--fg); }
