@@ -1,0 +1,39 @@
+# Garde-Manger — backend auto-hébergé (PocketBase + Caddy) pour NAS UGREEN.
+# PocketBase n'est PAS exposé directement : Caddy fait le reverse-proxy HTTPS.
+#
+# Avant de lancer : copier .env.example en .env et y mettre votre domaine + e-mail.
+
+services:
+  pocketbase:
+    # Version récente requise pour la connexion par code e-mail (OTP, PocketBase ≥ 0.23).
+    image: ghcr.io/muchobien/pocketbase:latest
+    container_name: gm-pocketbase
+    restart: unless-stopped
+    # Pas de port publié : seul Caddy y accède via le réseau interne Docker.
+    expose:
+      - '8090'
+    volumes:
+      - ./pb_data:/pb/pb_data # base de données (à sauvegarder !)
+      - ./pb_migrations:/pb/pb_migrations
+    healthcheck:
+      test: ['CMD', 'wget', '-qO-', 'http://localhost:8090/api/health']
+      interval: 30s
+      timeout: 5s
+      retries: 3
+
+  caddy:
+    image: caddy:2
+    container_name: gm-caddy
+    restart: unless-stopped
+    ports:
+      - '80:80' # requis pour le certificat HTTPS (Let's Encrypt)
+      - '443:443'
+    environment:
+      - GM_DOMAIN=${GM_DOMAIN}
+      - GM_EMAIL=${GM_EMAIL}
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - ./caddy_data:/data # certificats (persistés)
+      - ./caddy_config:/config
+    depends_on:
+      - pocketbase

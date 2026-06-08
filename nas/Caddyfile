@@ -1,0 +1,19 @@
+# Reverse-proxy HTTPS vers PocketBase.
+# Caddy obtient et renouvelle automatiquement le certificat Let's Encrypt
+# pour le domaine défini dans .env (GM_DOMAIN), tant que les ports 80 et 443
+# sont accessibles depuis Internet (redirection sur la box vers le NAS).
+
+{$GM_DOMAIN} {
+	encode zstd gzip
+	reverse_proxy pocketbase:8090
+
+	# E-mail utilisé par Let's Encrypt pour les notifications d'expiration.
+	tls {$GM_EMAIL}
+
+	log {
+		output file /data/access.log {
+			roll_size 10MB
+			roll_keep 5
+		}
+	}
+}
