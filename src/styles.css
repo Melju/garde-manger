@@ -1210,6 +1210,32 @@ button { font-family: inherit; }
 }
 .fab-backdrop.open { opacity: 1; pointer-events: auto; }
 
+/* Suggestion de péremption estimée */
+.estimate-hint {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  width: 100%;
+  margin-top: 8px;
+  padding: 10px 14px;
+  background: #f0f4ff;
+  border: 1px solid #dde5ff;
+  border-radius: var(--radius-sm);
+  font-size: 13px;
+  color: var(--fg-2);
+  font-family: inherit;
+  cursor: pointer;
+  text-align: left;
+  transition: all 0.15s ease;
+}
+.estimate-hint:hover { border-color: var(--info); }
+.estimate-hint .estimate-apply {
+  flex-shrink: 0;
+  font-weight: 600;
+  color: var(--info);
+}
+
 /* Fade entre écrans */
 .screen-fade { animation: fadeIn 0.2s ease; }
 @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }

@@ -1,8 +1,9 @@
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
 import { useStore } from '../data/store'
 import { useToast } from '../components/Toast'
 import { Icon } from '../components/Icon'
 import { CATEGORIES, type Category, type Product, type ProductInput } from '../types'
+import { estimateShelfLife, estimatedExpiryISO, durationLabel } from '../lib/shelfLife'
 
 interface ProductFormScreenProps {
   /** Produit à éditer, ou null pour une création. */
@@ -27,6 +28,13 @@ export function ProductFormScreen({ product, initial, onClose }: ProductFormScre
   const barcode = product?.barcode ?? initial?.barcode
 
   const canSave = name.trim().length > 0 && quantity > 0
+
+  // Estimation de péremption d'après le type d'aliment (si pas de date saisie).
+  const estimate = useMemo(() => estimateShelfLife(name, category), [name, category])
+  function applyEstimate() {
+    const iso = estimatedExpiryISO(name, category)
+    if (iso) setExpiryDate(iso)
+  }
 
   async function handleSave() {
     if (!canSave) return
@@ -155,6 +163,14 @@ export function ProductFormScreen({ product, initial, onClose }: ProductFormScre
           value={expiryDate}
           onChange={(e) => setExpiryDate(e.target.value)}
         />
+        {estimate && !expiryDate && (
+          <button type="button" className="estimate-hint" onClick={applyEstimate}>
+            <span>
+              Péremption estimée : <strong>{durationLabel(estimate.days)}</strong> ({estimate.group})
+            </span>
+            <span className="estimate-apply">Appliquer</span>
+          </button>
+        )}
       </div>
 
       <div className="form-section">
