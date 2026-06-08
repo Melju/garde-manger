@@ -26,9 +26,8 @@ export function AddMenuScreen({
     {
       icon: 'receipt',
       title: 'Scanner un ticket de caisse',
-      desc: 'Ajout en lot après les courses',
+      desc: 'Ajout en lot après les courses (Claude Vision)',
       onClick: onTicket,
-      soon: true,
     },
     {
       icon: 'bell',
