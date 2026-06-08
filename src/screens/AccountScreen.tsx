@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { useAuth } from '../data/auth'
+import { useStore } from '../data/store'
 import { useToast } from '../components/Toast'
 import { PageHeader } from '../components/PageHeader'
 
@@ -9,6 +10,7 @@ interface AccountScreenProps {
 
 export function AccountScreen({ onBack }: AccountScreenProps) {
   const auth = useAuth()
+  const store = useStore()
   const toast = useToast()
   const [email, setEmail] = useState('')
   const [sent, setSent] = useState(false)
@@ -182,6 +184,30 @@ export function AccountScreen({ onBack }: AccountScreenProps) {
           </button>
         </div>
       </div>
+      <div className="form-section">
+        <label className="form-label">Données de cet appareil</label>
+        <div className="setting-row" style={{ marginBottom: 12 }}>
+          <div className="setting-text">
+            <div className="setting-desc">
+              Importe les produits et la liste de courses enregistrés localement sur cet appareil vers
+              ce foyer cloud.
+            </div>
+          </div>
+        </div>
+        <button
+          className="btn-secondary"
+          disabled={busy}
+          onClick={async () => {
+            setBusy(true)
+            const n = await store.importLocalData()
+            setBusy(false)
+            toast(n > 0 ? `${n} élément(s) importé(s)` : 'Rien à importer')
+          }}
+        >
+          {busy ? 'Import…' : 'Importer les données de cet appareil'}
+        </button>
+      </div>
+
       <div className="form-section">
         <button className="btn-secondary btn-danger" onClick={auth.signOut}>
           Se déconnecter

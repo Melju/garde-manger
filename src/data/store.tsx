@@ -41,6 +41,10 @@ interface StoreValue {
   budget: BudgetConfig
   settings: Settings
   loading: boolean
+  /** true si les données sont synchronisées dans le cloud (connecté + foyer). */
+  cloudMode: boolean
+  /** Copie les produits/courses du stockage local de cet appareil vers le cloud. */
+  importLocalData(): Promise<number>
 
   // Produits
   addProduct(input: ProductInput): Promise<void>
@@ -168,6 +172,37 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       budget,
       settings,
       loading,
+      cloudMode: Boolean(supabase && auth.householdId),
+
+      async importLocalData() {
+        if (!(supabase && auth.householdId)) return 0
+        const local = new LocalStorageRepository()
+        const [lp, ls] = await Promise.all([local.listProducts(), local.listShopping()])
+        for (const p of lp) {
+          await repo.addProduct({
+            name: p.name,
+            category: p.category,
+            quantity: p.quantity,
+            unit: p.unit,
+            size: p.size,
+            expiryDate: p.expiryDate,
+            price: p.price,
+            barcode: p.barcode,
+          })
+        }
+        for (const s of ls) {
+          await repo.addShoppingItem({
+            name: s.name,
+            category: s.category,
+            quantity: s.quantity,
+            unit: s.unit,
+            source: s.source,
+          })
+        }
+        setProducts(await repo.listProducts())
+        setShopping(await repo.listShopping())
+        return lp.length + ls.length
+      },
 
       async addProduct(input) {
         await repo.addProduct(input)

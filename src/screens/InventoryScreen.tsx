@@ -26,7 +26,7 @@ export function InventoryScreen({
   onOpenNotifications,
   onOpenBudget,
 }: InventoryScreenProps) {
-  const { products, adjustQuantity, expenses, budget } = useStore()
+  const { products, adjustQuantity, expenses, budget, cloudMode } = useStore()
   const spent = useMemo(() => budgetSummary(expenses, budget).spent, [expenses, budget])
   const toast = useToast()
   const [search, setSearch] = useState('')
@@ -56,7 +56,9 @@ export function InventoryScreen({
       <header className="header">
         <div className="header-left">
           <h1>Garde-Manger</h1>
-          <p>{products.length} produits en stock</p>
+          <p>
+            {products.length} produits · {cloudMode ? '☁️ synchronisé' : '📱 local'}
+          </p>
         </div>
         <div className="header-actions">
           <button className="icon-btn" onClick={onScan} aria-label="Scanner un code-barres">
