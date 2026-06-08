@@ -10,7 +10,19 @@ interface RecipesScreenProps {
   onOpenFamily: () => void
 }
 
-type Filter = 'toutes' | 'perso' | 'favoris' | 'rapides' | 'vegetarien'
+type Filter =
+  | 'toutes'
+  | 'perso'
+  | 'favoris'
+  | 'plats'
+  | 'entrees'
+  | 'soupes'
+  | 'apero'
+  | 'desserts'
+  | 'rapides'
+  | 'vegetarien'
+
+const norm = (s: string) => s.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '')
 
 export function RecipesScreen({ onOpenRecipe, onOpenFamily }: RecipesScreenProps) {
   const { recipes, products, family, toggleFavorite, generateRecipe } = useStore()
@@ -52,10 +64,16 @@ export function RecipesScreen({ onOpenRecipe, onOpenFamily }: RecipesScreenProps
 
   const filtered = useMemo(() => {
     return recipes.filter((r) => {
-      if (filter === 'perso') return r.tags.includes('perso')
+      const tags = r.tags.map(norm)
+      if (filter === 'perso') return tags.includes('perso')
       if (filter === 'favoris') return r.favorite
-      if (filter === 'rapides') return r.tags.includes('rapide') || r.timeMin <= 15
-      if (filter === 'vegetarien') return r.tags.includes('vegetarien') || r.tags.includes('vegetalien')
+      if (filter === 'plats') return tags.some((t) => t.includes('plat'))
+      if (filter === 'entrees') return tags.some((t) => t.includes('entree'))
+      if (filter === 'soupes') return tags.some((t) => t.includes('soupe'))
+      if (filter === 'apero') return tags.some((t) => t.includes('aperitif') || t.includes('apero'))
+      if (filter === 'desserts') return tags.some((t) => t.includes('dessert'))
+      if (filter === 'rapides') return tags.includes('rapide') || r.timeMin <= 15
+      if (filter === 'vegetarien') return tags.includes('vegetarien') || tags.includes('vegetalien')
       return true
     })
   }, [recipes, filter])
@@ -79,6 +97,11 @@ export function RecipesScreen({ onOpenRecipe, onOpenFamily }: RecipesScreenProps
           ['toutes', 'Toutes'],
           ['perso', 'Perso'],
           ['favoris', 'Favoris'],
+          ['plats', 'Plats'],
+          ['entrees', 'Entrées'],
+          ['soupes', 'Soupes'],
+          ['apero', 'Apéro'],
+          ['desserts', 'Desserts'],
           ['rapides', 'Rapides'],
           ['vegetarien', 'Végétarien'],
         ] as [Filter, string][]).map(([id, label]) => (
