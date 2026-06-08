@@ -6,6 +6,7 @@ import { RecipesScreen } from './screens/RecipesScreen'
 import { RecipeDetailScreen } from './screens/RecipeDetailScreen'
 import { NotificationsScreen } from './screens/NotificationsScreen'
 import { PlanningScreen } from './screens/PlanningScreen'
+import { MealPickerScreen } from './screens/MealPickerScreen'
 import { StatsScreen } from './screens/StatsScreen'
 import { BudgetScreen } from './screens/BudgetScreen'
 import { WasteScreen } from './screens/WasteScreen'
@@ -27,14 +28,14 @@ const ScanScreen = lazy(() =>
   import('./screens/ScanScreen').then((m) => ({ default: m.ScanScreen })),
 )
 
-type Tab = 'inventory' | 'recipes' | 'shopping' | 'more'
+type Tab = 'inventory' | 'recipes' | 'planning' | 'shopping' | 'more'
 
 /** Sous-pages empilées par-dessus l'onglet courant. */
 type Route =
   | { name: 'product-form'; product: Product | null; initial?: Partial<ProductInput>; fromScan?: boolean }
   | { name: 'scan' }
   | { name: 'notifications' }
-  | { name: 'planning' }
+  | { name: 'meal-picker'; date: string; slot: string }
   | { name: 'stats' }
   | { name: 'budget' }
   | { name: 'waste' }
@@ -87,12 +88,14 @@ export function App() {
           onOpenFamily={() => push({ name: 'family' })}
         />
       )}
+      {tab === 'planning' && (
+        <PlanningScreen onEditMeal={(date, slot) => push({ name: 'meal-picker', date, slot })} />
+      )}
       {tab === 'shopping' && <ShoppingScreen />}
       {tab === 'more' && (
         <MoreScreen
           onFamily={() => push({ name: 'family' })}
           onStats={() => push({ name: 'stats' })}
-          onPlanning={() => push({ name: 'planning' })}
           onNotifications={() => push({ name: 'notifications' })}
           onWaste={() => push({ name: 'waste' })}
           onBudget={() => push({ name: 'budget' })}
@@ -106,6 +109,7 @@ export function App() {
       <nav className="bottom-nav">
         <NavButton tab="inventory" current={tab} icon="box" label="Stock" onClick={goTab} />
         <NavButton tab="recipes" current={tab} icon="book" label="Recettes" onClick={goTab} />
+        <NavButton tab="planning" current={tab} icon="calendar" label="Planning" onClick={goTab} />
         <NavButton tab="shopping" current={tab} icon="cart" label="Courses" onClick={goTab} />
         <NavButton tab="more" current={tab} icon="menu" label="Plus" onClick={goTab} />
       </nav>
@@ -136,8 +140,8 @@ export function App() {
         )
       case 'notifications':
         return <NotificationsScreen onBack={back} />
-      case 'planning':
-        return <PlanningScreen onBack={back} />
+      case 'meal-picker':
+        return <MealPickerScreen date={route.date} slot={route.slot} onBack={back} />
       case 'stats':
         return <StatsScreen onBack={back} onOpenWaste={() => push({ name: 'waste' })} />
       case 'budget':
@@ -185,7 +189,7 @@ function NavButton({
 }: {
   tab: Tab
   current: Tab
-  icon: 'box' | 'book' | 'cart' | 'menu'
+  icon: 'box' | 'book' | 'calendar' | 'cart' | 'menu'
   label: string
   onClick: (t: Tab) => void
 }) {

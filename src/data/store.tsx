@@ -18,6 +18,7 @@ import type {
   Product,
   ProductInput,
   Recipe,
+  RecipeInput,
   Settings,
   ShoppingItem,
   ShoppingItemInput,
@@ -64,6 +65,7 @@ interface StoreValue {
   clearCheckedShopping(): Promise<void>
 
   // Recettes
+  addRecipe(input: RecipeInput): Promise<Recipe>
   toggleFavorite(id: string): Promise<void>
   prepareRecipe(recipe: Recipe): Promise<void>
 
@@ -297,6 +299,13 @@ export function StoreProvider({ children }: { children: ReactNode }) {
         setShopping(await repo.listShopping())
       },
 
+      async addRecipe(input) {
+        const recipe: Recipe = { ...input, id: newId() }
+        const next = [recipe, ...recipes]
+        setRecipes(next)
+        await repo.saveRecipes(next)
+        return recipe
+      },
       async toggleFavorite(id) {
         const next = recipes.map((r) => (r.id === id ? { ...r, favorite: !r.favorite } : r))
         setRecipes(next)

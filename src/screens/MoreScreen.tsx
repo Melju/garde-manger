@@ -9,7 +9,6 @@ import { monthlyStats } from '../lib/analytics'
 interface MoreScreenProps {
   onFamily: () => void
   onStats: () => void
-  onPlanning: () => void
   onNotifications: () => void
   onWaste: () => void
   onBudget: () => void
@@ -36,7 +35,6 @@ export function MoreScreen(props: MoreScreenProps) {
   }[] = [
     { icon: 'users', title: 'Famille', desc: 'Gérer les profils et régimes', onClick: props.onFamily },
     { icon: 'chart', title: 'Statistiques', desc: 'Historique et consommation', onClick: props.onStats },
-    { icon: 'calendar', title: 'Planning repas', desc: 'Planifier la semaine', onClick: props.onPlanning },
     {
       icon: 'bell',
       title: 'Notifications',

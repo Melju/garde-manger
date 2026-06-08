@@ -1,36 +1,23 @@
 import { useMemo, useState } from 'react'
 import { useStore } from '../data/store'
 import { useToast } from '../components/Toast'
-import { PageHeader } from '../components/PageHeader'
 import { Icon } from '../components/Icon'
 import { MEAL_SLOTS } from '../types'
 import { DAYS_FR, addDays, formatDayMonth, fromISODate, startOfWeek, toISODate, weekDays } from '../lib/dates'
 import { recipeStock } from '../lib/recipesLib'
 
 interface PlanningScreenProps {
-  onBack: () => void
+  onEditMeal: (date: string, slot: string) => void
 }
 
-export function PlanningScreen({ onBack }: PlanningScreenProps) {
-  const { mealPlan, recipes, products, setMeal, addManyShopping } = useStore()
+export function PlanningScreen({ onEditMeal }: PlanningScreenProps) {
+  const { mealPlan, recipes, products, addManyShopping } = useStore()
   const toast = useToast()
   const [weekRef, setWeekRef] = useState(() => startOfWeek(new Date()))
 
   const days = useMemo(() => weekDays(weekRef), [weekRef])
   const todayISO = toISODate(new Date())
   const label = `Semaine du ${formatDayMonth(days[0])}`
-
-  async function editMeal(date: string, slot: string) {
-    const key = `${date}_${slot}`
-    const current = mealPlan[key] ?? ''
-    const suggestions = recipes.map((r) => r.title).join(', ')
-    const value = window.prompt(
-      `Repas (${slot})\nRecettes : ${suggestions}\n(laisser vide pour retirer)`,
-      current,
-    )
-    if (value === null) return
-    await setMeal(date, slot, value)
-  }
 
   async function generateList() {
     // Recettes planifiées cette semaine → ingrédients manquants → liste de courses.
@@ -60,7 +47,12 @@ export function PlanningScreen({ onBack }: PlanningScreenProps) {
 
   return (
     <div className="screen-fade">
-      <PageHeader title="Planification" onBack={onBack} />
+      <header className="header">
+        <div className="header-left">
+          <h1>Planning des repas</h1>
+          <p>Organise ta semaine</p>
+        </div>
+      </header>
 
       <div className="week-nav">
         <button onClick={() => setWeekRef((d) => addDays(d, -7))} aria-label="Semaine précédente">
@@ -89,7 +81,7 @@ export function PlanningScreen({ onBack }: PlanningScreenProps) {
                     <span className={`meal-content${meal ? '' : ' empty'}`}>
                       {meal ?? 'Ajouter un repas'}
                     </span>
-                    <button className="meal-add" onClick={() => editMeal(date, slot.id)} aria-label="Modifier">
+                    <button className="meal-add" onClick={() => onEditMeal(date, slot.id)} aria-label="Modifier">
                       <Icon name={meal ? 'pencil' : 'plus'} />
                     </button>
                   </div>

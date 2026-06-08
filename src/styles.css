@@ -705,6 +705,42 @@ button { font-family: inherit; }
 .browse-toggle svg.rot { transform: rotate(90deg); }
 .browse .quick-add-chips { margin-top: 12px; }
 
+/* Sélecteur de repas (planning) */
+.meal-current {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  background: var(--accent-soft);
+  border-radius: var(--radius);
+  padding: 14px 16px;
+}
+.meal-current-label { font-size: 12px; color: var(--muted); margin-bottom: 2px; }
+.meal-current-title { font-size: 16px; font-weight: 700; color: var(--brand); }
+.check-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 12px;
+  font-size: 14px;
+  color: var(--fg);
+  cursor: pointer;
+  user-select: none;
+}
+.check-box {
+  width: 22px;
+  height: 22px;
+  border-radius: 6px;
+  border: 1.5px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  transition: all 0.15s ease;
+}
+.check-box.on { background: var(--brand); border-color: var(--brand); }
+.check-box svg { width: 14px; height: 14px; color: #fff; }
+
 /* Form */
 .form-section { padding: 0 20px; margin-bottom: 20px; }
 .form-label {
