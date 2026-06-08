@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html lang="fr">
+<body style="margin:0;background:#eef2f1;font-family:-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;color:#1b2733;">
+  <div style="max-width:440px;margin:0 auto;padding:32px 24px;">
+    <div style="font-family:'Caveat',cursive;font-size:34px;font-weight:700;color:#0c8fa0;margin-bottom:8px;">Miamm</div>
+    <h1 style="font-size:18px;margin:0 0 16px;">Ton code de connexion</h1>
+    <p style="font-size:15px;line-height:1.5;margin:0 0 20px;color:#48596b;">
+      Saisis ce code dans l'application pour te connecter :
+    </p>
+    <div style="font-size:34px;font-weight:800;letter-spacing:10px;background:#fff;border-radius:14px;padding:18px 0;text-align:center;color:#0c8fa0;">
+      {{ .Token }}
+    </div>
+    <p style="font-size:13px;line-height:1.5;margin:20px 0 0;color:#7a8a99;">
+      Ce code expire dans 1 heure. Si tu n'es pas à l'origine de cette demande, ignore cet e-mail.
+    </p>
+    <p style="font-size:13px;line-height:1.5;margin:16px 0 0;color:#7a8a99;">
+      Tu peux aussi te connecter directement&nbsp;:
+      <a href="{{ .ConfirmationURL }}" style="color:#0c8fa0;">ouvrir le lien</a>
+    </p>
+  </div>
+</body>
+</html>

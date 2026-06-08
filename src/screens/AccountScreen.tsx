@@ -16,6 +16,7 @@ export function AccountScreen({ onBack }: AccountScreenProps) {
   const [sent, setSent] = useState(false)
   const [name, setName] = useState('')
   const [code, setCode] = useState('')
+  const [loginCode, setLoginCode] = useState('')
   const [busy, setBusy] = useState(false)
 
   if (!auth.cloudEnabled) {
@@ -41,6 +42,15 @@ export function AccountScreen({ onBack }: AccountScreenProps) {
     else setSent(true)
   }
 
+  async function verifyLoginCode() {
+    if (loginCode.trim().length < 6) return
+    setBusy(true)
+    const { error } = await auth.verifyCode(email, loginCode)
+    setBusy(false)
+    if (error) toast(error)
+    else toast('Connecté')
+  }
+
   async function create() {
     setBusy(true)
     const { error } = await auth.createHousehold(name)
@@ -64,16 +74,37 @@ export function AccountScreen({ onBack }: AccountScreenProps) {
         <PageHeader title="Connexion" onBack={onBack} />
         {sent ? (
           <div className="form-section">
-            <div className="setting-row">
+            <div className="setting-row" style={{ marginBottom: 16 }}>
               <div className="setting-text">
                 <div className="setting-title">Vérifie tes e-mails</div>
                 <div className="setting-desc">
-                  Un lien de connexion a été envoyé à {email}. Ouvre-le sur cet appareil pour te
-                  connecter.
+                  Un code à 6 chiffres a été envoyé à {email}. Saisis-le ci-dessous pour te connecter
+                  (reste dans l'app, idéal depuis l'écran d'accueil).
                 </div>
               </div>
             </div>
-            <button className="btn-secondary" onClick={() => setSent(false)}>
+            <label className="form-label" htmlFor="logincode">Code reçu par e-mail</label>
+            <input
+              id="logincode"
+              type="text"
+              inputMode="numeric"
+              autoComplete="one-time-code"
+              maxLength={6}
+              className="form-input"
+              placeholder="123456"
+              value={loginCode}
+              onChange={(e) => setLoginCode(e.target.value.replace(/\D/g, ''))}
+              style={{ marginBottom: 12, letterSpacing: 6, fontSize: 20, textAlign: 'center' }}
+            />
+            <button
+              className="btn-primary"
+              disabled={busy || loginCode.trim().length < 6}
+              onClick={verifyLoginCode}
+              style={{ marginBottom: 12 }}
+            >
+              {busy ? 'Connexion…' : 'Se connecter'}
+            </button>
+            <button className="btn-secondary" onClick={() => { setSent(false); setLoginCode('') }}>
               Utiliser une autre adresse
             </button>
           </div>
@@ -95,7 +126,7 @@ export function AccountScreen({ onBack }: AccountScreenProps) {
               style={{ marginBottom: 12 }}
             />
             <button className="btn-primary" disabled={busy || !email.trim()} onClick={sendLink}>
-              {busy ? 'Envoi…' : 'Recevoir le lien magique'}
+              {busy ? 'Envoi…' : 'Recevoir mon code'}
             </button>
           </div>
         )}

@@ -19,8 +19,10 @@ interface AuthValue {
   /** Foyer de l'utilisateur (null s'il n'en a pas encore). */
   householdId: string | null
   inviteCode: string | null
-  /** Envoie un lien magique de connexion. */
+  /** Envoie un e-mail contenant un code (et un lien) de connexion. */
   signInWithEmail(email: string): Promise<{ error?: string }>
+  /** Valide le code à 6 chiffres reçu par e-mail (reste dans l'app / la PWA). */
+  verifyCode(email: string, token: string): Promise<{ error?: string }>
   signOut(): Promise<void>
   createHousehold(name: string): Promise<{ error?: string }>
   joinHousehold(code: string): Promise<{ error?: string }>
@@ -88,7 +90,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       if (!supabase) return { error: 'Cloud non configuré' }
       const { error } = await supabase.auth.signInWithOtp({
         email: email.trim(),
-        options: { emailRedirectTo: REDIRECT_URL },
+        options: { emailRedirectTo: REDIRECT_URL, shouldCreateUser: true },
+      })
+      return error ? { error: error.message } : {}
+    },
+    async verifyCode(email, token) {
+      if (!supabase) return { error: 'Cloud non configuré' }
+      const { error } = await supabase.auth.verifyOtp({
+        email: email.trim(),
+        token: token.trim(),
+        type: 'email',
       })
       return error ? { error: error.message } : {}
     },
