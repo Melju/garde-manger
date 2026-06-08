@@ -6,8 +6,7 @@ import { categoryColor } from '../lib/categoryColors'
 import {
   isWeightProduct,
   consumeAmount,
-  weightInfo,
-  portionValues,
+  portionScale,
   formatContenance,
 } from '../lib/contenance'
 import { Icon } from './Icon'
@@ -44,7 +43,7 @@ export function ProductItem({
   const col = categoryColor(product.category)
   // Produit au poids/volume si une seule unité en stock avec une contenance continue.
   const byWeight = product.quantity <= 1 && isWeightProduct(product.size)
-  const wi = byWeight ? weightInfo(product.size) : null
+  const scale = byWeight ? portionScale(product.size) : null
 
   function onPointerDown(e: React.PointerEvent) {
     startX.current = e.clientX
@@ -111,21 +110,25 @@ export function ProductItem({
 
       {/* Action droite révélée par un glissement vers la gauche : molette de retrait */}
       <div className="swipe-actions right">
-        {byWeight && wi ? (
+        {byWeight && scale ? (
           <SwipeWheel
-            values={portionValues(product.size)}
+            values={scale.values}
+            itemW={26}
             initialIndex={1}
-            format={(v) => (v === 0 ? '0' : formatContenance(v, wi.baseUnit))}
+            isMajor={(v) => v % scale.major === 0 || v === scale.values[scale.values.length - 1]}
+            format={(v) => (v === 0 ? '0' : formatContenance(v, scale.baseUnit))}
             onConfirm={(v) => {
               setSwipe('none')
               if (v <= 0) return
-              onConsumePortion(product, consumeAmount(product.size!, v, wi.baseUnit))
+              onConsumePortion(product, consumeAmount(product.size!, v, scale.baseUnit))
             }}
           />
         ) : (
           <SwipeWheel
             values={Array.from({ length: product.quantity }, (_, i) => i + 1)}
+            itemW={48}
             initialIndex={0}
+            isMajor={() => true}
             format={(v) => `−${v}`}
             onConfirm={(v) => {
               setSwipe('none')

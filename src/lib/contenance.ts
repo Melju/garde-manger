@@ -37,24 +37,29 @@ export function weightInfo(size?: string): { baseUnit: 'g' | 'mL'; total: number
   return { baseUnit: fam === 'mass' ? 'g' : 'mL', total: toBase(p.value, p.unit) }
 }
 
-/** Pas d'aimantation adapté à la contenance totale (crans « ronds »). */
-function snapStep(total: number): number {
-  if (total <= 300) return 10
-  if (total <= 600) return 25
-  if (total <= 1500) return 50
-  if (total <= 4000) return 100
-  return 250
+/** Graduation fine (précision) + intervalle d'étiquetage (valeurs rondes). */
+function scaleSteps(total: number): { fine: number; major: number } {
+  if (total <= 200) return { fine: 5, major: 25 }
+  if (total <= 600) return { fine: 5, major: 50 }
+  if (total <= 2000) return { fine: 10, major: 100 }
+  if (total <= 5000) return { fine: 25, major: 250 }
+  return { fine: 50, major: 500 }
 }
 
-/** Valeurs proposées par la molette (en unité de base), de 0 au total. */
-export function portionValues(size?: string): number[] {
+/**
+ * Réglette graduée pour la portion : valeurs fines de 0 au total,
+ * + le pas « majeur » pour savoir lesquelles étiqueter.
+ */
+export function portionScale(
+  size?: string,
+): { values: number[]; baseUnit: 'g' | 'mL'; major: number } | null {
   const wi = weightInfo(size)
-  if (!wi) return []
-  const step = snapStep(wi.total)
+  if (!wi) return null
+  const { fine, major } = scaleSteps(wi.total)
   const values: number[] = []
-  for (let v = 0; v < wi.total - 0.001; v += step) values.push(Math.round(v))
+  for (let v = 0; v < wi.total - 0.001; v += fine) values.push(Math.round(v))
   values.push(Math.round(wi.total)) // toujours finir pile au total
-  return values
+  return { values, baseUnit: wi.baseUnit, major }
 }
 
 /** Famille d'unité pour la conversion (mass / volume / null). */

@@ -328,7 +328,7 @@ button { font-family: inherit; }
 }
 .swipe-hint svg { width: 16px; height: 16px; }
 
-/* Molette « réglette » intégrée dans la barre de swipe */
+/* Réglette graduée intégrée dans la barre de swipe */
 .swipe-wheel {
   display: flex;
   align-items: stretch;
@@ -341,47 +341,74 @@ button { font-family: inherit; }
   min-width: 0;
   overflow: hidden;
 }
-/* Bande de sélection centrale */
+/* Valeur exacte affichée au-dessus du centre */
+.sw-readout {
+  position: absolute;
+  top: 6px;
+  left: 0;
+  right: 0;
+  text-align: center;
+  color: #fff;
+  font-weight: 800;
+  font-size: 15px;
+  line-height: 1;
+  pointer-events: none;
+  z-index: 3;
+  letter-spacing: 0.01em;
+}
+/* Trait de sélection central */
 .sw-center {
   position: absolute;
-  top: 9px;
-  bottom: 9px;
+  top: 24px;
+  bottom: 8px;
   left: 50%;
-  width: 48px;
+  width: 2px;
   transform: translateX(-50%);
-  border-radius: 10px;
-  background: oklch(0 0 0 / 0.2);
+  background: #fff;
+  border-radius: 1px;
   pointer-events: none;
-  z-index: 0;
+  z-index: 2;
 }
 .sw-track {
   position: relative;
   z-index: 1;
   height: 100%;
   display: flex;
-  align-items: center;
+  align-items: flex-end;
   overflow-x: scroll;
   scroll-snap-type: x mandatory;
-  padding: 0 calc(50% - 24px); /* centre le premier/dernier cran */
+  padding: 0 calc(50% - var(--iw) / 2); /* centre le premier/dernier cran */
   scrollbar-width: none;
   -webkit-overflow-scrolling: touch;
 }
 .sw-track::-webkit-scrollbar { display: none; }
-.sw-item {
-  flex: 0 0 48px;
-  width: 48px;
-  border: none;
-  background: transparent;
-  color: #fff;
-  font-family: inherit;
-  font-weight: 700;
-  font-size: 15px;
-  opacity: 0.5;
+.sw-tick {
+  flex: 0 0 var(--iw);
+  width: var(--iw);
+  height: 100%;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-end;
+  padding-bottom: 8px;
   scroll-snap-align: center;
-  cursor: pointer;
-  transition: opacity 0.15s ease, transform 0.15s ease;
 }
-.sw-item.active { opacity: 1; transform: scale(1.28); }
+.sw-mark {
+  width: 2px;
+  height: 12px;
+  border-radius: 1px;
+  background: oklch(1 0 0 / 0.45);
+}
+.sw-tick.major .sw-mark { height: 18px; background: oklch(1 0 0 / 0.7); }
+.sw-tick.active .sw-mark { background: #fff; height: 22px; }
+.sw-lab {
+  margin-top: 3px;
+  font-size: 10px;
+  font-weight: 600;
+  color: oklch(1 0 0 / 0.85);
+  white-space: nowrap;
+}
 .sw-go {
   flex: 0 0 56px;
   display: flex;
