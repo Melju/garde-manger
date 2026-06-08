@@ -4,12 +4,15 @@ import { categoryLabel } from '../types'
 import { expiryLabel, expiryStatus } from '../lib/expiry'
 import { categoryColor } from '../lib/categoryColors'
 import {
-  parseContenance,
   isWeightProduct,
   consumeFraction,
   consumeAmount,
+  weightInfo,
+  portionValues,
+  formatContenance,
 } from '../lib/contenance'
 import { Icon } from './Icon'
+import { WheelSheet } from './WheelSheet'
 
 interface ProductItemProps {
   product: Product
@@ -35,6 +38,7 @@ export function ProductItem({
   onConsumePortion,
 }: ProductItemProps) {
   const [swipe, setSwipe] = useState<Swipe>('none')
+  const [sheet, setSheet] = useState<'none' | 'weight' | 'count'>('none')
   const startX = useRef<number | null>(null)
   const moved = useRef(false)
 
@@ -47,15 +51,9 @@ export function ProductItem({
     onConsumePortion(product, consumeFraction(product.size!, f))
     setSwipe('none')
   }
-  function askAmount() {
-    const parsed = parseContenance(product.size)
-    const unit = parsed?.unit ?? 'g'
-    const raw = window.prompt(`Quantité utilisée ? (en ${unit})`)
+  function openSheet(kind: 'weight' | 'count') {
+    setSheet(kind)
     setSwipe('none')
-    if (!raw) return
-    const amount = Number(raw.replace(',', '.'))
-    if (!isFinite(amount) || amount <= 0) return
-    onConsumePortion(product, consumeAmount(product.size!, amount, unit))
   }
 
   function onPointerDown(e: React.PointerEvent) {
@@ -130,7 +128,7 @@ export function ProductItem({
               <button className="qty-btn" onClick={() => fraction(0.5)}>
                 ½
               </button>
-              <button className="qty-btn" onClick={askAmount}>
+              <button className="qty-btn" onClick={() => openSheet('weight')}>
                 <Icon name="pencil" width={1.2} />
                 <span>saisir</span>
               </button>
@@ -146,7 +144,7 @@ export function ProductItem({
             </>
           ) : (
             <>
-              {[1, 2, 3].map((n) => (
+              {[1, 2].map((n) => (
                 <button
                   key={n}
                   className="qty-btn"
@@ -160,6 +158,14 @@ export function ProductItem({
                 </button>
               ))}
               <button
+                className="qty-btn"
+                disabled={product.quantity < 3}
+                onClick={() => openSheet('count')}
+              >
+                <Icon name="pencil" width={1.2} />
+                <span>saisir</span>
+              </button>
+              <button
                 className="qty-btn delete-all"
                 onClick={() => {
                   onRemoveQty(product, 'all')
@@ -172,6 +178,42 @@ export function ProductItem({
           )}
         </div>
       </div>
+
+      {sheet === 'weight' && (() => {
+        const wi = weightInfo(product.size)
+        const values = portionValues(product.size)
+        if (!wi || values.length === 0) return null
+        return (
+          <WheelSheet
+            title="Quantité utilisée"
+            subtitle={`${product.name} · ${product.size} en stock`}
+            values={values}
+            format={(v) => (v === 0 ? '0' : formatContenance(v, wi.baseUnit))}
+            initialIndex={0}
+            onCancel={() => setSheet('none')}
+            onConfirm={(v) => {
+              setSheet('none')
+              if (v <= 0) return
+              onConsumePortion(product, consumeAmount(product.size!, v, wi.baseUnit))
+            }}
+          />
+        )
+      })()}
+
+      {sheet === 'count' && (
+        <WheelSheet
+          title="Combien en retirer ?"
+          subtitle={`${product.name} · ×${product.quantity} en stock`}
+          values={Array.from({ length: product.quantity }, (_, i) => i + 1)}
+          format={(v) => `${v}`}
+          initialIndex={0}
+          onCancel={() => setSheet('none')}
+          onConfirm={(v) => {
+            setSheet('none')
+            onRemoveQty(product, v >= product.quantity ? 'all' : v)
+          }}
+        />
+      )}
     </div>
   )
 }

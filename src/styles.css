@@ -328,6 +328,100 @@ button { font-family: inherit; }
 }
 .swipe-hint svg { width: 16px; height: 16px; }
 
+/* Feuille modale + molette (sélection de portion / quantité) */
+.sheet-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 400;
+  background: oklch(0.2 0.02 220 / 0.45);
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  animation: sheet-fade 0.2s ease;
+}
+@keyframes sheet-fade { from { opacity: 0; } to { opacity: 1; } }
+.sheet {
+  width: 100%;
+  max-width: 420px;
+  background: var(--surface);
+  border-radius: 22px 22px 0 0;
+  padding: 10px 20px calc(20px + env(safe-area-inset-bottom));
+  box-shadow: 0 -10px 30px oklch(0.2 0.02 220 / 0.18);
+  animation: sheet-up 0.28s cubic-bezier(0.22, 1, 0.36, 1);
+}
+@keyframes sheet-up { from { transform: translateY(100%); } to { transform: translateY(0); } }
+.sheet-handle {
+  width: 40px;
+  height: 4px;
+  border-radius: 2px;
+  background: var(--border);
+  margin: 0 auto 14px;
+}
+.sheet-head { text-align: center; margin-bottom: 8px; }
+.sheet-title { font-weight: 700; font-size: 17px; }
+.sheet-sub { font-size: 13px; color: var(--muted); margin-top: 2px; }
+
+.wheel {
+  position: relative;
+  height: 240px; /* 5 crans de 48px */
+  margin: 8px 0 18px;
+}
+.wheel-list {
+  height: 100%;
+  overflow-y: scroll;
+  scroll-snap-type: y mandatory;
+  padding: 96px 0; /* 2 crans en haut/bas pour centrer */
+  scrollbar-width: none;
+  -webkit-overflow-scrolling: touch;
+}
+.wheel-list::-webkit-scrollbar { display: none; }
+.wheel-item {
+  height: 48px;
+  width: 100%;
+  border: none;
+  background: transparent;
+  font-family: inherit;
+  font-size: 20px;
+  font-weight: 600;
+  color: var(--muted);
+  opacity: 0.5;
+  scroll-snap-align: center;
+  cursor: pointer;
+  transition: opacity 0.15s ease, color 0.15s ease, transform 0.15s ease;
+}
+.wheel-item.active {
+  opacity: 1;
+  color: var(--brand);
+  font-size: 24px;
+  transform: scale(1.02);
+}
+/* Bande de sélection centrale */
+.wheel-selection {
+  position: absolute;
+  top: 96px;
+  left: 0;
+  right: 0;
+  height: 48px;
+  border-top: 1px solid var(--border);
+  border-bottom: 1px solid var(--border);
+  background: var(--accent-soft);
+  border-radius: 10px;
+  pointer-events: none;
+}
+/* Dégradés haut/bas pour l'effet molette */
+.wheel-mask {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 2;
+  background: linear-gradient(
+    var(--surface) 0%,
+    oklch(1 0 0 / 0) 40%,
+    oklch(1 0 0 / 0) 60%,
+    var(--surface) 100%
+  );
+}
+
 /* Bottom nav */
 .bottom-nav {
   position: fixed;

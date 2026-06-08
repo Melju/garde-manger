@@ -28,6 +28,35 @@ export function isWeightProduct(size?: string): boolean {
   return !!p && WEIGHT_UNITS.includes(p.unit)
 }
 
+/** Infos en unité de base (g ou mL) pour la molette de portions. */
+export function weightInfo(size?: string): { baseUnit: 'g' | 'mL'; total: number } | null {
+  const p = parseContenance(size)
+  if (!p) return null
+  const fam = family(p.unit)
+  if (!fam) return null
+  return { baseUnit: fam === 'mass' ? 'g' : 'mL', total: toBase(p.value, p.unit) }
+}
+
+/** Pas d'aimantation adapté à la contenance totale (crans « ronds »). */
+function snapStep(total: number): number {
+  if (total <= 300) return 10
+  if (total <= 600) return 25
+  if (total <= 1500) return 50
+  if (total <= 4000) return 100
+  return 250
+}
+
+/** Valeurs proposées par la molette (en unité de base), de 0 au total. */
+export function portionValues(size?: string): number[] {
+  const wi = weightInfo(size)
+  if (!wi) return []
+  const step = snapStep(wi.total)
+  const values: number[] = []
+  for (let v = 0; v < wi.total - 0.001; v += step) values.push(Math.round(v))
+  values.push(Math.round(wi.total)) // toujours finir pile au total
+  return values
+}
+
 /** Famille d'unité pour la conversion (mass / volume / null). */
 function family(unit: string): 'mass' | 'volume' | null {
   const u = unit.toLowerCase()
