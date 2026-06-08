@@ -2,6 +2,7 @@ import { useMemo, useState } from 'react'
 import { useStore } from '../data/store'
 import { useToast } from '../components/Toast'
 import { Icon } from '../components/Icon'
+import { QuantityWheel } from '../components/QuantityWheel'
 import { CATEGORIES, categoryLabel, type Category, type ShoppingItem } from '../types'
 
 export function ShoppingScreen() {
@@ -18,6 +19,8 @@ export function ShoppingScreen() {
 
   const [name, setName] = useState('')
   const [category, setCategory] = useState<Category>('autre')
+  const [qty, setQty] = useState(1)
+  const [browseAll, setBrowseAll] = useState(false)
 
   const remaining = shopping.filter((it) => !it.checked).length
 
@@ -40,12 +43,12 @@ export function ShoppingScreen() {
     return [...map.values()].filter((it) => !inList.has(it.name.toLowerCase()))
   }, [products, history, shopping])
 
-  // Suggestions filtrées par la saisie (ou les plus récentes si vide).
+  // Suggestions filtrées par la saisie (autocomplétion).
+  const typed = name.trim().toLowerCase()
   const suggestions = useMemo(() => {
-    const q = name.trim().toLowerCase()
-    const base = q ? catalog.filter((it) => it.name.toLowerCase().includes(q)) : catalog
-    return base.slice(0, 12)
-  }, [catalog, name])
+    if (!typed) return []
+    return catalog.filter((it) => it.name.toLowerCase().includes(typed)).slice(0, 6)
+  }, [catalog, typed])
 
   // Regroupement par catégorie, dans l'ordre défini.
   const grouped = useMemo(() => {
@@ -63,15 +66,17 @@ export function ShoppingScreen() {
   async function handleAdd() {
     const trimmed = name.trim()
     if (!trimmed) return
-    await addShoppingItem({ name: trimmed, category, quantity: 1, source: 'manuel' })
+    await addShoppingItem({ name: trimmed, category, quantity: qty, source: 'manuel' })
     setName('')
+    setQty(1)
     toast('Ajouté à la liste')
   }
 
   async function quickAdd(item: { name: string; category: Category }) {
-    await addShoppingItem({ name: item.name, category: item.category, quantity: 1, source: 'manuel' })
+    await addShoppingItem({ name: item.name, category: item.category, quantity: qty, source: 'manuel' })
     setName('')
-    toast(`${item.name} ajouté`)
+    setQty(1)
+    toast(`${item.name}${qty > 1 ? ` ×${qty}` : ''} ajouté`)
   }
 
   /** Ajoute à la liste les produits dont le stock est faible (≤ 1) et absents de la liste. */
@@ -138,23 +143,44 @@ export function ShoppingScreen() {
         </div>
       </div>
 
+      {/* Quantité à acheter (roulette) */}
+      <div className="qty-row">
+        <span className="qty-row-label">Quantité</span>
+        <QuantityWheel value={qty} onChange={setQty} max={30} />
+        <span className="qty-row-value">×{qty}</span>
+      </div>
+
+      {/* Autocomplétion pendant la saisie */}
       {suggestions.length > 0 && (
-        <div className="quick-add">
-          <div className="quick-add-title">
-            {name.trim() ? 'Suggestions' : 'Déjà achetés'}
-          </div>
-          <div className="quick-add-chips">
-            {suggestions.map((it) => (
-              <button
-                key={it.name}
-                className="quick-chip"
-                onClick={() => quickAdd(it)}
-              >
-                <Icon name="plus" width={2.4} />
-                {it.name}
-              </button>
-            ))}
-          </div>
+        <div className="suggest-list">
+          {suggestions.map((it) => (
+            <button key={it.name} className="suggest-row" onClick={() => quickAdd(it)}>
+              <Icon name="plus" width={2} />
+              <span className="suggest-name">{it.name}</span>
+              <span className="suggest-cat">{categoryLabel(it.category)}</span>
+            </button>
+          ))}
+        </div>
+      )}
+
+      {/* Panneau « Déjà achetés » repliable (compact) */}
+      {!typed && catalog.length > 0 && (
+        <div className="browse">
+          <button className="browse-toggle" onClick={() => setBrowseAll((b) => !b)}>
+            <Icon name="cart" width={2} />
+            Déjà achetés ({catalog.length})
+            <Icon name="chevron" width={2} className={browseAll ? 'rot' : ''} />
+          </button>
+          {browseAll && (
+            <div className="quick-add-chips">
+              {catalog.map((it) => (
+                <button key={it.name} className="quick-chip" onClick={() => quickAdd(it)}>
+                  <Icon name="plus" width={2.4} />
+                  {it.name}
+                </button>
+              ))}
+            </div>
+          )}
         </div>
       )}
 
