@@ -12,6 +12,7 @@ interface InventoryScreenProps {
   onOpenStats: () => void
   onOpenNotifications: () => void
   onOpenBudget: () => void
+  onScanConsume: () => void
 }
 
 type Filter = 'tout' | Category
@@ -21,6 +22,7 @@ export function InventoryScreen({
   onOpenStats,
   onOpenNotifications,
   onOpenBudget,
+  onScanConsume,
 }: InventoryScreenProps) {
   const { products, adjustQuantity, wasteProduct, updateProduct, expenses, budget, cloudMode, offline, unreadNotifCount } = useStore()
   const spent = useMemo(() => budgetSummary(expenses, budget).spent, [expenses, budget])
@@ -75,6 +77,9 @@ export function InventoryScreen({
           </p>
         </div>
         <div className="header-actions">
+          <button className="icon-btn" onClick={onScanConsume} aria-label="Scanner un retrait">
+            <Icon name="scan" />
+          </button>
           <button className="icon-btn" onClick={onOpenNotifications} aria-label="Notifications">
             <Icon name="bell" />
             {unreadNotifCount > 0 && <span className="notif-badge">{unreadNotifCount}</span>}

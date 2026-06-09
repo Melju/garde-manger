@@ -44,6 +44,7 @@ const NAV: { tab: Tab; icon: 'box' | 'book' | 'calendar' | 'cart' | 'menu'; labe
 type Route =
   | { name: 'product-form'; product: Product | null; initial?: Partial<ProductInput>; fromScan?: boolean }
   | { name: 'scan' }
+  | { name: 'scan-consume' }
   | { name: 'ticket-scan' }
   | { name: 'bulk-add' }
   | { name: 'notifications' }
@@ -59,9 +60,21 @@ type Route =
   | { name: 'add-menu' }
 
 export function App() {
-  const { loading } = useStore()
+  const { loading, products, adjustQuantity } = useStore()
   const auth = useAuth()
   const toast = useToast()
+
+  // Retrait par scan : décrémente le produit correspondant au code-barres.
+  async function consumeByBarcode(barcode: string) {
+    const p = products.find((x) => x.barcode && x.barcode === barcode)
+    if (!p) {
+      toast('Produit pas en stock')
+      return
+    }
+    await adjustQuantity(p.id, -1)
+    const left = p.quantity - 1
+    toast(left > 0 ? `${p.name} : reste ×${left}` : `${p.name} retiré du stock`)
+  }
   const [tab, setTab] = useState<Tab>('inventory')
   const [stack, setStack] = useState<Route[]>([])
   const [shopAddOpen, setShopAddOpen] = useState(false)
@@ -131,6 +144,7 @@ export function App() {
                 onOpenStats={() => push({ name: 'stats' })}
                 onOpenNotifications={() => push({ name: 'notifications' })}
                 onOpenBudget={() => push({ name: 'budget' })}
+                onScanConsume={() => push({ name: 'scan-consume' })}
               />
             )}
             {tab === 'recipes' && (
@@ -191,6 +205,12 @@ export function App() {
               onResult={(initial) => replace({ name: 'product-form', product: null, initial, fromScan: true })}
               onClose={back}
             />
+          </Suspense>
+        )
+      case 'scan-consume':
+        return (
+          <Suspense fallback={<div className="scan-screen" />}>
+            <ScanScreen mode="consume" onConsume={consumeByBarcode} onClose={back} />
           </Suspense>
         )
       case 'ticket-scan':
