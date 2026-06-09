@@ -197,6 +197,9 @@ export class LocalStorageRepository implements Repository {
   async saveHistory(entries: HistoryEntry[]): Promise<void> {
     write(HISTORY_KEY, entries)
   }
+  async removeHistory(id: string): Promise<void> {
+    write(HISTORY_KEY, read<HistoryEntry[]>(HISTORY_KEY, []).filter((h) => h.id !== id))
+  }
 
   async getExpenses(): Promise<Expense[]> {
     return read<Expense[]>(EXPENSES_KEY, [])

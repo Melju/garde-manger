@@ -45,6 +45,8 @@ interface StoreValue {
   family: FamilyMember[]
   mealPlan: MealPlan
   history: HistoryEntry[]
+  /** Annule/corrige une entrée d'historique (restaure le stock si possible). */
+  undoHistory(entry: HistoryEntry): Promise<void>
   expenses: Expense[]
   budget: BudgetConfig
   settings: Settings
@@ -227,7 +229,12 @@ export function StoreProvider({ children }: { children: ReactNode }) {
 
   const value = useMemo<StoreValue>(() => {
     // Ajoute une entrée d'historique et met à jour l'état + le stockage.
-    async function logHistory(kind: HistoryKind, label: string, amount?: number) {
+    async function logHistory(
+      kind: HistoryKind,
+      label: string,
+      amount?: number,
+      meta?: HistoryEntry['meta'],
+    ) {
       const now = new Date()
       const entry: HistoryEntry = {
         id: newId(),
@@ -236,6 +243,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
         kind,
         label,
         amount,
+        meta,
       }
       const next = [entry, ...(await repo.getHistory())]
       await repo.saveHistory(next)
@@ -321,9 +329,15 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       },
 
       async addProduct(input) {
-        await repo.addProduct(input)
+        const created = await repo.addProduct(input)
         setProducts(await repo.listProducts())
-        await logHistory('ajoute', `${input.name} ajouté (×${input.quantity})`)
+        await logHistory('ajoute', `${input.name} ajouté (×${input.quantity})`, undefined, {
+          productId: created?.id,
+          name: input.name,
+          qty: input.quantity,
+          category: input.category,
+          conservation: input.conservation,
+        })
         // Si un prix est renseigné, on enregistre une dépense.
         if (input.price && input.price > 0) {
           const expense: Expense = {
@@ -347,10 +361,12 @@ export function StoreProvider({ children }: { children: ReactNode }) {
         await repo.adjustQuantity(id, delta)
         setProducts(await repo.listProducts())
         if (delta < 0 && before) {
+          const qty = Math.min(-delta, before.quantity)
           await logHistory(
             'consomme',
-            `${before.name} consommé (×${Math.min(-delta, before.quantity)})`,
-            before.price ? before.price * Math.min(-delta, before.quantity) : undefined,
+            `${before.name} consommé (×${qty})`,
+            before.price ? before.price * qty : undefined,
+            { name: before.name, qty, category: before.category, conservation: before.conservation },
           )
         }
       },
@@ -358,11 +374,50 @@ export function StoreProvider({ children }: { children: ReactNode }) {
         await repo.removeProduct(id)
         setProducts(await repo.listProducts())
       },
+      async undoHistory(entry) {
+        const m = entry.meta
+        if (entry.kind === 'ajoute') {
+          // Annule un ajout : on retire le produit créé.
+          if (m?.productId) {
+            await repo.removeProduct(m.productId)
+            setProducts(await repo.listProducts())
+          }
+        } else if (entry.kind === 'consomme' || entry.kind === 'jete') {
+          // Restaure le stock : +qty si le produit existe encore, sinon on le recrée.
+          if (m?.name) {
+            const existing =
+              entry.kind === 'consomme'
+                ? products.find((p) => p.name.trim().toLowerCase() === m.name!.trim().toLowerCase())
+                : undefined
+            if (existing) {
+              await repo.adjustQuantity(existing.id, m.qty ?? 1)
+            } else {
+              await repo.addProduct({
+                name: m.name,
+                category: m.category ?? 'autre',
+                conservation: m.conservation,
+                quantity: m.qty ?? 1,
+                dateType: 'dlc',
+              })
+            }
+            setProducts(await repo.listProducts())
+          }
+        }
+        // Retire l'entrée de l'historique.
+        await repo.removeHistory(entry.id)
+        setHistory(history.filter((h) => h.id !== entry.id))
+      },
       async wasteProduct(id) {
         const before = products.find((p) => p.id === id)
         await repo.removeProduct(id)
         setProducts(await repo.listProducts())
-        if (before) await logHistory('jete', `${before.name} jeté (périmé)`)
+        if (before)
+          await logHistory('jete', `${before.name} jeté (périmé)`, undefined, {
+            name: before.name,
+            qty: before.quantity,
+            category: before.category,
+            conservation: before.conservation,
+          })
       },
 
       async addShoppingItem(input) {

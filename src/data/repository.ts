@@ -53,6 +53,7 @@ export interface Repository {
   // Historique
   getHistory(): Promise<HistoryEntry[]>
   saveHistory(entries: HistoryEntry[]): Promise<void>
+  removeHistory(id: string): Promise<void>
 
   // Dépenses
   getExpenses(): Promise<Expense[]>

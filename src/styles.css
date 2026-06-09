@@ -1531,7 +1531,23 @@ input[type='date'].form-input::-webkit-calendar-picker-indicator {
 }
 .history-section { padding: 0 20px; }
 .history-title { font-size: 14px; font-weight: 600; margin-bottom: 12px; }
-.history-item { display: flex; gap: 14px; padding: 12px 0; border-bottom: 1px solid var(--border); }
+.history-item { display: flex; gap: 14px; padding: 12px 0; border-bottom: 1px solid var(--border); align-items: center; }
+.history-content { flex: 1; min-width: 0; }
+.history-undo {
+  flex-shrink: 0;
+  width: 34px;
+  height: 34px;
+  border-radius: 9px;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--muted);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+.history-undo:hover { border-color: var(--brand); color: var(--brand); }
+.history-undo svg { width: 17px; height: 17px; }
 .history-date { width: 44px; text-align: center; }
 .history-date .day { font-size: 18px; font-weight: 700; }
 .history-date .month { font-size: 11px; color: var(--muted); }

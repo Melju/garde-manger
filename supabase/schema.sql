@@ -189,7 +189,8 @@ create table if not exists history (
   at           timestamptz not null default now(),
   kind         text not null,
   label        text not null,
-  amount       numeric
+  amount       numeric,
+  meta         jsonb
 );
 
 create table if not exists expenses (

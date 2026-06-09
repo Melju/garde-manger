@@ -1,5 +1,6 @@
 import { useMemo } from 'react'
 import { useStore } from '../data/store'
+import { useToast } from '../components/Toast'
 import { Icon } from '../components/Icon'
 import { monthlyStats, nutritionStats } from '../lib/analytics'
 import { formatMonthYear, formatTime, fromISODate, MONTHS_FR } from '../lib/dates'
@@ -10,7 +11,8 @@ interface StatsScreenProps {
 }
 
 export function StatsScreen({ onBack, onOpenWaste }: StatsScreenProps) {
-  const { products, history, expenses } = useStore()
+  const { products, history, expenses, undoHistory } = useStore()
+  const toast = useToast()
   const stats = useMemo(() => monthlyStats(products, history, expenses), [products, history, expenses])
   const nut = useMemo(() => nutritionStats(products), [products])
   const maxWeek = Math.max(1, ...stats.weekly)
@@ -128,6 +130,21 @@ export function StatsScreen({ onBack, onOpenWaste }: StatsScreenProps) {
                   <div className="history-action">{h.label}</div>
                   <div className="history-time">{formatTime(h.at)}</div>
                 </div>
+                <button
+                  className="history-undo"
+                  aria-label="Corriger / annuler"
+                  onClick={async () => {
+                    const reversible = h.kind === 'consomme' || h.kind === 'jete' || h.kind === 'ajoute'
+                    const msg = reversible
+                      ? 'Annuler cette action et corriger le stock ?'
+                      : 'Retirer cette entrée de l’historique ?'
+                    if (!confirm(msg)) return
+                    await undoHistory(h)
+                    toast(reversible ? 'Action annulée' : 'Entrée retirée')
+                  }}
+                >
+                  <Icon name="back" />
+                </button>
               </div>
             )
           })

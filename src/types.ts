@@ -235,6 +235,14 @@ export interface HistoryEntry {
   label: string
   /** Valeur monétaire associée (€), pour les économies/dépenses. */
   amount?: number
+  /** Données permettant d'annuler l'action (corriger une erreur). */
+  meta?: {
+    productId?: string
+    name?: string
+    qty?: number
+    category?: Category
+    conservation?: Conservation
+  }
 }
 
 // ===== Budget / dépenses =====

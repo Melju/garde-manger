@@ -307,6 +307,7 @@ export class SupabaseRepository implements Repository {
       kind: r.kind,
       label: r.label,
       amount: r.amount != null ? Number(r.amount) : undefined,
+      meta: r.meta ?? undefined,
     }))
   }
 
@@ -321,9 +322,15 @@ export class SupabaseRepository implements Repository {
         kind: h.kind,
         label: h.label,
         amount: h.amount ?? null,
+        meta: h.meta ?? null,
       })),
       false, // historique : on n'efface pas (append-only)
     )
+  }
+
+  async removeHistory(id: string): Promise<void> {
+    const { error } = await this.sb.from('history').delete().eq('id', id).eq('household_id', this.hid)
+    if (error) throw error
   }
 
   // ---------- Dépenses ----------
