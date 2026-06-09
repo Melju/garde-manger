@@ -15,7 +15,12 @@ interface KnownItem {
   count: number
 }
 
-export function ShoppingScreen() {
+interface ShoppingScreenProps {
+  addOpen: boolean
+  onCloseAdd: () => void
+}
+
+export function ShoppingScreen({ addOpen, onCloseAdd }: ShoppingScreenProps) {
   const {
     shopping,
     products,
@@ -171,67 +176,6 @@ export function ShoppingScreen() {
         </div>
       </header>
 
-      <div className="search-row">
-        <div className="search-input">
-          <input
-            id="shop-add"
-            type="text"
-            placeholder="Ajouter un article..."
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-            onKeyDown={(e) => {
-              if (e.key === 'Enter') handleAdd()
-            }}
-          />
-          {name.trim() && (
-            <span className="add-cat-hint">{categoryLabel(draftCategory)}</span>
-          )}
-          <button className="icon-btn" onClick={handleAdd} aria-label="Ajouter" style={{ width: 36, height: 36 }} disabled={!name.trim()}>
-            <Icon name="plus" />
-          </button>
-        </div>
-      </div>
-
-      {/* Quantité (roulette adaptative : nombre, poids ou volume) */}
-      <div className="qty-row">
-        <span className="qty-row-label">Quantité</span>
-        <QuantityWheel values={scale.values} value={qty} onChange={setQty} format={scale.format} />
-      </div>
-
-      {/* Autocomplétion pendant la saisie (1 tap = ajout) */}
-      {suggestions.length > 0 && (
-        <div className="suggest-list">
-          {suggestions.map((it) => (
-            <button key={it.name} className="suggest-row" onClick={() => quickAdd(it)}>
-              <Icon name="plus" width={2} />
-              <span className="suggest-name">{it.name}</span>
-              <span className="suggest-cat">{categoryLabel(it.category)}</span>
-            </button>
-          ))}
-        </div>
-      )}
-
-      {/* Panneau « Déjà achetés » repliable, trié par fréquence */}
-      {!typed && catalog.length > 0 && (
-        <div className="browse">
-          <button className="browse-toggle" onClick={() => setBrowseAll((b) => !b)}>
-            <Icon name="cart" width={2} />
-            Déjà achetés ({catalog.length})
-            <Icon name="chevron" width={2} className={browseAll ? 'rot' : ''} />
-          </button>
-          {browseAll && (
-            <div className="quick-add-chips">
-              {catalog.slice(0, 40).map((it) => (
-                <button key={it.name} className="quick-chip" onClick={() => quickAdd(it)}>
-                  <Icon name="plus" width={2.4} />
-                  {it.name}
-                </button>
-              ))}
-            </div>
-          )}
-        </div>
-      )}
-
       <button className="generate-list-btn" onClick={handleGenerate}>
         <Icon name="sparkles" />
         Générer depuis les stocks faibles
@@ -272,6 +216,77 @@ export function ShoppingScreen() {
             ))}
           </div>
         ))
+      )}
+
+      {/* Drawer d'ajout (déclenché par le bouton d'action de la page) */}
+      {addOpen && (
+        <div className="drawer-overlay" onClick={onCloseAdd}>
+          <div className="drawer" onClick={(e) => e.stopPropagation()}>
+            <div className="drawer-handle" />
+            <div className="drawer-head">
+              <div className="drawer-title">Ajouter un article</div>
+              <button className="btn-secondary" style={{ width: 'auto', padding: '0 14px', height: 36 }} onClick={onCloseAdd}>
+                Terminé
+              </button>
+            </div>
+            <div className="drawer-body">
+              <div className="search-input" style={{ marginBottom: 14 }}>
+                <input
+                  id="shop-add"
+                  type="text"
+                  autoFocus
+                  placeholder="Ajouter un article..."
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') handleAdd()
+                  }}
+                />
+                {name.trim() && <span className="add-cat-hint">{categoryLabel(draftCategory)}</span>}
+                <button className="icon-btn" onClick={handleAdd} aria-label="Ajouter" style={{ width: 36, height: 36 }} disabled={!name.trim()}>
+                  <Icon name="plus" />
+                </button>
+              </div>
+
+              <div className="qty-row" style={{ padding: 0, marginBottom: 14 }}>
+                <span className="qty-row-label">Quantité</span>
+                <QuantityWheel values={scale.values} value={qty} onChange={setQty} format={scale.format} />
+              </div>
+
+              {suggestions.length > 0 && (
+                <div className="suggest-list" style={{ padding: 0, marginBottom: 14 }}>
+                  {suggestions.map((it) => (
+                    <button key={it.name} className="suggest-row" onClick={() => quickAdd(it)}>
+                      <Icon name="plus" width={2} />
+                      <span className="suggest-name">{it.name}</span>
+                      <span className="suggest-cat">{categoryLabel(it.category)}</span>
+                    </button>
+                  ))}
+                </div>
+              )}
+
+              {!typed && catalog.length > 0 && (
+                <div className="browse" style={{ padding: 0 }}>
+                  <button className="browse-toggle" onClick={() => setBrowseAll((b) => !b)}>
+                    <Icon name="cart" width={2} />
+                    Déjà achetés ({catalog.length})
+                    <Icon name="chevron" width={2} className={browseAll ? 'rot' : ''} />
+                  </button>
+                  {browseAll && (
+                    <div className="quick-add-chips">
+                      {catalog.slice(0, 40).map((it) => (
+                        <button key={it.name} className="quick-chip" onClick={() => quickAdd(it)}>
+                          <Icon name="plus" width={2.4} />
+                          {it.name}
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
       )}
     </div>
   )

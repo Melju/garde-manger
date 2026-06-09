@@ -64,6 +64,7 @@ export function App() {
   const toast = useToast()
   const [tab, setTab] = useState<Tab>('inventory')
   const [stack, setStack] = useState<Route[]>([])
+  const [shopAddOpen, setShopAddOpen] = useState(false)
 
   // On attend que l'auth soit résolue (évite d'afficher « local » un bref instant
   // avant la bascule en cloud) et que les données soient chargées.
@@ -87,15 +88,10 @@ export function App() {
   const top = stack[stack.length - 1]
 
   // Action d'ajout contextuelle par page (barre du bas en mobile, bouton sidebar en bureau).
-  const focusShoppingInput = () => {
-    const el = document.getElementById('shop-add') as HTMLInputElement | null
-    el?.scrollIntoView({ block: 'center', behavior: 'smooth' })
-    el?.focus()
-  }
   const addAction: Partial<Record<Tab, { label: string; run: () => void }>> = {
     inventory: { label: 'Ajouter un produit', run: () => push({ name: 'add-menu' }) },
     recipes: { label: 'Nouvelle recette', run: () => push({ name: 'recipe-form' }) },
-    shopping: { label: 'Ajouter un article', run: focusShoppingInput },
+    shopping: { label: 'Ajouter un article', run: () => setShopAddOpen(true) },
   }
   const add = addAction[tab]
 
@@ -144,7 +140,9 @@ export function App() {
               />
             )}
             {tab === 'planning' && <PlanningScreen />}
-            {tab === 'shopping' && <ShoppingScreen />}
+            {tab === 'shopping' && (
+              <ShoppingScreen addOpen={shopAddOpen} onCloseAdd={() => setShopAddOpen(false)} />
+            )}
             {tab === 'more' && (
               <MoreScreen
                 onFamily={() => push({ name: 'family' })}
