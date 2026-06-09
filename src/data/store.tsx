@@ -34,6 +34,7 @@ import { newId, type Repository } from './repository'
 import { toISODate } from '../lib/dates'
 import { isIngredientInStock } from '../lib/recipesLib'
 import { priorityProducts } from '../lib/expiry'
+import { DIET_LABELS } from '../types'
 import { lookupBarcode } from '../lib/openfoodfacts'
 
 interface StoreValue {
@@ -82,6 +83,8 @@ interface StoreValue {
   scanReceipt(image: string, mediaType: string): Promise<ReceiptItem[]>
   /** Transforme une liste tapée en vrac en articles structurés (Claude). */
   parseBulk(text: string): Promise<ReceiptItem[]>
+  /** Génère un menu de la semaine (IA) pour les 7 dates fournies. Renvoie le nombre de repas planifiés. */
+  generateWeekPlan(days: string[]): Promise<number>
   toggleFavorite(id: string): Promise<void>
   prepareRecipe(recipe: Recipe): Promise<void>
 
@@ -443,6 +446,45 @@ export function StoreProvider({ children }: { children: ReactNode }) {
         const items = (data as any)?.items
         if (!Array.isArray(items)) throw new Error((data as any)?.error || 'Réponse invalide')
         return items as ReceiptItem[]
+      },
+      async generateWeekPlan(days) {
+        if (!supabase) throw new Error('Connecte-toi pour planifier la semaine')
+        const prio = priorityProducts(products).map((p) => p.name)
+        const rest = products.map((p) => p.name).filter((n) => !prio.includes(n))
+        const stock = [...new Set([...prio, ...rest])].slice(0, 50)
+        const expiring = prio.slice(0, 12)
+        const freq = new Map<string, number>()
+        for (const label of Object.values(mealPlan)) {
+          const t = label.trim()
+          if (t) freq.set(t, (freq.get(t) ?? 0) + 1)
+        }
+        const preferences = [
+          ...new Set([
+            ...[...freq.entries()].sort((a, b) => b[1] - a[1]).map(([t]) => t),
+            ...recipes.filter((r) => r.favorite).map((r) => r.title),
+          ]),
+        ].slice(0, 12)
+        const diets = family.map(
+          (m) =>
+            `${m.name} : ${DIET_LABELS[m.diet]}${m.restrictions?.length ? ' (' + m.restrictions.join(', ') + ')' : ''}`,
+        )
+        const { data, error } = await supabase.functions.invoke('weekplan', {
+          body: { stock, expiring, preferences, diets },
+        })
+        if (error) throw new Error(error.message || 'Génération impossible')
+        const meals = (data as any)?.meals
+        if (!Array.isArray(meals)) throw new Error((data as any)?.error || 'Réponse invalide')
+        const next = { ...mealPlan }
+        let count = 0
+        for (const m of meals) {
+          const date = days[m.day]
+          if (!date || (m.slot !== 'midi' && m.slot !== 'soir')) continue
+          next[`${date}_${m.slot}`] = m.title
+          count++
+        }
+        setMealPlan(next)
+        await repo.saveMealPlan(next)
+        return count
       },
       async toggleFavorite(id) {
         const next = recipes.map((r) => (r.id === id ? { ...r, favorite: !r.favorite } : r))

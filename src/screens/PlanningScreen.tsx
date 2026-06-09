@@ -8,10 +8,25 @@ import { DAYS_FR, addDays, formatDayMonth, fromISODate, startOfWeek, toISODate, 
 import { recipeStock } from '../lib/recipesLib'
 
 export function PlanningScreen() {
-  const { mealPlan, recipes, products, addManyShopping } = useStore()
+  const { mealPlan, recipes, products, addManyShopping, generateWeekPlan } = useStore()
   const toast = useToast()
   const [weekRef, setWeekRef] = useState(() => startOfWeek(new Date()))
   const [drawer, setDrawer] = useState<{ date: string; slot: string } | null>(null)
+  const [planning, setPlanning] = useState(false)
+
+  async function handleGenerateWeek() {
+    if (planning) return
+    setPlanning(true)
+    toast('Claude prépare ta semaine…')
+    try {
+      const n = await generateWeekPlan(days)
+      toast(n > 0 ? `${n} repas planifiés` : 'Aucun repas généré')
+    } catch (e) {
+      toast(e instanceof Error ? e.message : 'Génération impossible')
+    } finally {
+      setPlanning(false)
+    }
+  }
 
   const days = useMemo(() => weekDays(weekRef), [weekRef])
   const todayISO = toISODate(new Date())
@@ -90,7 +105,12 @@ export function PlanningScreen() {
         )
       })}
 
-      <div className="btn-row" style={{ marginTop: 20 }}>
+      <button className="generate-list-btn" onClick={handleGenerateWeek} disabled={planning}>
+        <Icon name="sparkles" />
+        {planning ? 'Génération du menu…' : 'Planifier ma semaine (IA)'}
+      </button>
+
+      <div className="btn-row" style={{ marginTop: 8 }}>
         <button className="btn-primary" onClick={generateList}>
           Générer la liste de courses
         </button>

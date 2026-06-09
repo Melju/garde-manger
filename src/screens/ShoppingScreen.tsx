@@ -3,9 +3,10 @@ import { useStore } from '../data/store'
 import { useToast } from '../components/Toast'
 import { Icon } from '../components/Icon'
 import { QuantityWheel } from '../components/QuantityWheel'
-import { CATEGORIES, categoryLabel, type Category, type ShoppingItem } from '../types'
+import { CATEGORIES, categoryLabel, defaultConservation, type Category, type ShoppingItem } from '../types'
 import { buyScale, formatContenance, parseContenance } from '../lib/contenance'
 import { guessCategoryFromName, guessUnitFromName } from '../lib/categoryGuess'
+import { estimatedExpiryISO } from '../lib/shelfLife'
 
 interface KnownItem {
   name: string
@@ -27,6 +28,7 @@ export function ShoppingScreen({ addOpen, onCloseAdd }: ShoppingScreenProps) {
     history,
     shopCatalog,
     recordShopItem,
+    addProduct,
     addShoppingItem,
     toggleShoppingItem,
     removeShoppingItem,
@@ -140,6 +142,27 @@ export function ShoppingScreen({ addOpen, onCloseAdd }: ShoppingScreenProps) {
     toast(`${item.name} · ${qtyLabel(q, s.baseUnit || undefined)}`)
   }
 
+  // Cocher = acheté → ranger les articles cochés dans le stock (cycle courses → garde-manger).
+  async function addCheckedToStock() {
+    const checked = shopping.filter((it) => it.checked)
+    if (checked.length === 0) return
+    for (const it of checked) {
+      const conservation = defaultConservation(it.category)
+      const byWeight = !!it.unit && ['g', 'kg', 'mL', 'L'].includes(it.unit)
+      await addProduct({
+        name: it.name,
+        category: it.category,
+        conservation,
+        quantity: byWeight ? 1 : it.quantity,
+        size: byWeight ? formatContenance(it.quantity, it.unit!) : undefined,
+        dateType: 'dlc',
+        expiryDate: estimatedExpiryISO(it.name, conservation, it.category) || undefined,
+      })
+    }
+    await clearCheckedShopping()
+    toast(`${checked.length} article${checked.length > 1 ? 's' : ''} rangé${checked.length > 1 ? 's' : ''} dans le stock`)
+  }
+
   async function handleGenerate() {
     const existing = new Set(shopping.map((it) => it.name.toLowerCase()))
     const low = products.filter((p) => p.quantity <= 1 && !existing.has(p.name.toLowerCase()))
@@ -160,21 +183,25 @@ export function ShoppingScreen({ addOpen, onCloseAdd }: ShoppingScreenProps) {
           <h1>Liste de courses</h1>
           <p>{remaining} article{remaining !== 1 ? 's' : ''} restant{remaining !== 1 ? 's' : ''}</p>
         </div>
-        <div className="header-actions">
-          {shopping.some((it) => it.checked) && (
-            <button
-              className="icon-btn"
-              onClick={async () => {
-                await clearCheckedShopping()
-                toast('Articles cochés effacés')
-              }}
-              aria-label="Effacer les articles cochés"
-            >
-              <Icon name="check" />
-            </button>
-          )}
-        </div>
+        <div className="header-actions" />
       </header>
+
+      {shopping.some((it) => it.checked) && (
+        <div className="btn-row" style={{ margin: '0 20px 14px' }}>
+          <button
+            className="btn-secondary"
+            onClick={async () => {
+              await clearCheckedShopping()
+              toast('Articles cochés effacés')
+            }}
+          >
+            Effacer cochés
+          </button>
+          <button className="btn-primary" onClick={addCheckedToStock}>
+            Ranger au stock ({shopping.filter((it) => it.checked).length})
+          </button>
+        </div>
+      )}
 
       <button className="generate-list-btn" onClick={handleGenerate}>
         <Icon name="sparkles" />
