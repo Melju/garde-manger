@@ -1227,6 +1227,31 @@ input[type='date'].form-input::-webkit-calendar-picker-indicator {
   border-radius: 16px;
   box-shadow: 0 0 0 9999px rgba(0, 0, 0, 0.45);
 }
+/* Bannière de mode (différencie ajout vs retrait) */
+.scan-mode-banner {
+  position: absolute;
+  top: 60px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 5;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 9px 16px;
+  border-radius: 999px;
+  font-size: 13px;
+  font-weight: 700;
+  color: #fff;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.3);
+  max-width: 92%;
+  text-align: center;
+}
+.scan-mode-banner svg { width: 17px; height: 17px; flex-shrink: 0; }
+.scan-mode-banner.plus { background: var(--brand); }
+.scan-mode-banner.minus { background: var(--danger); }
+/* Retrait : cadre rouge pour lever toute ambiguïté */
+.scan-screen.consume .scan-frame { border-color: var(--danger); }
+
 .scan-hint {
   position: absolute;
   bottom: calc(48px + env(safe-area-inset-bottom));

@@ -85,12 +85,17 @@ export function ScanScreen({ mode = 'add', onResult, onConsume, onClose }: ScanS
   const isConsume = mode === 'consume'
 
   return (
-    <div className="scan-screen">
+    <div className={`scan-screen${isConsume ? ' consume' : ''}`}>
       <div className="scan-topbar">
         <button className="back-btn" onClick={onClose} aria-label="Retour">
           <Icon name="back" />
         </button>
         <span className="scan-title">{isConsume ? 'Scanner un retrait' : 'Scanner un code-barres'}</span>
+      </div>
+
+      <div className={`scan-mode-banner${isConsume ? ' minus' : ' plus'}`}>
+        <Icon name={isConsume ? 'minus' : 'plus'} width={2.4} />
+        {isConsume ? 'Mode retrait · chaque scan enlève 1 du stock' : 'Mode ajout · scanne pour ajouter un produit'}
       </div>
 
       {phase === 'error' ? (
