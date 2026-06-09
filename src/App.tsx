@@ -51,7 +51,7 @@ type Route =
   | { name: 'budget' }
   | { name: 'waste' }
   | { name: 'recipe-detail'; recipe: Recipe }
-  | { name: 'recipe-form' }
+  | { name: 'recipe-form'; recipe?: Recipe }
   | { name: 'family' }
   | { name: 'member-edit'; member: FamilyMember | null }
   | { name: 'settings' }
@@ -211,13 +211,15 @@ export function App() {
             recipe={route.recipe}
             onBack={back}
             onGoShopping={() => goTab('shopping')}
+            onEdit={(recipe) => push({ name: 'recipe-form', recipe })}
           />
         )
       case 'recipe-form':
         return (
           <RecipeFormScreen
+            recipe={route.recipe}
             onClose={back}
-            onSaved={(recipe) => replace({ name: 'recipe-detail', recipe })}
+            onSaved={(recipe) => setStack([{ name: 'recipe-detail', recipe }])}
           />
         )
       case 'family':

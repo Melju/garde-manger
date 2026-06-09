@@ -6,6 +6,8 @@ import { Icon } from '../components/Icon'
 import type { Recipe, RecipeIngredient } from '../types'
 
 interface RecipeFormScreenProps {
+  /** Recette à modifier, ou null pour une création. */
+  recipe?: Recipe | null
   onClose: () => void
   onSaved: (recipe: Recipe) => void
 }
@@ -17,15 +19,22 @@ const COURSES: [string, string][] = [
   ['soupe', 'Soupe'],
   ['dessert', 'Dessert'],
 ]
+const COURSE_VALUES = COURSES.map(([v]) => v)
 
-export function RecipeFormScreen({ onClose, onSaved }: RecipeFormScreenProps) {
-  const { addRecipe } = useStore()
+export function RecipeFormScreen({ recipe, onClose, onSaved }: RecipeFormScreenProps) {
+  const { addRecipe, updateRecipe } = useStore()
   const toast = useToast()
-  const [title, setTitle] = useState('')
-  const [course, setCourse] = useState('plat principal')
-  const [timeMin, setTimeMin] = useState('')
-  const [ingredients, setIngredients] = useState<RecipeIngredient[]>([{ name: '', qty: '' }])
-  const [steps, setSteps] = useState('')
+  const isEdit = !!recipe
+
+  const [title, setTitle] = useState(recipe?.title ?? '')
+  const [course, setCourse] = useState(
+    recipe?.tags.find((t) => COURSE_VALUES.includes(t)) ?? 'plat principal',
+  )
+  const [timeMin, setTimeMin] = useState(recipe?.timeMin ? String(recipe.timeMin) : '')
+  const [ingredients, setIngredients] = useState<RecipeIngredient[]>(
+    recipe?.ingredients.length ? recipe.ingredients : [{ name: '', qty: '' }],
+  )
+  const [steps, setSteps] = useState((recipe?.steps ?? []).join('\n'))
   const [busy, setBusy] = useState(false)
 
   function setIng(i: number, p: Partial<RecipeIngredient>) {
@@ -37,23 +46,31 @@ export function RecipeFormScreen({ onClose, onSaved }: RecipeFormScreenProps) {
     if (!t) return
     setBusy(true)
     try {
-      const recipe = await addRecipe({
+      // Conserve les tags existants hors « type », et applique le type choisi.
+      const baseTags = (recipe?.tags ?? ['perso']).filter((tag) => !COURSE_VALUES.includes(tag))
+      const tags = [...new Set([...baseTags, 'perso', course])]
+      const input = {
         title: t,
         timeMin: Number(timeMin) || 0,
-        tags: ['perso', course],
-        favorite: false,
+        cuisine: recipe?.cuisine,
+        tags,
+        favorite: recipe?.favorite ?? false,
         ingredients: ingredients
           .map((i) => ({ name: i.name.trim(), qty: i.qty?.trim() || undefined }))
           .filter((i) => i.name),
-        steps: steps
-          .split('\n')
-          .map((s) => s.trim())
-          .filter(Boolean),
-      })
-      toast('Recette créée')
-      onSaved(recipe)
+        steps: steps.split('\n').map((s) => s.trim()).filter(Boolean),
+      }
+      if (isEdit && recipe) {
+        await updateRecipe(recipe.id, input)
+        toast('Recette modifiée')
+        onSaved({ ...recipe, ...input })
+      } else {
+        const created = await addRecipe(input)
+        toast('Recette créée')
+        onSaved(created)
+      }
     } catch (e) {
-      toast(e instanceof Error ? e.message : 'Création impossible')
+      toast(e instanceof Error ? e.message : 'Enregistrement impossible')
     } finally {
       setBusy(false)
     }
@@ -61,7 +78,7 @@ export function RecipeFormScreen({ onClose, onSaved }: RecipeFormScreenProps) {
 
   return (
     <div className="screen-fade">
-      <PageHeader title="Nouvelle recette" onBack={onClose} />
+      <PageHeader title={isEdit ? 'Modifier la recette' : 'Nouvelle recette'} onBack={onClose} />
 
       <div className="form-section">
         <label className="form-label" htmlFor="rtitle">Nom de la recette</label>
@@ -70,7 +87,7 @@ export function RecipeFormScreen({ onClose, onSaved }: RecipeFormScreenProps) {
           className="form-input"
           placeholder="Ex : Gratin de courgettes"
           value={title}
-          autoFocus
+          autoFocus={!isEdit}
           onChange={(e) => setTitle(e.target.value)}
         />
       </div>
@@ -150,7 +167,7 @@ export function RecipeFormScreen({ onClose, onSaved }: RecipeFormScreenProps) {
       <div className="btn-row" style={{ margin: '0 20px 20px' }}>
         <button className="btn-secondary" onClick={onClose} disabled={busy}>Annuler</button>
         <button className="btn-primary" onClick={save} disabled={busy || !title.trim()}>
-          {busy ? 'Création…' : 'Créer la recette'}
+          {busy ? 'Enregistrement…' : isEdit ? 'Enregistrer' : 'Créer la recette'}
         </button>
       </div>
     </div>

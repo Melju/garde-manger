@@ -84,6 +84,8 @@ interface StoreValue {
 
   // Recettes
   addRecipe(input: RecipeInput): Promise<Recipe>
+  updateRecipe(id: string, patch: Partial<RecipeInput>): Promise<void>
+  removeRecipe(id: string): Promise<void>
   /** Génère une recette via Claude (edge function) à partir du stock. */
   generateRecipe(opts?: { constraints?: string; course?: string }): Promise<Recipe>
   /** Analyse la photo d'un ticket de caisse (Claude Vision) → articles détectés. */
@@ -408,6 +410,16 @@ export function StoreProvider({ children }: { children: ReactNode }) {
         setRecipes(next)
         await repo.saveRecipes(next)
         return recipe
+      },
+      async updateRecipe(id, patch) {
+        const next = recipes.map((r) => (r.id === id ? { ...r, ...patch } : r))
+        setRecipes(next)
+        await repo.saveRecipes(next)
+      },
+      async removeRecipe(id) {
+        const next = recipes.filter((r) => r.id !== id)
+        setRecipes(next)
+        await repo.saveRecipes(next)
       },
       async generateRecipe(opts) {
         if (!supabase) throw new Error('Connecte-toi pour utiliser la génération IA')

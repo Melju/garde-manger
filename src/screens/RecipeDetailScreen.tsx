@@ -1,6 +1,7 @@
 import { useStore } from '../data/store'
 import { useToast } from '../components/Toast'
 import { PageHeader } from '../components/PageHeader'
+import { Icon } from '../components/Icon'
 import { isIngredientInStock, recipeStock, adaptationFor } from '../lib/recipesLib'
 import type { Recipe } from '../types'
 
@@ -8,11 +9,19 @@ interface RecipeDetailScreenProps {
   recipe: Recipe
   onBack: () => void
   onGoShopping: () => void
+  onEdit: (recipe: Recipe) => void
 }
 
-export function RecipeDetailScreen({ recipe, onBack, onGoShopping }: RecipeDetailScreenProps) {
-  const { products, family, addManyShopping, prepareRecipe } = useStore()
+export function RecipeDetailScreen({ recipe, onBack, onGoShopping, onEdit }: RecipeDetailScreenProps) {
+  const { products, family, addManyShopping, prepareRecipe, removeRecipe } = useStore()
   const toast = useToast()
+
+  async function handleDelete() {
+    if (!confirm(`Supprimer la recette « ${recipe.title} » ?`)) return
+    await removeRecipe(recipe.id)
+    toast('Recette supprimée')
+    onBack()
+  }
 
   const adaptations = family.map((m) => ({ m, note: adaptationFor(recipe, m) }))
 
@@ -37,7 +46,15 @@ export function RecipeDetailScreen({ recipe, onBack, onGoShopping }: RecipeDetai
 
   return (
     <div className="screen-fade">
-      <PageHeader title="Recette" onBack={onBack} />
+      <PageHeader
+        title="Recette"
+        onBack={onBack}
+        action={
+          <button className="icon-btn" onClick={() => onEdit(recipe)} aria-label="Modifier">
+            <Icon name="pencil" />
+          </button>
+        }
+      />
 
       <div className="form-section" style={{ textAlign: 'center', paddingTop: 10 }}>
         <h2 style={{ fontSize: 22, fontWeight: 700, marginBottom: 4 }}>{recipe.title}</h2>
@@ -99,6 +116,12 @@ export function RecipeDetailScreen({ recipe, onBack, onGoShopping }: RecipeDetai
         </button>
         <button className="btn-primary" onClick={prepared}>
           Recette préparée
+        </button>
+      </div>
+
+      <div className="btn-row" style={{ marginTop: 12 }}>
+        <button className="btn-secondary btn-danger" onClick={handleDelete}>
+          Supprimer la recette
         </button>
       </div>
     </div>
