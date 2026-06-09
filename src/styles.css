@@ -1230,39 +1230,64 @@ input[type='date'].form-input::-webkit-calendar-picker-indicator {
 /* Bannière de mode (différencie ajout vs retrait) */
 .scan-mode-banner {
   position: absolute;
-  top: 60px;
+  top: 64px;
   left: 50%;
   transform: translateX(-50%);
   z-index: 5;
   display: flex;
   align-items: center;
-  gap: 8px;
-  padding: 9px 16px;
+  gap: 10px;
+  padding: 8px 16px 8px 8px;
   border-radius: 999px;
   font-size: 13px;
   font-weight: 700;
   color: #fff;
-  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.3);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.35);
   max-width: 92%;
-  text-align: center;
 }
-.scan-mode-banner svg { width: 17px; height: 17px; flex-shrink: 0; }
+.smb-icon {
+  flex-shrink: 0;
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  background: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.smb-icon svg { width: 20px; height: 20px; }
+.smb-text { line-height: 1.25; }
 .scan-mode-banner.plus { background: var(--brand); }
+.scan-mode-banner.plus .smb-icon { color: var(--brand); }
 .scan-mode-banner.minus { background: var(--danger); }
-/* Retrait : cadre rouge pour lever toute ambiguïté */
-.scan-screen.consume .scan-frame { border-color: var(--danger); }
+.scan-mode-banner.minus .smb-icon { color: var(--danger); }
 
-.scan-hint {
+/* Retrait : voile rouge translucide (au lieu du gris) + cadre blanc net */
+.scan-screen.consume .scan-frame {
+  border-color: #fff;
+  box-shadow: 0 0 0 9999px rgba(214, 69, 58, 0.34);
+}
+
+/* Bas d'écran : consigne puis bouton, empilés (sans chevauchement) */
+.scan-bottom {
   position: absolute;
-  bottom: calc(48px + env(safe-area-inset-bottom));
+  bottom: calc(28px + env(safe-area-inset-bottom));
   left: 0;
   right: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 14px;
+  padding: 0 20px;
+}
+.scan-hint {
   text-align: center;
   color: #fff;
   font-size: 14px;
   font-weight: 500;
   text-shadow: 0 1px 4px rgba(0, 0, 0, 0.6);
 }
+.scan-done { width: auto; padding: 0 32px; }
 .scan-error {
   margin: auto;
   padding: 24px;

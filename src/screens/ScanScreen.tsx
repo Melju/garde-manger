@@ -94,8 +94,12 @@ export function ScanScreen({ mode = 'add', onResult, onConsume, onClose }: ScanS
       </div>
 
       <div className={`scan-mode-banner${isConsume ? ' minus' : ' plus'}`}>
-        <Icon name={isConsume ? 'minus' : 'plus'} width={2.4} />
-        {isConsume ? 'Mode retrait · chaque scan enlève 1 du stock' : 'Mode ajout · scanne pour ajouter un produit'}
+        <span className="smb-icon">
+          <Icon name={isConsume ? 'minus' : 'plus'} width={3} />
+        </span>
+        <span className="smb-text">
+          {isConsume ? 'Mode retrait · chaque scan enlève 1 du stock' : 'Mode ajout · scanne pour ajouter un produit'}
+        </span>
       </div>
 
       {phase === 'error' ? (
@@ -110,18 +114,20 @@ export function ScanScreen({ mode = 'add', onResult, onConsume, onClose }: ScanS
         <>
           <video ref={videoRef} className="scan-video" playsInline muted />
           <div className="scan-frame" />
-          <p className="scan-hint">
-            {phase === 'looking-up'
-              ? 'Recherche du produit…'
-              : isConsume
-                ? 'Visez un produit à retirer (scan en continu)'
-                : 'Visez le code-barres du produit'}
-          </p>
-          {isConsume && (
-            <button className="btn-primary" onClick={onClose} style={{ position: 'absolute', bottom: 'calc(32px + env(safe-area-inset-bottom))', left: '50%', transform: 'translateX(-50%)', width: 'auto', padding: '0 28px' }}>
-              Terminé
-            </button>
-          )}
+          <div className="scan-bottom">
+            <p className="scan-hint">
+              {phase === 'looking-up'
+                ? 'Recherche du produit…'
+                : isConsume
+                  ? 'Visez un produit à retirer (scan en continu)'
+                  : 'Visez le code-barres du produit'}
+            </p>
+            {isConsume && (
+              <button className="btn-primary scan-done" onClick={onClose}>
+                Terminé
+              </button>
+            )}
+          </div>
         </>
       )}
     </div>
