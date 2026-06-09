@@ -35,6 +35,7 @@ export type IconName =
   | 'receipt'
   | 'cloud'
   | 'phone'
+  | 'mic'
   // Catégories d'aliments
   | 'apple'
   | 'veggie'
@@ -220,6 +221,13 @@ const paths: Record<IconName, React.ReactNode> = {
       strokeLinecap="round"
       strokeLinejoin="round"
       d="M10.5 1.5H8.25A2.25 2.25 0 006 3.75v16.5a2.25 2.25 0 002.25 2.25h7.5A2.25 2.25 0 0018 20.25V3.75a2.25 2.25 0 00-2.25-2.25H13.5m-3 0V3h3V1.5m-3 0h3m-3 18.75h3"
+    />
+  ),
+  mic: (
+    <path
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      d="M12 18.75a6 6 0 006-6v-1.5m-6 7.5a6 6 0 01-6-6v-1.5m6 7.5v3.75m-3.75 0h7.5M12 15.75a3 3 0 01-3-3V4.5a3 3 0 116 0v8.25a3 3 0 01-3 3z"
     />
   ),
   // ----- Catégories d'aliments (icônes Lucide, trait duotone) -----

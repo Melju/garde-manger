@@ -10,6 +10,7 @@ import {
 import type {
   BudgetConfig,
   Category,
+  Conservation,
   Expense,
   FamilyMember,
   FamilyMemberInput,
@@ -93,6 +94,8 @@ interface StoreValue {
   generateRecipe(opts?: { constraints?: string; course?: string }): Promise<Recipe>
   /** Analyse la photo d'un ticket de caisse (Claude Vision) → articles détectés. */
   scanReceipt(image: string, mediaType: string): Promise<ReceiptItem[]>
+  /** Devine catégorie/conservation/unité/durée pour un nom de produit (pré-remplissage). */
+  enrichProduct(name: string): Promise<{ category: Category; conservation: Conservation; unit: string; shelfLifeDays: number }>
   /** Transforme une liste tapée en vrac en articles structurés (Claude). */
   parseBulk(text: string): Promise<ReceiptItem[]>
   /** Génère un menu de la semaine (IA) pour les 7 dates fournies. Renvoie le nombre de repas planifiés. */
@@ -544,6 +547,19 @@ export function StoreProvider({ children }: { children: ReactNode }) {
         const items = (data as any)?.items
         if (!Array.isArray(items)) throw new Error((data as any)?.error || 'Réponse invalide')
         return items as ReceiptItem[]
+      },
+      async enrichProduct(name) {
+        if (!supabase) throw new Error('Connecte-toi pour l’assistance IA')
+        const { data, error } = await supabase.functions.invoke('enrich', { body: { name } })
+        if (error) throw new Error(error.message || 'Analyse impossible')
+        const d = data as any
+        if (!d?.category) throw new Error(d?.error || 'Réponse invalide')
+        return {
+          category: d.category as Category,
+          conservation: d.conservation as Conservation,
+          unit: typeof d.unit === 'string' ? d.unit : '',
+          shelfLifeDays: Number(d.shelfLifeDays) || 0,
+        }
       },
       async parseBulk(text) {
         if (!supabase) throw new Error('Connecte-toi pour la saisie en lot')

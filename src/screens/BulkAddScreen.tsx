@@ -4,6 +4,7 @@ import { useToast } from '../components/Toast'
 import { PageHeader } from '../components/PageHeader'
 import { Icon } from '../components/Icon'
 import { ReviewItems } from '../components/ReviewItems'
+import { useDictation } from '../lib/useDictation'
 import type { ReceiptItem } from '../types'
 
 interface BulkAddScreenProps {
@@ -18,6 +19,20 @@ export function BulkAddScreen({ onClose, onAdded }: BulkAddScreenProps) {
   const [text, setText] = useState('')
   const [busy, setBusy] = useState(false)
   const [items, setItems] = useState<ReceiptItem[] | null>(null)
+  const dict = useDictation(setText)
+
+  function toggleMic() {
+    if (dict.listening) {
+      dict.stop()
+      return
+    }
+    if (!dict.supported) {
+      document.getElementById('bulk-text')?.focus()
+      toast('Touche le micro 🎤 de ton clavier pour dicter')
+      return
+    }
+    dict.start(text)
+  }
 
   async function analyze() {
     if (!text.trim()) return
@@ -48,13 +63,22 @@ export function BulkAddScreen({ onClose, onAdded }: BulkAddScreenProps) {
             transforme en produits (nom, quantité, unité, catégorie).
           </p>
           <textarea
+            id="bulk-text"
             className="form-input"
             style={{ minHeight: 160, resize: 'vertical', lineHeight: 1.5 }}
             placeholder={'Ex :\n6 yaourts nature\n1 kg farine\npâtes x3\nlait demi-écrémé 1L\n4 pommes'}
             value={text}
             onChange={(e) => setText(e.target.value)}
           />
-          <button className="btn-primary" style={{ marginTop: 14 }} disabled={busy || !text.trim()} onClick={analyze}>
+          <button
+            className={`dictate-btn${dict.listening ? ' on' : ''}`}
+            onClick={toggleMic}
+            type="button"
+          >
+            <Icon name="mic" />
+            {dict.listening ? 'Écoute… (touche pour arrêter)' : 'Dicter la liste'}
+          </button>
+          <button className="btn-primary" style={{ marginTop: 12 }} disabled={busy || !text.trim()} onClick={analyze}>
             {busy ? 'Analyse en cours…' : 'Analyser la liste'}
           </button>
         </div>

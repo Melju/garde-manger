@@ -39,9 +39,10 @@ interface ProductFormScreenProps {
 }
 
 export function ProductFormScreen({ product, initial, onClose, onSaved }: ProductFormScreenProps) {
-  const { addProduct, updateProduct, removeProduct, adjustQuantity, wasteProduct, family } = useStore()
+  const { addProduct, updateProduct, removeProduct, adjustQuantity, wasteProduct, enrichProduct, family } = useStore()
   const toast = useToast()
   const isEdit = product !== null
+  const [enriching, setEnriching] = useState(false)
 
   // Données enrichies Open Food Facts (lecture seule, conservées telles quelles).
   const enrich = {
@@ -107,6 +108,28 @@ export function ProductFormScreen({ product, initial, onClose, onSaved }: Produc
   function pickCategory(c: Category) {
     setCategory(c)
     pickConservation(defaultConservation(c))
+  }
+
+  // Pré-remplissage IA : devine catégorie/conservation/unité/DLC depuis le nom.
+  async function aiComplete() {
+    if (!name.trim() || enriching) return
+    setEnriching(true)
+    try {
+      const r = await enrichProduct(name)
+      setCategory(r.category)
+      pickConservation(r.conservation)
+      if (r.unit && !sizeUnit) setSizeUnit(r.unit)
+      if (!expiryDate && r.shelfLifeDays > 0) {
+        const d = new Date()
+        d.setDate(d.getDate() + r.shelfLifeDays)
+        setExpiryDate(d.toISOString().slice(0, 10))
+      }
+      toast('Pré-rempli par l’IA — vérifie et ajuste')
+    } catch (e) {
+      toast(e instanceof Error ? e.message : 'Assistance indisponible')
+    } finally {
+      setEnriching(false)
+    }
   }
 
   function buildInput(): ProductInput {
@@ -182,6 +205,12 @@ export function ProductFormScreen({ product, initial, onClose, onSaved }: Produc
           autoFocus={!isEdit}
           onChange={(e) => setName(e.target.value)}
         />
+        {name.trim() && (
+          <button type="button" className="ai-complete-btn" onClick={aiComplete} disabled={enriching}>
+            <Icon name="sparkles" width={2.2} />
+            {enriching ? 'Analyse…' : 'Compléter avec l’IA'}
+          </button>
+        )}
         {barcode && (
           <p style={{ fontSize: 12, color: 'var(--muted)', marginTop: 6 }}>Code-barres : {barcode}</p>
         )}
