@@ -30,9 +30,12 @@ Deno.serve(async (req) => {
   const preferences: string[] = Array.isArray(body.preferences)
     ? body.preferences.filter((x: unknown) => typeof x === 'string').slice(0, 12)
     : []
+  const diets: string[] = Array.isArray(body.diets)
+    ? body.diets.filter((x: unknown) => typeof x === 'string').slice(0, 10)
+    : []
   const nocache = body.nocache === true
 
-  const key = cacheKey('recipe', { ingredients, expiring, constraints, preferences })
+  const key = cacheKey('recipe', { ingredients, expiring, constraints, preferences, diets })
   if (!nocache) {
     const hit = cacheGet<any>(key)
     if (hit) return json({ recipe: hit, cached: true })
@@ -44,6 +47,7 @@ quelques-uns courants si nécessaire).
 
 Ingrédients disponibles : ${ingredients.length ? ingredients.join(', ') : 'aucun en particulier'}.
 ${expiring.length ? `À écouler en priorité (périment bientôt) : ${expiring.join(', ')}.` : ''}
+${diets.length ? `Contraintes alimentaires de la famille à respecter ABSOLUMENT (régimes, allergies, aversions) : ${diets.join(' ; ')}. Ne propose AUCUN ingrédient incompatible ; adapte ou remplace si besoin.` : ''}
 ${preferences.length ? `Goûts de la famille (plats qu'ils cuisinent/aiment souvent) — inspire-toi de ce style sans forcément les répéter : ${preferences.join(', ')}.` : ''}
 ${constraints ? `Contraintes : ${constraints}.` : ''}
 

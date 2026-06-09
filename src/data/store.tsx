@@ -507,8 +507,15 @@ export function StoreProvider({ children }: { children: ReactNode }) {
         const frequent = [...freq.entries()].sort((a, b) => b[1] - a[1]).map(([t]) => t)
         const favorites = recipes.filter((r) => r.favorite).map((r) => r.title)
         const preferences = [...new Set([...frequent, ...favorites])].slice(0, 12)
+        // Régimes / allergies / aversions de la famille (contraintes strictes).
+        const diets = family.map(
+          (m) =>
+            `${m.name} : ${DIET_LABELS[m.diet]}` +
+            (m.restrictions?.length ? ` (${m.restrictions.join(', ')})` : '') +
+            (m.aversions?.trim() ? ` — n'aime pas : ${m.aversions.trim()}` : ''),
+        )
         const { data, error } = await supabase.functions.invoke('recipe', {
-          body: { ingredients, expiring, constraints, preferences },
+          body: { ingredients, expiring, constraints, preferences, diets },
         })
         if (error) throw new Error(error.message || 'Génération impossible')
         const r = (data as any)?.recipe
@@ -565,7 +572,9 @@ export function StoreProvider({ children }: { children: ReactNode }) {
         ].slice(0, 12)
         const diets = family.map(
           (m) =>
-            `${m.name} : ${DIET_LABELS[m.diet]}${m.restrictions?.length ? ' (' + m.restrictions.join(', ') + ')' : ''}`,
+            `${m.name} : ${DIET_LABELS[m.diet]}` +
+            (m.restrictions?.length ? ' (' + m.restrictions.join(', ') + ')' : '') +
+            (m.aversions?.trim() ? " — n'aime pas : " + m.aversions.trim() : ''),
         )
         const { data, error } = await supabase.functions.invoke('weekplan', {
           body: { stock, expiring, preferences, diets },
