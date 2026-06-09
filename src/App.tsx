@@ -31,6 +31,14 @@ const ScanScreen = lazy(() =>
 
 type Tab = 'inventory' | 'recipes' | 'planning' | 'shopping' | 'more'
 
+const NAV: { tab: Tab; icon: 'box' | 'book' | 'calendar' | 'cart' | 'menu'; label: string }[] = [
+  { tab: 'inventory', icon: 'box', label: 'Stock' },
+  { tab: 'recipes', icon: 'book', label: 'Recettes' },
+  { tab: 'planning', icon: 'calendar', label: 'Planning' },
+  { tab: 'shopping', icon: 'cart', label: 'Courses' },
+  { tab: 'more', icon: 'menu', label: 'Plus' },
+]
+
 /** Sous-pages empilées par-dessus l'onglet courant. */
 type Route =
   | { name: 'product-form'; product: Product | null; initial?: Partial<ProductInput>; fromScan?: boolean }
@@ -76,50 +84,75 @@ export function App() {
 
   const top = stack[stack.length - 1]
 
-  if (top) {
-    return <div className="app">{renderRoute(top)}</div>
-  }
-
   return (
-    <div className={`app${tab === 'inventory' ? ' with-fab' : ''}`}>
-      {tab === 'inventory' && (
-        <InventoryScreen
-          onEdit={(product) => push({ name: 'product-form', product })}
-          onOpenStats={() => push({ name: 'stats' })}
-          onOpenNotifications={() => push({ name: 'notifications' })}
-          onOpenBudget={() => push({ name: 'budget' })}
-        />
-      )}
-      {tab === 'recipes' && (
-        <RecipesScreen
-          onOpenRecipe={(recipe) => push({ name: 'recipe-detail', recipe })}
-          onOpenFamily={() => push({ name: 'family' })}
-        />
-      )}
-      {tab === 'planning' && <PlanningScreen />}
-      {tab === 'shopping' && <ShoppingScreen />}
-      {tab === 'more' && (
-        <MoreScreen
-          onFamily={() => push({ name: 'family' })}
-          onStats={() => push({ name: 'stats' })}
-          onNotifications={() => push({ name: 'notifications' })}
-          onWaste={() => push({ name: 'waste' })}
-          onBudget={() => push({ name: 'budget' })}
-          onSettings={() => push({ name: 'settings' })}
-          onAccount={() => push({ name: 'account' })}
-        />
-      )}
+    <div className="shell">
+      {/* Barre latérale (bureau uniquement, masquée en mobile via CSS) */}
+      <aside className="sidebar">
+        <div className="sidebar-logo">Miamm</div>
+        <nav className="sidebar-nav">
+          {NAV.map((n) => (
+            <button
+              key={n.tab}
+              className={`sidebar-item${!top && tab === n.tab ? ' active' : ''}`}
+              onClick={() => goTab(n.tab)}
+            >
+              <Icon name={n.icon} />
+              {n.label}
+            </button>
+          ))}
+        </nav>
+        <button className="sidebar-add" onClick={() => push({ name: 'add-menu' })}>
+          <Icon name="plus" />
+          Ajouter un produit
+        </button>
+      </aside>
 
-      {/* Action contextuelle : seulement sur le Stock (ajout de produit). */}
-      {tab === 'inventory' && <Fab onOpen={() => push({ name: 'add-menu' })} />}
+      <main className={`app${!top && tab === 'inventory' ? ' with-fab' : ''}`}>
+        {top ? (
+          renderRoute(top)
+        ) : (
+          <>
+            {tab === 'inventory' && (
+              <InventoryScreen
+                onEdit={(product) => push({ name: 'product-form', product })}
+                onOpenStats={() => push({ name: 'stats' })}
+                onOpenNotifications={() => push({ name: 'notifications' })}
+                onOpenBudget={() => push({ name: 'budget' })}
+              />
+            )}
+            {tab === 'recipes' && (
+              <RecipesScreen
+                onOpenRecipe={(recipe) => push({ name: 'recipe-detail', recipe })}
+                onOpenFamily={() => push({ name: 'family' })}
+              />
+            )}
+            {tab === 'planning' && <PlanningScreen />}
+            {tab === 'shopping' && <ShoppingScreen />}
+            {tab === 'more' && (
+              <MoreScreen
+                onFamily={() => push({ name: 'family' })}
+                onStats={() => push({ name: 'stats' })}
+                onNotifications={() => push({ name: 'notifications' })}
+                onWaste={() => push({ name: 'waste' })}
+                onBudget={() => push({ name: 'budget' })}
+                onSettings={() => push({ name: 'settings' })}
+                onAccount={() => push({ name: 'account' })}
+              />
+            )}
+          </>
+        )}
+      </main>
 
-      <nav className="bottom-nav">
-        <NavButton tab="inventory" current={tab} icon="box" label="Stock" onClick={goTab} />
-        <NavButton tab="recipes" current={tab} icon="book" label="Recettes" onClick={goTab} />
-        <NavButton tab="planning" current={tab} icon="calendar" label="Planning" onClick={goTab} />
-        <NavButton tab="shopping" current={tab} icon="cart" label="Courses" onClick={goTab} />
-        <NavButton tab="more" current={tab} icon="menu" label="Plus" onClick={goTab} />
-      </nav>
+      {/* Action contextuelle mobile : seulement sur le Stock. */}
+      {!top && tab === 'inventory' && <Fab onOpen={() => push({ name: 'add-menu' })} />}
+
+      {!top && (
+        <nav className="bottom-nav">
+          {NAV.map((n) => (
+            <NavButton key={n.tab} tab={n.tab} current={tab} icon={n.icon} label={n.label} onClick={goTab} />
+          ))}
+        </nav>
+      )}
     </div>
   )
 
