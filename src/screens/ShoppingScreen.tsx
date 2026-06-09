@@ -234,7 +234,6 @@ export function ShoppingScreen({ addOpen, onCloseAdd }: ShoppingScreenProps) {
                 <input
                   id="shop-add"
                   type="text"
-                  autoFocus
                   placeholder="Ajouter un article..."
                   value={name}
                   onChange={(e) => setName(e.target.value)}
