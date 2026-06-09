@@ -38,6 +38,8 @@ export function RecipeFormScreen({ recipe, onClose, onSaved }: RecipeFormScreenP
   }, [products, recipes, shopCatalog])
 
   const [activeIdx, setActiveIdx] = useState<number | null>(null)
+  const [qtyIdx, setQtyIdx] = useState<number | null>(null)
+  const QTY_PRESETS = ['QS', 'selon goût', 'une pincée', 'un peu', '1 c. à café', '1 c. à soupe']
 
   const [title, setTitle] = useState(recipe?.title ?? '')
   const [course, setCourse] = useState(
@@ -149,7 +151,10 @@ export function RecipeFormScreen({ recipe, onClose, onSaved }: RecipeFormScreenP
                   className="form-input"
                   placeholder="Ingrédient"
                   value={ing.name}
-                  onFocus={() => setActiveIdx(i)}
+                  onFocus={() => {
+                    setActiveIdx(i)
+                    setQtyIdx(null)
+                  }}
                   onChange={(e) => {
                     setIng(i, { name: e.target.value })
                     setActiveIdx(i)
@@ -157,9 +162,12 @@ export function RecipeFormScreen({ recipe, onClose, onSaved }: RecipeFormScreenP
                 />
                 <input
                   className="form-input ing-qty"
-                  placeholder="Qté"
+                  placeholder="Qté (option.)"
                   value={ing.qty ?? ''}
-                  onFocus={() => setActiveIdx(null)}
+                  onFocus={() => {
+                    setActiveIdx(null)
+                    setQtyIdx(i)
+                  }}
                   onChange={(e) => setIng(i, { qty: e.target.value })}
                 />
                 <button
@@ -183,6 +191,15 @@ export function RecipeFormScreen({ recipe, onClose, onSaved }: RecipeFormScreenP
                     >
                       <Icon name="plus" width={2} />
                       <span className="suggest-name">{n}</span>
+                    </button>
+                  ))}
+                </div>
+              )}
+              {qtyIdx === i && (
+                <div className="quick-add-chips" style={{ margin: '4px 0 8px' }}>
+                  {QTY_PRESETS.map((p) => (
+                    <button key={p} className="quick-chip" onMouseDown={(e) => e.preventDefault()} onClick={() => setIng(i, { qty: p })}>
+                      {p}
                     </button>
                   ))}
                 </div>
