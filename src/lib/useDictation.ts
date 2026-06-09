@@ -42,8 +42,19 @@ export function useDictation(onText: (full: string) => void) {
   }
 
   function stop() {
-    recRef.current?.stop()
+    const rec = recRef.current
+    recRef.current = null
     setListening(false)
+    if (rec) {
+      try {
+        rec.onresult = null
+        rec.onend = null
+        rec.stop()
+        rec.abort?.()
+      } catch {
+        /* déjà arrêté */
+      }
+    }
   }
 
   return { supported, listening, start, stop }
