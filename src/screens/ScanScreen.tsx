@@ -78,6 +78,11 @@ export function ScanScreen({ mode = 'add', onResult, onConsume, onClose }: ScanS
     return () => {
       cancelled = true
       controlsRef.current?.stop()
+      // Libère complètement la caméra (sinon iOS finit par redemander l'autorisation).
+      const v = videoRef.current
+      const stream = v?.srcObject as MediaStream | null
+      stream?.getTracks().forEach((t) => t.stop())
+      if (v) v.srcObject = null
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
