@@ -131,14 +131,12 @@ export function ProductFormScreen({ product, initial, onClose, onSaved }: Produc
       const r = await enrichProduct(name)
       setCategory(r.category)
       setAiShelf(r.shelfLife)
-      // Applique le mode recommandé + sa durée correspondante.
-      setConservation(r.conservation)
-      const auto = CONS_LOCATION[r.conservation]
-      if (auto) setLocation(auto)
       if (r.unit && !sizeUnit) setSizeUnit(r.unit)
-      const days = r.shelfLife[r.conservation]
+      // On RESPECTE le mode de conservation déjà choisi : la DLC est calculée
+      // pour CE mode. (Change de mode → la date se recalcule automatiquement.)
+      const days = r.shelfLife[conservation]
       if (days > 0) setExpiryDate(isoInDays(days))
-      toast('Pré-rempli par l’IA — vérifie et ajuste')
+      toast(`Pré-rempli par l’IA (${conservation}) — vérifie et ajuste`)
     } catch (e) {
       toast(e instanceof Error ? e.message : 'Assistance indisponible')
     } finally {
