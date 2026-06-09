@@ -47,7 +47,9 @@ quelques-uns courants si nécessaire).
 
 Ingrédients disponibles : ${ingredients.length ? ingredients.join(', ') : 'aucun en particulier'}.
 ${expiring.length ? `À écouler en priorité (périment bientôt) : ${expiring.join(', ')}.` : ''}
-${diets.length ? `Contraintes alimentaires de la famille à respecter ABSOLUMENT (régimes, allergies, aversions) : ${diets.join(' ; ')}. Ne propose AUCUN ingrédient incompatible ; adapte ou remplace si besoin.` : ''}
+${diets.length ? `Membres de la famille et contraintes : ${diets.join(' ; ')}.
+Définitions des régimes : pescétarien = pas de viande terrestre mais poisson et fruits de mer autorisés ; végétarien = ni viande ni poisson ; végétalien = aucun produit animal (ni œufs ni lait) ; flexitarien = mange de tout mais privilégie le végétal. Les mentions « sans gluten/lactose/… » sont des allergies/intolérances STRICTES.
+Tu PEUX proposer un plat principal avec viande ou poisson. Mais pour chaque membre dont le régime ou l'allergie est incompatible, fournis une ALTERNATIVE concrète (ingrédient de remplacement) clairement indiquée dans les étapes, par ex. « Variante pour Emma (végétarienne) : remplacer le poulet par des pois chiches ». Respecte toujours les aversions.` : ''}
 ${preferences.length ? `Goûts de la famille (plats qu'ils cuisinent/aiment souvent) — inspire-toi de ce style sans forcément les répéter : ${preferences.join(', ')}.` : ''}
 ${constraints ? `Contraintes : ${constraints}.` : ''}
 

@@ -83,7 +83,9 @@ export function ShoppingScreen({ addOpen, onCloseAdd }: ShoppingScreenProps) {
   // Brouillon courant : unité + catégorie devinées depuis l'article.
   const match = typed ? lookup.get(typed) : undefined
   const draftCategory: Category = match?.category ?? (typed ? guessCategoryFromName(name) : 'autre')
-  const rawUnit = match?.unit ?? (typed ? guessUnitFromName(name) : '')
+  // Les conserves s'achètent à l'unité (boîtes), jamais au poids.
+  const rawUnit =
+    draftCategory === 'conserves' ? '' : (match?.unit ?? (typed ? guessUnitFromName(name) : ''))
   const scale = useMemo(() => buyScale(rawUnit), [rawUnit])
 
   // La roulette s'adapte : on recale la quantité par défaut quand l'unité change.

@@ -28,7 +28,9 @@ Deno.serve(async (req) => {
 
 Stock disponible : ${stock.length ? stock.join(', ') : 'varié'}.
 ${expiring.length ? `À écouler en priorité (périment bientôt) : ${expiring.join(', ')}.` : ''}
-${diets.length ? `Contraintes alimentaires de la famille (à respecter ABSOLUMENT) : ${diets.join(' ; ')}.` : ''}
+${diets.length ? `Membres de la famille et contraintes : ${diets.join(' ; ')}.
+Définitions : pescétarien = pas de viande terrestre mais poisson et fruits de mer autorisés ; végétarien = ni viande ni poisson ; végétalien = aucun produit animal ; flexitarien = mange de tout, privilégie le végétal. « sans gluten/lactose/… » = allergies strictes.
+Tu peux prévoir des plats avec viande/poisson, mais propose une alternative pour les membres incompatibles (ex. version végétarienne).` : ''}
 ${preferences.length ? `Goûts / plats fréquents : ${preferences.join(', ')}.` : ''}
 
 Propose un menu varié et réaliste : des plats simples en semaine, un peu plus élaborés le week-end,
