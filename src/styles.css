@@ -58,7 +58,27 @@ button { font-family: inherit; }
   background: var(--bg);
   position: relative;
   overflow-x: hidden;
+  /* Place pour la barre de navigation seule. */
+  padding-bottom: calc(96px + env(safe-area-inset-bottom));
+}
+/* Place supplémentaire pour la barre « Ajouter un produit » (Stock). */
+.app.with-fab {
   padding-bottom: calc(164px + env(safe-area-inset-bottom));
+}
+
+/* ---------- Affichage bureau (écran large) ---------- */
+@media (min-width: 760px) {
+  body {
+    background: oklch(0.93 0.012 220);
+  }
+  .app {
+    box-shadow: 0 0 0 1px var(--border), 0 18px 60px oklch(0.2 0.03 220 / 0.18);
+  }
+  /* Les éléments fixes restent alignés sur la colonne centrale. */
+  .bottom-nav,
+  .add-bar {
+    box-shadow: 0 0 0 1px var(--border), 0 -8px 24px oklch(0.2 0.03 220 / 0.1);
+  }
 }
 
 /* Header */

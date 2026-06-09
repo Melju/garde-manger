@@ -81,7 +81,7 @@ export function App() {
   }
 
   return (
-    <div className="app">
+    <div className={`app${tab === 'inventory' ? ' with-fab' : ''}`}>
       {tab === 'inventory' && (
         <InventoryScreen
           onEdit={(product) => push({ name: 'product-form', product })}
@@ -110,7 +110,8 @@ export function App() {
         />
       )}
 
-      <Fab onOpen={() => push({ name: 'add-menu' })} />
+      {/* Action contextuelle : seulement sur le Stock (ajout de produit). */}
+      {tab === 'inventory' && <Fab onOpen={() => push({ name: 'add-menu' })} />}
 
       <nav className="bottom-nav">
         <NavButton tab="inventory" current={tab} icon="box" label="Stock" onClick={goTab} />
