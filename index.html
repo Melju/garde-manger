@@ -15,9 +15,26 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Caveat:wght@600;700&family=Nunito:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <style>
+    /* Splash de lancement (visible immédiatement, avant le chargement du JS) */
+    .splash {
+      position: fixed; inset: 0;
+      display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 24px;
+      background: radial-gradient(120% 120% at 30% 20%, #2ec6d2 0%, #0c8fa0 55%, #0a7585 100%);
+      z-index: 9999;
+    }
+    .splash-logo { font-family: 'Caveat', cursive; color: #fff; font-size: 54px; font-weight: 700; line-height: 1; text-shadow: 0 3px 12px rgba(0,0,0,.15); }
+    .splash-spin { width: 30px; height: 30px; border-radius: 50%; border: 3px solid rgba(255,255,255,.35); border-top-color: #fff; animation: splash-spin .8s linear infinite; }
+    @keyframes splash-spin { to { transform: rotate(360deg); } }
+  </style>
 </head>
 <body>
-  <div id="root"></div>
+  <div id="root">
+    <div class="splash">
+      <div class="splash-logo">Miamm</div>
+      <div class="splash-spin"></div>
+    </div>
+  </div>
   <script type="module" src="/src/main.tsx"></script>
 </body>
 </html>

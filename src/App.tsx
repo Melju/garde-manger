@@ -57,7 +57,13 @@ export function App() {
 
   // On attend que l'auth soit résolue (évite d'afficher « local » un bref instant
   // avant la bascule en cloud) et que les données soient chargées.
-  if (!auth.ready || loading) return <div className="app" />
+  if (!auth.ready || loading)
+    return (
+      <div className="splash">
+        <div className="splash-logo">Miamm</div>
+        <div className="splash-spin" />
+      </div>
+    )
 
   const push = (r: Route) => setStack((s) => [...s, r])
   const back = () => setStack((s) => s.slice(0, -1))
