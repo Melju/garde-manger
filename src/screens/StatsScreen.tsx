@@ -53,16 +53,24 @@ export function StatsScreen({ onBack, onOpenWaste }: StatsScreenProps) {
 
       <div className="chart-section">
         <div className="chart-title">Consommation par semaine</div>
-        <div className="chart-placeholder">
-          {stats.weekly.map((v, i) => (
-            <div
-              key={i}
-              className="chart-bar"
-              style={{ height: `${Math.max(6, (v / maxWeek) * 100)}%` }}
-              data-label={`S${i + 1}`}
-            />
-          ))}
-        </div>
+        {stats.weekly.every((v) => v === 0) ? (
+          <p className="chart-empty">
+            Pas encore de consommation enregistrée ce mois-ci. Retire des produits (swipe, scan ou « consommé ») pour voir la courbe se remplir.
+          </p>
+        ) : (
+          <div className="chart-placeholder">
+            {stats.weekly.map((v, i) => (
+              <div
+                key={i}
+                className="chart-bar"
+                style={{ height: `${Math.max(4, (v / maxWeek) * 100)}%` }}
+                data-label={`S${i + 1}`}
+              >
+                <span className="bar-val">{v}</span>
+              </div>
+            ))}
+          </div>
+        )}
       </div>
 
       <div className="chart-section">
