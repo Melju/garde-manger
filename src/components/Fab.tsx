@@ -1,12 +1,12 @@
 import { Icon } from './Icon'
 
-/** Barre d'ajout fixe en bas (largeur d'une fiche produit), ouvre l'écran d'ajout. */
-export function Fab({ onOpen }: { onOpen: () => void }) {
+/** Barre d'action fixe en bas (largeur d'une fiche), contextuelle à la page. */
+export function Fab({ label, onOpen }: { label: string; onOpen: () => void }) {
   return (
     <div className="add-bar">
       <button className="add-btn" onClick={onOpen}>
         <Icon name="plus" />
-        Ajouter un produit
+        {label}
       </button>
     </div>
   )

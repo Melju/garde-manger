@@ -174,6 +174,7 @@ export function ShoppingScreen() {
       <div className="search-row">
         <div className="search-input">
           <input
+            id="shop-add"
             type="text"
             placeholder="Ajouter un article..."
             value={name}

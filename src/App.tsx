@@ -86,6 +86,19 @@ export function App() {
 
   const top = stack[stack.length - 1]
 
+  // Action d'ajout contextuelle par page (barre du bas en mobile, bouton sidebar en bureau).
+  const focusShoppingInput = () => {
+    const el = document.getElementById('shop-add') as HTMLInputElement | null
+    el?.scrollIntoView({ block: 'center', behavior: 'smooth' })
+    el?.focus()
+  }
+  const addAction: Partial<Record<Tab, { label: string; run: () => void }>> = {
+    inventory: { label: 'Ajouter un produit', run: () => push({ name: 'add-menu' }) },
+    recipes: { label: 'Nouvelle recette', run: () => push({ name: 'recipe-form' }) },
+    shopping: { label: 'Ajouter un article', run: focusShoppingInput },
+  }
+  const add = addAction[tab]
+
   return (
     <div className="shell">
       {/* Barre latérale (bureau uniquement, masquée en mobile via CSS) */}
@@ -103,13 +116,15 @@ export function App() {
             </button>
           ))}
         </nav>
-        <button className="sidebar-add" onClick={() => push({ name: 'add-menu' })}>
-          <Icon name="plus" />
-          Ajouter un produit
-        </button>
+        {add && (
+          <button className="sidebar-add" onClick={add.run}>
+            <Icon name="plus" />
+            {add.label}
+          </button>
+        )}
       </aside>
 
-      <main className={`app${!top && tab === 'inventory' ? ' with-fab' : ''}`}>
+      <main className={`app${!top && add ? ' with-fab' : ''}`}>
         {top ? (
           renderRoute(top)
         ) : (
@@ -126,7 +141,6 @@ export function App() {
               <RecipesScreen
                 onOpenRecipe={(recipe) => push({ name: 'recipe-detail', recipe })}
                 onOpenFamily={() => push({ name: 'family' })}
-                onNewRecipe={() => push({ name: 'recipe-form' })}
               />
             )}
             {tab === 'planning' && <PlanningScreen />}
@@ -146,8 +160,8 @@ export function App() {
         )}
       </main>
 
-      {/* Action contextuelle mobile : seulement sur le Stock. */}
-      {!top && tab === 'inventory' && <Fab onOpen={() => push({ name: 'add-menu' })} />}
+      {/* Action contextuelle mobile (barre du bas), selon la page. */}
+      {!top && add && <Fab label={add.label} onOpen={add.run} />}
 
       {!top && (
         <nav className="bottom-nav">
