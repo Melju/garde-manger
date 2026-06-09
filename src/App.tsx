@@ -23,6 +23,7 @@ import { Fab } from './components/Fab'
 import { useToast } from './components/Toast'
 import { useStore } from './data/store'
 import { useAuth } from './data/auth'
+import { lookupBarcode } from './lib/openfoodfacts'
 import type { FamilyMember, Product, ProductInput, Recipe } from './types'
 
 // Chargé à la demande : la bibliothèque de scan (ZXing) est lourde.
@@ -68,7 +69,11 @@ export function App() {
   async function consumeByBarcode(barcode: string) {
     const p = products.find((x) => x.barcode && x.barcode === barcode)
     if (!p) {
-      toast('Produit pas en stock')
+      // Produit inconnu : on propose de l'ajouter (bascule vers le mode ajout).
+      if (confirm("Ce produit n'est pas dans ton stock. L'ajouter ?")) {
+        const res = await lookupBarcode(barcode)
+        push({ name: 'product-form', product: null, initial: res.prefill })
+      }
       return
     }
     await adjustQuantity(p.id, -1)
