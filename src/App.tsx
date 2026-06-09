@@ -4,6 +4,7 @@ import { ShoppingScreen } from './screens/ShoppingScreen'
 import { ProductFormScreen } from './screens/ProductFormScreen'
 import { RecipesScreen } from './screens/RecipesScreen'
 import { RecipeDetailScreen } from './screens/RecipeDetailScreen'
+import { RecipeFormScreen } from './screens/RecipeFormScreen'
 import { NotificationsScreen } from './screens/NotificationsScreen'
 import { PlanningScreen } from './screens/PlanningScreen'
 import { StatsScreen } from './screens/StatsScreen'
@@ -50,6 +51,7 @@ type Route =
   | { name: 'budget' }
   | { name: 'waste' }
   | { name: 'recipe-detail'; recipe: Recipe }
+  | { name: 'recipe-form' }
   | { name: 'family' }
   | { name: 'member-edit'; member: FamilyMember | null }
   | { name: 'settings' }
@@ -124,6 +126,7 @@ export function App() {
               <RecipesScreen
                 onOpenRecipe={(recipe) => push({ name: 'recipe-detail', recipe })}
                 onOpenFamily={() => push({ name: 'family' })}
+                onNewRecipe={() => push({ name: 'recipe-form' })}
               />
             )}
             {tab === 'planning' && <PlanningScreen />}
@@ -196,6 +199,13 @@ export function App() {
             recipe={route.recipe}
             onBack={back}
             onGoShopping={() => goTab('shopping')}
+          />
+        )
+      case 'recipe-form':
+        return (
+          <RecipeFormScreen
+            onClose={back}
+            onSaved={(recipe) => replace({ name: 'recipe-detail', recipe })}
           />
         )
       case 'family':

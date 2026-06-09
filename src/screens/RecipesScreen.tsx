@@ -8,6 +8,7 @@ import type { Recipe } from '../types'
 interface RecipesScreenProps {
   onOpenRecipe: (recipe: Recipe) => void
   onOpenFamily: () => void
+  onNewRecipe: () => void
 }
 
 type Filter =
@@ -24,7 +25,7 @@ type Filter =
 
 const norm = (s: string) => s.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '')
 
-export function RecipesScreen({ onOpenRecipe, onOpenFamily }: RecipesScreenProps) {
+export function RecipesScreen({ onOpenRecipe, onOpenFamily, onNewRecipe }: RecipesScreenProps) {
   const { recipes, products, family, toggleFavorite, generateRecipe } = useStore()
   const toast = useToast()
   const [filter, setFilter] = useState<Filter>('toutes')
@@ -86,6 +87,9 @@ export function RecipesScreen({ onOpenRecipe, onOpenFamily }: RecipesScreenProps
           <p>Suggestions avec ton stock</p>
         </div>
         <div className="header-actions">
+          <button className="icon-btn" onClick={onNewRecipe} aria-label="Nouvelle recette">
+            <Icon name="plus" />
+          </button>
           <button className="icon-btn" onClick={onOpenFamily} aria-label="Famille">
             <Icon name="users" />
           </button>
