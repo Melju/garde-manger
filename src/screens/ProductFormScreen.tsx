@@ -43,6 +43,14 @@ export function ProductFormScreen({ product, initial, onClose, onSaved }: Produc
   const toast = useToast()
   const isEdit = product !== null
   const [enriching, setEnriching] = useState(false)
+  // Durées de conservation par mode, fournies par l'IA (pour adapter la DLC).
+  const [aiShelf, setAiShelf] = useState<{ frais: number; refrigere: number; congele: number } | null>(null)
+
+  function isoInDays(days: number): string {
+    const d = new Date()
+    d.setDate(d.getDate() + days)
+    return d.toISOString().slice(0, 10)
+  }
 
   // Données enrichies Open Food Facts (lecture seule, conservées telles quelles).
   const enrich = {
@@ -102,6 +110,11 @@ export function ProductFormScreen({ product, initial, onClose, onSaved }: Produc
     if (auto) setLocation(auto)
     // En repassant en « frais », on retire l'emplacement auto précédent.
     else setLocation((cur) => (cur === 'Réfrigérateur' || cur === 'Congélateur' ? '' : cur))
+    // Si l'IA a fourni des durées, la DLC suit le mode de conservation choisi.
+    if (aiShelf) {
+      const days = aiShelf[c]
+      if (days > 0) setExpiryDate(isoInDays(days))
+    }
   }
 
   // Quand on change de catégorie, on aligne la conservation par défaut (et l'emplacement).
@@ -117,13 +130,14 @@ export function ProductFormScreen({ product, initial, onClose, onSaved }: Produc
     try {
       const r = await enrichProduct(name)
       setCategory(r.category)
-      pickConservation(r.conservation)
+      setAiShelf(r.shelfLife)
+      // Applique le mode recommandé + sa durée correspondante.
+      setConservation(r.conservation)
+      const auto = CONS_LOCATION[r.conservation]
+      if (auto) setLocation(auto)
       if (r.unit && !sizeUnit) setSizeUnit(r.unit)
-      if (!expiryDate && r.shelfLifeDays > 0) {
-        const d = new Date()
-        d.setDate(d.getDate() + r.shelfLifeDays)
-        setExpiryDate(d.toISOString().slice(0, 10))
-      }
+      const days = r.shelfLife[r.conservation]
+      if (days > 0) setExpiryDate(isoInDays(days))
       toast('Pré-rempli par l’IA — vérifie et ajuste')
     } catch (e) {
       toast(e instanceof Error ? e.message : 'Assistance indisponible')

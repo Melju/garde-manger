@@ -94,8 +94,13 @@ interface StoreValue {
   generateRecipe(opts?: { constraints?: string; course?: string }): Promise<Recipe>
   /** Analyse la photo d'un ticket de caisse (Claude Vision) → articles détectés. */
   scanReceipt(image: string, mediaType: string): Promise<ReceiptItem[]>
-  /** Devine catégorie/conservation/unité/durée pour un nom de produit (pré-remplissage). */
-  enrichProduct(name: string): Promise<{ category: Category; conservation: Conservation; unit: string; shelfLifeDays: number }>
+  /** Devine catégorie/conservation/unité + durée par mode pour un nom de produit. */
+  enrichProduct(name: string): Promise<{
+    category: Category
+    conservation: Conservation
+    unit: string
+    shelfLife: { frais: number; refrigere: number; congele: number }
+  }>
   /** Transforme une liste tapée en vrac en articles structurés (Claude). */
   parseBulk(text: string): Promise<ReceiptItem[]>
   /** Génère un menu de la semaine (IA) pour les 7 dates fournies. Renvoie le nombre de repas planifiés. */
@@ -554,11 +559,16 @@ export function StoreProvider({ children }: { children: ReactNode }) {
         if (error) throw new Error(error.message || 'Analyse impossible')
         const d = data as any
         if (!d?.category) throw new Error(d?.error || 'Réponse invalide')
+        const sl = d.shelfLife ?? {}
         return {
           category: d.category as Category,
           conservation: d.conservation as Conservation,
           unit: typeof d.unit === 'string' ? d.unit : '',
-          shelfLifeDays: Number(d.shelfLifeDays) || 0,
+          shelfLife: {
+            frais: Number(sl.frais) || 0,
+            refrigere: Number(sl.refrigere) || 0,
+            congele: Number(sl.congele) || 0,
+          },
         }
       },
       async parseBulk(text) {

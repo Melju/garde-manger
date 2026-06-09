@@ -34,21 +34,30 @@ Réponds STRICTEMENT en JSON valide, sans texte autour :
 {"category": une valeur parmi [${CATEGORIES}],
  "conservation": "frais" | "refrigere" | "congele",
  "unit": "" | "g" | "kg" | "mL" | "L" | "pièce",
- "shelfLifeDays": nombre de jours de conservation typique APRÈS achat}
-Règles : conservation = "refrigere" pour frais réfrigéré (viande, poisson, laitier, légume frais), "congele" pour surgelé, "frais" pour épicerie/ambiant. unit = "" si le produit se compte à l'unité.`
+ "shelfLife": {"frais": jours à température ambiante (placard),
+               "refrigere": jours au réfrigérateur,
+               "congele": jours au congélateur}}
+Règles : "conservation" = le mode RECOMMANDÉ (refrigere pour viande/poisson/laitier/légume frais, congele pour surgelé, frais pour épicerie/ambiant).
+Les durées doivent être RÉALISTES et cohérentes avec le mode : le congélateur prolonge fortement (souvent plusieurs mois), le frigo prolonge le frais, l'ambiant peut être très court pour un produit périssable (ou 0 si non conservable ainsi). unit = "" si le produit se compte à l'unité.`
 
-  const res = await callClaude({ prompt, tier: 'fast', maxTokens: 300 })
+  const res = await callClaude({ prompt, tier: 'fast', maxTokens: 350 })
   if (!res.ok) return json({ error: res.detail }, res.status)
 
   const r = extractJson(res.text)
   if (!r) return json({ error: 'Réponse illisible' }, 502)
 
   const cats = CATEGORIES.split(', ')
+  const days = (v: unknown) => Math.max(0, Math.min(3650, Math.round(Number(v) || 0)))
+  const sl = r.shelfLife ?? {}
   const out = {
     category: cats.includes(r.category) ? r.category : 'autre',
     conservation: ['frais', 'refrigere', 'congele'].includes(r.conservation) ? r.conservation : 'frais',
     unit: ['', 'g', 'kg', 'mL', 'L', 'pièce'].includes(r.unit) ? r.unit : '',
-    shelfLifeDays: Math.max(0, Math.min(3650, Math.round(Number(r.shelfLifeDays) || 0))),
+    shelfLife: {
+      frais: days(sl.frais),
+      refrigere: days(sl.refrigere),
+      congele: days(sl.congele),
+    },
   }
   cacheSet(key, out, TTL)
   return json(out)

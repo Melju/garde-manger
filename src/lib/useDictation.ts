@@ -9,7 +9,13 @@ export function useDictation(onText: (full: string) => void) {
     typeof window !== 'undefined'
       ? (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition
       : undefined
-  const supported = !!SR
+  // iOS « expose » webkitSpeechRecognition mais elle ne fonctionne pas réellement
+  // (et on ne peut pas la stopper) → on bascule sur le micro du clavier.
+  const isIOS =
+    typeof navigator !== 'undefined' &&
+    (/iP(hone|ad|od)/.test(navigator.userAgent) ||
+      (navigator.userAgent.includes('Mac') && 'ontouchend' in document))
+  const supported = !!SR && !isIOS
   const recRef = useRef<any>(null)
   const baseRef = useRef('')
   const [listening, setListening] = useState(false)
