@@ -19,6 +19,11 @@ interface AuthValue {
   /** Foyer de l'utilisateur (null s'il n'en a pas encore). */
   householdId: string | null
   inviteCode: string | null
+  /** Membres du foyer (profils). */
+  members: { id: string; name: string }[]
+  /** Nom affiché de l'utilisateur courant. */
+  displayName: string
+  setDisplayName(name: string): Promise<void>
   /** Envoie un e-mail contenant un code (et un lien) de connexion. */
   signInWithEmail(email: string): Promise<{ error?: string }>
   /** Valide le code à 6 chiffres reçu par e-mail (reste dans l'app / la PWA). */
@@ -39,18 +44,23 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [session, setSession] = useState<Session | null>(null)
   const [householdId, setHouseholdId] = useState<string | null>(null)
   const [inviteCode, setInviteCode] = useState<string | null>(null)
+  const [members, setMembers] = useState<{ id: string; name: string }[]>([])
+  const [displayName, setDisplayNameState] = useState('')
 
   const loadHousehold = useCallback(async (uid: string | undefined) => {
     if (!supabase || !uid) {
       setHouseholdId(null)
       setInviteCode(null)
+      setMembers([])
+      setDisplayNameState('')
       return
     }
     const { data: profile } = await supabase
       .from('profiles')
-      .select('household_id')
+      .select('household_id, display_name')
       .eq('id', uid)
       .maybeSingle()
+    setDisplayNameState(profile?.display_name ?? '')
     const hid = profile?.household_id ?? null
     setHouseholdId(hid)
     if (hid) {
@@ -60,8 +70,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         .eq('id', hid)
         .maybeSingle()
       setInviteCode(h?.invite_code ?? null)
+      const { data: profs } = await supabase
+        .from('profiles')
+        .select('id, display_name')
+        .eq('household_id', hid)
+      setMembers((profs ?? []).map((p: any) => ({ id: p.id, name: p.display_name || 'Membre' })))
     } else {
       setInviteCode(null)
+      setMembers([])
     }
   }, [])
 
@@ -86,6 +102,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     user: session?.user ?? null,
     householdId,
     inviteCode,
+    members,
+    displayName,
+    async setDisplayName(name) {
+      if (!supabase || !session?.user?.id) return
+      await supabase.from('profiles').update({ display_name: name.trim() }).eq('id', session.user.id)
+      await loadHousehold(session.user.id)
+    },
     async signInWithEmail(email) {
       if (!supabase) return { error: 'Cloud non configuré' }
       const { error } = await supabase.auth.signInWithOtp({

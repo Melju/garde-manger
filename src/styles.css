@@ -588,6 +588,8 @@ button { font-family: inherit; }
 .quick-chip:active { transform: scale(0.96); }
 .quick-chip svg { width: 14px; height: 14px; }
 
+.member-you { color: var(--muted); font-weight: 400; font-size: 13px; }
+
 /* Splash de lancement */
 .splash {
   position: fixed;

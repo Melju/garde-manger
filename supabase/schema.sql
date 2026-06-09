@@ -246,6 +246,11 @@ create policy profiles_self on profiles
   for all to authenticated
   using (id = auth.uid()) with check (id = auth.uid());
 
+-- Lecture des profils du même foyer (liste des membres).
+create policy profiles_household_read on profiles
+  for select to authenticated
+  using (household_id = auth_household_id());
+
 -- Foyer : un membre voit son foyer ; la création passe par les fonctions RPC.
 create policy households_member_read on households
   for select to authenticated

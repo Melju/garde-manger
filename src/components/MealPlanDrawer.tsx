@@ -25,8 +25,17 @@ export function MealPlanDrawer({ date, slot, onClose }: MealPlanDrawerProps) {
   const [mode, setMode] = useState<'pick' | 'custom'>('pick')
   // Repas personnalisé
   const [title, setTitle] = useState('')
+  const [course, setCourse] = useState('plat principal')
   const [saveAsRecipe, setSaveAsRecipe] = useState(true)
   const [ingredients, setIngredients] = useState<RecipeIngredient[]>([{ name: '', qty: '' }])
+
+  const COURSES: [string, string][] = [
+    ['plat principal', 'Plat'],
+    ['entrée', 'Entrée'],
+    ['apéritif', 'Apéro'],
+    ['soupe', 'Soupe'],
+    ['dessert', 'Dessert'],
+  ]
 
   const favorites = useMemo(() => recipes.filter((r) => r.favorite), [recipes])
   const filtered = useMemo(() => {
@@ -66,7 +75,7 @@ export function MealPlanDrawer({ date, slot, onClose }: MealPlanDrawerProps) {
       await addRecipe({
         title: t,
         timeMin: 0,
-        tags: ['perso'],
+        tags: ['perso', course],
         favorite: false,
         ingredients: cleanIngredients,
       })
@@ -155,6 +164,24 @@ export function MealPlanDrawer({ date, slot, onClose }: MealPlanDrawerProps) {
                 onChange={(e) => setTitle(e.target.value)}
                 style={{ marginBottom: 12 }}
               />
+
+              {saveAsRecipe && (
+                <>
+                  <label className="form-label">Type</label>
+                  <div className="opt-grid" style={{ marginBottom: 12 }}>
+                    {COURSES.map(([val, label]) => (
+                      <button
+                        key={val}
+                        type="button"
+                        className={`opt-btn${course === val ? ' active' : ''}`}
+                        onClick={() => setCourse(val)}
+                      >
+                        {label}
+                      </button>
+                    ))}
+                  </div>
+                </>
+              )}
 
               <label className="check-row" onClick={() => setSaveAsRecipe((v) => !v)}>
                 <span className={`check-box${saveAsRecipe ? ' on' : ''}`}>

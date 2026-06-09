@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useAuth } from '../data/auth'
 import { useStore } from '../data/store'
 import { useToast } from '../components/Toast'
@@ -18,6 +18,27 @@ export function AccountScreen({ onBack }: AccountScreenProps) {
   const [code, setCode] = useState('')
   const [loginCode, setLoginCode] = useState('')
   const [busy, setBusy] = useState(false)
+  const [myName, setMyName] = useState(auth.displayName)
+
+  // Synchronise le champ nom quand le profil est (re)chargé.
+  useEffect(() => {
+    setMyName(auth.displayName)
+  }, [auth.displayName])
+
+  async function shareInvite() {
+    const codeStr = auth.inviteCode ?? ''
+    const text = `Rejoins notre garde-manger Miamm ! Va sur https://food.graphikeo.com → Plus → Compte → Rejoindre un foyer, et entre le code : ${codeStr}`
+    try {
+      if (navigator.share) {
+        await navigator.share({ title: 'Miamm — code du foyer', text })
+      } else {
+        await navigator.clipboard?.writeText(text)
+        toast('Invitation copiée')
+      }
+    } catch {
+      /* partage annulé */
+    }
+  }
 
   if (!auth.cloudEnabled) {
     return (
@@ -193,8 +214,34 @@ export function AccountScreen({ onBack }: AccountScreenProps) {
         </div>
       </div>
       <div className="form-section">
+        <label className="form-label" htmlFor="myname">Mon nom (visible par le foyer)</label>
+        <div className="form-row">
+          <input
+            id="myname"
+            className="form-input"
+            placeholder="Ex : Julien"
+            value={myName}
+            onChange={(e) => setMyName(e.target.value)}
+          />
+          <button
+            className="btn-secondary"
+            style={{ width: 'auto', padding: '0 16px' }}
+            disabled={busy || myName.trim() === auth.displayName}
+            onClick={async () => {
+              setBusy(true)
+              await auth.setDisplayName(myName)
+              setBusy(false)
+              toast('Nom enregistré')
+            }}
+          >
+            Enregistrer
+          </button>
+        </div>
+      </div>
+
+      <div className="form-section">
         <label className="form-label">Code d'invitation du foyer</label>
-        <div className="setting-row">
+        <div className="setting-row" style={{ marginBottom: 12 }}>
           <div className="setting-text">
             <div className="setting-title" style={{ letterSpacing: 2, fontSize: 20 }}>
               {auth.inviteCode ?? '—'}
@@ -203,9 +250,10 @@ export function AccountScreen({ onBack }: AccountScreenProps) {
               Partage ce code avec ta famille pour qu'ils rejoignent ce garde-manger.
             </div>
           </div>
+        </div>
+        <div className="btn-row">
           <button
             className="btn-secondary"
-            style={{ width: 'auto', padding: '0 16px', height: 40 }}
             onClick={() => {
               if (auth.inviteCode) navigator.clipboard?.writeText(auth.inviteCode)
               toast('Code copié')
@@ -213,7 +261,22 @@ export function AccountScreen({ onBack }: AccountScreenProps) {
           >
             Copier
           </button>
+          <button className="btn-primary" onClick={shareInvite}>Partager</button>
         </div>
+      </div>
+
+      <div className="form-section">
+        <label className="form-label">Membres du foyer ({auth.members.length})</label>
+        {auth.members.map((m) => (
+          <div className="setting-row" key={m.id}>
+            <div className="setting-text">
+              <div className="setting-title">
+                {m.name}
+                {m.id === auth.user?.id && <span className="member-you"> (toi)</span>}
+              </div>
+            </div>
+          </div>
+        ))}
       </div>
       <div className="form-section">
         <label className="form-label">Données de cet appareil</label>
