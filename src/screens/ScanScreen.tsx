@@ -11,12 +11,16 @@ interface ScanScreenProps {
   onResult?: (prefill: Partial<ProductInput>, found: boolean) => void
   /** Mode retrait : appelé à chaque scan avec le code-barres (le scan continue). */
   onConsume?: (barcode: string) => void
+  /** Mode retrait : produits retirés dans la session (pour correction). */
+  removed?: { id: string; name: string; count: number }[]
+  /** Mode retrait : annule un retrait (remet +1). */
+  onUndo?: (id: string) => void
   onClose: () => void
 }
 
 type Phase = 'scanning' | 'looking-up' | 'error'
 
-export function ScanScreen({ mode = 'add', onResult, onConsume, onClose }: ScanScreenProps) {
+export function ScanScreen({ mode = 'add', onResult, onConsume, removed, onUndo, onClose }: ScanScreenProps) {
   const videoRef = useRef<HTMLVideoElement>(null)
   const controlsRef = useRef<IScannerControls | null>(null)
   const handledRef = useRef(false)
@@ -119,6 +123,21 @@ export function ScanScreen({ mode = 'add', onResult, onConsume, onClose }: ScanS
         <>
           <video ref={videoRef} className="scan-video" playsInline muted />
           <div className="scan-frame" />
+
+          {isConsume && removed && removed.length > 0 && (
+            <div className="scan-removed">
+              <div className="scan-removed-title">Retirés · touche pour annuler</div>
+              <div className="scan-removed-list">
+                {removed.map((r) => (
+                  <button key={r.id} className="removed-chip" onClick={() => onUndo?.(r.id)}>
+                    <Icon name="back" width={2.2} />
+                    {r.name} ×{r.count}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+
           <div className="scan-bottom">
             <p className="scan-hint">
               {phase === 'looking-up'

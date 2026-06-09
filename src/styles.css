@@ -1288,6 +1288,48 @@ input[type='date'].form-input::-webkit-calendar-picker-indicator {
   text-shadow: 0 1px 4px rgba(0, 0, 0, 0.6);
 }
 .scan-done { width: auto; padding: 0 32px; }
+
+/* Liste des produits retirés pendant le scan (correction) */
+.scan-removed {
+  position: absolute;
+  bottom: calc(108px + env(safe-area-inset-bottom));
+  left: 0;
+  right: 0;
+  padding: 0 16px;
+}
+.scan-removed-title {
+  text-align: center;
+  color: #fff;
+  font-size: 11px;
+  font-weight: 600;
+  margin-bottom: 8px;
+  text-shadow: 0 1px 4px rgba(0, 0, 0, 0.6);
+}
+.scan-removed-list {
+  display: flex;
+  gap: 8px;
+  overflow-x: auto;
+  justify-content: flex-start;
+  scrollbar-width: none;
+  padding-bottom: 2px;
+}
+.scan-removed-list::-webkit-scrollbar { display: none; }
+.removed-chip {
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 13px 8px 10px;
+  border-radius: 999px;
+  border: none;
+  background: rgba(255, 255, 255, 0.92);
+  color: var(--fg);
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+}
+.removed-chip svg { width: 15px; height: 15px; color: var(--danger); }
 .scan-error {
   margin: auto;
   padding: 24px;

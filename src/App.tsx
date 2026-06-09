@@ -79,10 +79,25 @@ export function App() {
     await adjustQuantity(p.id, -1)
     const left = p.quantity - 1
     toast(left > 0 ? `${p.name} : reste ×${left}` : `${p.name} retiré du stock`)
+    setConsumeLog((log) => {
+      const ex = log.find((e) => e.id === p.id)
+      if (ex) return log.map((e) => (e.id === p.id ? { ...e, count: e.count + 1 } : e))
+      return [{ id: p.id, name: p.name, count: 1 }, ...log]
+    })
+  }
+
+  // Annule un retrait scanné (remet +1 au stock).
+  async function undoConsume(id: string) {
+    await adjustQuantity(id, +1)
+    setConsumeLog((log) =>
+      log.flatMap((e) => (e.id === id ? (e.count > 1 ? [{ ...e, count: e.count - 1 }] : []) : [e])),
+    )
+    toast('Retrait annulé (+1)')
   }
   const [tab, setTab] = useState<Tab>('inventory')
   const [stack, setStack] = useState<Route[]>([])
   const [shopAddOpen, setShopAddOpen] = useState(false)
+  const [consumeLog, setConsumeLog] = useState<{ id: string; name: string; count: number }[]>([])
 
   // On attend que l'auth soit résolue (évite d'afficher « local » un bref instant
   // avant la bascule en cloud) et que les données soient chargées.
@@ -149,7 +164,10 @@ export function App() {
                 onOpenStats={() => push({ name: 'stats' })}
                 onOpenNotifications={() => push({ name: 'notifications' })}
                 onOpenBudget={() => push({ name: 'budget' })}
-                onScanConsume={() => push({ name: 'scan-consume' })}
+                onScanConsume={() => {
+                  setConsumeLog([])
+                  push({ name: 'scan-consume' })
+                }}
               />
             )}
             {tab === 'recipes' && (
@@ -215,7 +233,7 @@ export function App() {
       case 'scan-consume':
         return (
           <Suspense fallback={<div className="scan-screen" />}>
-            <ScanScreen mode="consume" onConsume={consumeByBarcode} onClose={back} />
+            <ScanScreen mode="consume" onConsume={consumeByBarcode} onClose={back} removed={consumeLog} onUndo={undoConsume} />
           </Suspense>
         )
       case 'ticket-scan':
