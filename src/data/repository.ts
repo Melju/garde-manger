@@ -34,6 +34,7 @@ export interface Repository {
   // Liste de courses
   listShopping(): Promise<ShoppingItem[]>
   addShoppingItem(input: ShoppingItemInput): Promise<ShoppingItem>
+  updateShoppingItem(id: string, patch: Partial<ShoppingItemInput>): Promise<void>
   toggleShoppingItem(id: string): Promise<ShoppingItem | null>
   removeShoppingItem(id: string): Promise<void>
   clearCheckedShopping(): Promise<void>

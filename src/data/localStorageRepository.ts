@@ -148,6 +148,11 @@ export class LocalStorageRepository implements Repository {
     return item
   }
 
+  async updateShoppingItem(id: string, patch: Partial<ShoppingItemInput>): Promise<void> {
+    const items = await this.listShopping()
+    write(SHOPPING_KEY, items.map((it) => (it.id === id ? { ...it, ...patch } : it)))
+  }
+
   async toggleShoppingItem(id: string): Promise<ShoppingItem | null> {
     const items = await this.listShopping()
     let toggled: ShoppingItem | null = null

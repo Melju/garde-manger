@@ -617,6 +617,35 @@ button { font-family: inherit; }
 .shopping-item.checked .checkbox svg { opacity: 1; }
 .shopping-name { flex: 1; font-weight: 500; }
 .shopping-qty { font-size: 13px; color: var(--muted); }
+.shop-step {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  flex-shrink: 0;
+}
+.shop-step button {
+  width: 26px;
+  height: 26px;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  border-radius: 7px;
+  font-size: 16px;
+  font-weight: 700;
+  line-height: 1;
+  color: var(--fg-2);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.shop-step button:active { background: var(--accent-soft); }
+.shop-step-val {
+  min-width: 48px;
+  text-align: center;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--fg);
+}
 .shopping-source { font-size: 11px; padding: 3px 8px; background: var(--accent-soft); border-radius: 4px; color: var(--fg-2); }
 .shopping-delete {
   background: none;

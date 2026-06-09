@@ -198,6 +198,17 @@ export class SupabaseRepository implements Repository {
     return toShopping(data)
   }
 
+  async updateShoppingItem(id: string, patch: Partial<ShoppingItemInput>): Promise<void> {
+    const row: Record<string, unknown> = {}
+    if (patch.name !== undefined) row.name = patch.name
+    if (patch.category !== undefined) row.category = patch.category
+    if (patch.quantity !== undefined) row.quantity = patch.quantity
+    if (patch.unit !== undefined) row.unit = patch.unit ?? null
+    if (patch.source !== undefined) row.source = patch.source
+    const { error } = await this.sb.from('shopping_items').update(row).eq('id', id).eq('household_id', this.hid)
+    if (error) throw error
+  }
+
   async toggleShoppingItem(id: string): Promise<ShoppingItem | null> {
     const { data: cur } = await this.sb
       .from('shopping_items')

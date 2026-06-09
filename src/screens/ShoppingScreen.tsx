@@ -30,6 +30,7 @@ export function ShoppingScreen({ addOpen, onCloseAdd }: ShoppingScreenProps) {
     recordShopItem,
     addProduct,
     addShoppingItem,
+    updateShoppingItem,
     toggleShoppingItem,
     removeShoppingItem,
     clearCheckedShopping,
@@ -126,20 +127,19 @@ export function ShoppingScreen({ addOpen, onCloseAdd }: ShoppingScreenProps) {
     toast(`${trimmed} · ${qtyLabel(qty, scale.baseUnit || undefined)}`)
   }
 
-  // Ajout en 1 tap depuis les suggestions : unité + quantité apprises.
-  async function quickAdd(item: KnownItem) {
-    const s = buyScale(item.unit)
-    const q = item.qty && s.values.includes(item.qty) ? item.qty : s.defaultValue
-    await addShoppingItem({
-      name: item.name,
-      category: item.category,
-      quantity: q,
-      unit: s.baseUnit || undefined,
-      source: 'manuel',
-    })
-    await recordShopItem(item.name, item.category, item.unit, q)
-    setName('')
-    toast(`${item.name} · ${qtyLabel(q, s.baseUnit || undefined)}`)
+  // Toucher une suggestion remplit le champ : la roulette s'adapte, puis on
+  // choisit la quantité et on valide avec « + ». (Pas d'ajout direct.)
+  function pickItem(item: KnownItem) {
+    setName(item.name)
+  }
+
+  // Ajuste la quantité d'un article déjà dans la liste (corriger une erreur).
+  async function stepQty(it: ShoppingItem, dir: 1 | -1) {
+    const s = buyScale(it.unit)
+    let idx = s.values.indexOf(it.quantity)
+    if (idx < 0) idx = 0
+    const ni = Math.max(0, Math.min(s.values.length - 1, idx + dir))
+    await updateShoppingItem(it.id, { quantity: s.values[ni] })
   }
 
   // Cocher = acheté → ranger les articles cochés dans le stock (cycle courses → garde-manger).
@@ -227,7 +227,11 @@ export function ShoppingScreen({ addOpen, onCloseAdd }: ShoppingScreenProps) {
                   <Icon name="check" width={3} />
                 </div>
                 <span className="shopping-name">{it.name}</span>
-                <span className="shopping-qty">{qtyLabel(it.quantity, it.unit)}</span>
+                <div className="shop-step" onClick={(e) => e.stopPropagation()}>
+                  <button aria-label="Diminuer" onClick={() => stepQty(it, -1)}>−</button>
+                  <span className="shop-step-val">{qtyLabel(it.quantity, it.unit)}</span>
+                  <button aria-label="Augmenter" onClick={() => stepQty(it, 1)}>+</button>
+                </div>
                 {it.source === 'auto' && <span className="shopping-source">auto</span>}
                 <button
                   className="shopping-delete"
@@ -282,7 +286,7 @@ export function ShoppingScreen({ addOpen, onCloseAdd }: ShoppingScreenProps) {
               {suggestions.length > 0 && (
                 <div className="suggest-list" style={{ padding: 0, marginBottom: 14 }}>
                   {suggestions.map((it) => (
-                    <button key={it.name} className="suggest-row" onClick={() => quickAdd(it)}>
+                    <button key={it.name} className="suggest-row" onClick={() => pickItem(it)}>
                       <Icon name="plus" width={2} />
                       <span className="suggest-name">{it.name}</span>
                       <span className="suggest-cat">{categoryLabel(it.category)}</span>
@@ -301,7 +305,7 @@ export function ShoppingScreen({ addOpen, onCloseAdd }: ShoppingScreenProps) {
                   {browseAll && (
                     <div className="quick-add-chips">
                       {catalog.slice(0, 40).map((it) => (
-                        <button key={it.name} className="quick-chip" onClick={() => quickAdd(it)}>
+                        <button key={it.name} className="quick-chip" onClick={() => pickItem(it)}>
                           <Icon name="plus" width={2.4} />
                           {it.name}
                         </button>

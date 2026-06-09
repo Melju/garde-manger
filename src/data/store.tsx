@@ -75,6 +75,7 @@ interface StoreValue {
 
   // Courses
   addShoppingItem(input: ShoppingItemInput): Promise<void>
+  updateShoppingItem(id: string, patch: Partial<ShoppingItemInput>): Promise<void>
   addManyShopping(inputs: ShoppingItemInput[]): Promise<number>
   toggleShoppingItem(id: string): Promise<void>
   removeShoppingItem(id: string): Promise<void>
@@ -422,6 +423,10 @@ export function StoreProvider({ children }: { children: ReactNode }) {
 
       async addShoppingItem(input) {
         await repo.addShoppingItem(input)
+        setShopping(await repo.listShopping())
+      },
+      async updateShoppingItem(id, patch) {
+        await repo.updateShoppingItem(id, patch)
         setShopping(await repo.listShopping())
       },
       async addManyShopping(inputs) {
