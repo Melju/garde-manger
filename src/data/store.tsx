@@ -34,6 +34,7 @@ import { newId, type Repository } from './repository'
 import { toISODate } from '../lib/dates'
 import { isIngredientInStock } from '../lib/recipesLib'
 import { priorityProducts } from '../lib/expiry'
+import { buildNotifications, type Notification } from '../lib/analytics'
 import { DIET_LABELS } from '../types'
 import { lookupBarcode } from '../lib/openfoodfacts'
 
@@ -52,6 +53,12 @@ interface StoreValue {
   cloudMode: boolean
   /** true si le cloud est injoignable et qu'on affiche le dernier instantané (lecture seule). */
   offline: boolean
+  /** Notifications actuelles (péremption, stock bas). */
+  notifications: Notification[]
+  /** Nombre de notifications non vues (pour le badge). */
+  unreadNotifCount: number
+  /** Marque toutes les notifications actuelles comme vues (efface le badge). */
+  markNotificationsRead(): void
   /** Copie les produits/courses du stockage local de cet appareil vers le cloud. */
   importLocalData(): Promise<number>
   /** Complète les infos manquantes (photo, Nutri-Score, allergènes…) des produits ayant un code-barres, via Open Food Facts. */
@@ -134,6 +141,13 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   })
   const [loading, setLoading] = useState(true)
   const [offline, setOffline] = useState(false)
+  const [seenNotif, setSeenNotif] = useState<string[]>(() => {
+    try {
+      return JSON.parse(localStorage.getItem('gm.notif.seen') || '[]')
+    } catch {
+      return []
+    }
+  })
 
   const auth = useAuth()
   const cloud = Boolean(supabase && auth.householdId)
@@ -207,6 +221,8 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     loadAll().finally(() => setLoading(false))
   }, [loadAll])
 
+  const notifications = useMemo(() => buildNotifications(products, settings), [products, settings])
+
   const value = useMemo<StoreValue>(() => {
     // Ajoute une entrée d'historique et met à jour l'état + le stockage.
     async function logHistory(kind: HistoryKind, label: string, amount?: number) {
@@ -237,6 +253,17 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       loading,
       cloudMode: Boolean(supabase && auth.householdId),
       offline,
+      notifications,
+      unreadNotifCount: notifications.filter((n) => !seenNotif.includes(n.id)).length,
+      markNotificationsRead() {
+        const ids = notifications.map((n) => n.id)
+        setSeenNotif(ids)
+        try {
+          localStorage.setItem('gm.notif.seen', JSON.stringify(ids))
+        } catch {
+          /* ignore */
+        }
+      },
 
       async importLocalData() {
         if (!(supabase && auth.householdId)) return 0
@@ -547,7 +574,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
         await loadAll()
       },
     }
-  }, [repo, products, shopping, recipes, family, mealPlan, history, expenses, shopCatalog, budget, settings, loading, offline, loadAll])
+  }, [repo, products, shopping, recipes, family, mealPlan, history, expenses, shopCatalog, budget, settings, loading, offline, notifications, seenNotif, loadAll])
 
   return <StoreContext.Provider value={value}>{children}</StoreContext.Provider>
 }

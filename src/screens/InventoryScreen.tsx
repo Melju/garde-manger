@@ -22,7 +22,7 @@ export function InventoryScreen({
   onOpenNotifications,
   onOpenBudget,
 }: InventoryScreenProps) {
-  const { products, adjustQuantity, wasteProduct, updateProduct, expenses, budget, cloudMode, offline } = useStore()
+  const { products, adjustQuantity, wasteProduct, updateProduct, expenses, budget, cloudMode, offline, unreadNotifCount } = useStore()
   const spent = useMemo(() => budgetSummary(expenses, budget).spent, [expenses, budget])
   const toast = useToast()
   const [search, setSearch] = useState('')
@@ -77,7 +77,7 @@ export function InventoryScreen({
         <div className="header-actions">
           <button className="icon-btn" onClick={onOpenNotifications} aria-label="Notifications">
             <Icon name="bell" />
-            {urgent > 0 && <span className="notif-badge">{urgent}</span>}
+            {unreadNotifCount > 0 && <span className="notif-badge">{unreadNotifCount}</span>}
           </button>
         </div>
       </header>

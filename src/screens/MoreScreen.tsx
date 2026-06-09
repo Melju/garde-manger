@@ -2,7 +2,6 @@ import { useMemo } from 'react'
 import { useStore } from '../data/store'
 import { useAuth } from '../data/auth'
 import { Icon, type IconName } from '../components/Icon'
-import { buildNotifications } from '../lib/analytics'
 import { budgetSummary } from '../lib/analytics'
 import { monthlyStats } from '../lib/analytics'
 
@@ -17,12 +16,9 @@ interface MoreScreenProps {
 }
 
 export function MoreScreen(props: MoreScreenProps) {
-  const { products, settings, expenses, budget, history } = useStore()
+  const { products, expenses, budget, history, unreadNotifCount } = useStore()
   const auth = useAuth()
-  const notifCount = useMemo(
-    () => buildNotifications(products, settings).length,
-    [products, settings],
-  )
+  const notifCount = unreadNotifCount
   const spent = useMemo(() => budgetSummary(expenses, budget).spent, [expenses, budget])
   const score = useMemo(() => monthlyStats(products, history, expenses).score, [products, history, expenses])
 

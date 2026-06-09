@@ -1,8 +1,8 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useStore } from '../data/store'
 import { PageHeader } from '../components/PageHeader'
 import { Icon, type IconName } from '../components/Icon'
-import { buildNotifications, type NotifKind, type NotifSeverity } from '../lib/analytics'
+import { type NotifKind, type NotifSeverity } from '../lib/analytics'
 
 interface NotificationsScreenProps {
   onBack: () => void
@@ -18,11 +18,16 @@ const ICON_BY_SEVERITY: Record<NotifSeverity, IconName> = {
 type Tab = 'toutes' | NotifKind
 
 export function NotificationsScreen({ onBack }: NotificationsScreenProps) {
-  const { products, settings } = useStore()
+  const { notifications, markNotificationsRead } = useStore()
   const [tab, setTab] = useState<Tab>('toutes')
 
-  const all = useMemo(() => buildNotifications(products, settings), [products, settings])
-  const list = all.filter((n) => tab === 'toutes' || n.kind === tab)
+  // À l'ouverture, on marque les notifications comme vues (efface le badge).
+  useEffect(() => {
+    markNotificationsRead()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
+  const list = notifications.filter((n) => tab === 'toutes' || n.kind === tab)
 
   return (
     <div className="screen-fade">
