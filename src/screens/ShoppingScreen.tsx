@@ -258,7 +258,14 @@ export function ShoppingScreen({ addOpen, onCloseAdd }: ShoppingScreenProps) {
             <div className="drawer-handle" />
             <div className="drawer-head">
               <div className="drawer-title">Ajouter un article</div>
-              <button className="btn-secondary" style={{ width: 'auto', padding: '0 14px', height: 36 }} onClick={onCloseAdd}>
+              <button
+                className="btn-secondary"
+                style={{ width: 'auto', padding: '0 14px', height: 36 }}
+                onClick={async () => {
+                  if (name.trim()) await handleAdd()
+                  onCloseAdd()
+                }}
+              >
                 Terminé
               </button>
             </div>
