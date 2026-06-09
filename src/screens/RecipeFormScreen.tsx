@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
 import { useStore } from '../data/store'
 import { useToast } from '../components/Toast'
 import { PageHeader } from '../components/PageHeader'
@@ -22,9 +22,22 @@ const COURSES: [string, string][] = [
 const COURSE_VALUES = COURSES.map(([v]) => v)
 
 export function RecipeFormScreen({ recipe, onClose, onSaved }: RecipeFormScreenProps) {
-  const { addRecipe, updateRecipe } = useStore()
+  const { addRecipe, updateRecipe, products, recipes, shopCatalog } = useStore()
   const toast = useToast()
   const isEdit = !!recipe
+
+  // Ingrédients déjà connus : stock + autres recettes + catalogue de courses.
+  const knownIngredients = useMemo(() => {
+    const map = new Map<string, string>()
+    for (const p of products) if (p.name.trim()) map.set(p.name.trim().toLowerCase(), p.name.trim())
+    for (const r of recipes)
+      for (const ing of r.ingredients)
+        if (ing.name?.trim()) map.set(ing.name.trim().toLowerCase(), ing.name.trim())
+    for (const e of shopCatalog) if (e.name?.trim()) map.set(e.name.trim().toLowerCase(), e.name.trim())
+    return [...map.values()].sort((a, b) => a.localeCompare(b))
+  }, [products, recipes, shopCatalog])
+
+  const [activeIdx, setActiveIdx] = useState<number | null>(null)
 
   const [title, setTitle] = useState(recipe?.title ?? '')
   const [course, setCourse] = useState(
@@ -123,29 +136,60 @@ export function RecipeFormScreen({ recipe, onClose, onSaved }: RecipeFormScreenP
 
       <div className="form-section">
         <label className="form-label">Ingrédients</label>
-        {ingredients.map((ing, i) => (
-          <div className="ing-row" key={i}>
-            <input
-              className="form-input"
-              placeholder="Ingrédient"
-              value={ing.name}
-              onChange={(e) => setIng(i, { name: e.target.value })}
-            />
-            <input
-              className="form-input ing-qty"
-              placeholder="Qté"
-              value={ing.qty ?? ''}
-              onChange={(e) => setIng(i, { qty: e.target.value })}
-            />
-            <button
-              className="ing-del"
-              onClick={() => setIngredients((l) => (l.length > 1 ? l.filter((_, idx) => idx !== i) : l))}
-              aria-label="Retirer"
-            >
-              <Icon name="trash" width={2} />
-            </button>
-          </div>
-        ))}
+        {ingredients.map((ing, i) => {
+          const q = ing.name.trim().toLowerCase()
+          const sugg =
+            activeIdx === i && q
+              ? knownIngredients.filter((n) => n.toLowerCase().includes(q) && n.toLowerCase() !== q).slice(0, 6)
+              : []
+          return (
+            <div key={i}>
+              <div className="ing-row">
+                <input
+                  className="form-input"
+                  placeholder="Ingrédient"
+                  value={ing.name}
+                  onFocus={() => setActiveIdx(i)}
+                  onChange={(e) => {
+                    setIng(i, { name: e.target.value })
+                    setActiveIdx(i)
+                  }}
+                />
+                <input
+                  className="form-input ing-qty"
+                  placeholder="Qté"
+                  value={ing.qty ?? ''}
+                  onFocus={() => setActiveIdx(null)}
+                  onChange={(e) => setIng(i, { qty: e.target.value })}
+                />
+                <button
+                  className="ing-del"
+                  onClick={() => setIngredients((l) => (l.length > 1 ? l.filter((_, idx) => idx !== i) : l))}
+                  aria-label="Retirer"
+                >
+                  <Icon name="trash" width={2} />
+                </button>
+              </div>
+              {sugg.length > 0 && (
+                <div className="suggest-list" style={{ padding: 0, margin: '4px 0 8px' }}>
+                  {sugg.map((n) => (
+                    <button
+                      key={n}
+                      className="suggest-row"
+                      onClick={() => {
+                        setIng(i, { name: n })
+                        setActiveIdx(null)
+                      }}
+                    >
+                      <Icon name="plus" width={2} />
+                      <span className="suggest-name">{n}</span>
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+          )
+        })}
         <button className="ing-add" onClick={() => setIngredients((l) => [...l, { name: '', qty: '' }])}>
           <Icon name="plus" width={2.2} />
           Ajouter un ingrédient
