@@ -8,6 +8,10 @@ import { normalize } from './productIcon'
  * Retourne null si rien ne correspond : l'appelant retombe sur le pictogramme de secours.
  */
 const RULES: [string[], string][] = [
+  [['filet de poulet marine', 'filets de poulet marines', 'filet poulet marine', 'filets poulet marines', 'poulet marine', 'poulets marines', 'blanc de poulet marine', 'blancs de poulet marines'], 'filet-poulet-marine'],
+  [['emince tex mex', 'eminces tex mex', 'emince de poulet tex mex', 'eminces de poulet tex mex', 'poulet tex mex', 'tex mex', 'texmex'], 'emince-tex-mex'],
+  [['boulettes vegetales', 'boulette vegetale', 'boulettes vegetariennes', 'boulette vegetarienne', 'boulettes vegan', 'boulettes veggie', 'boulettes vege', 'falafel', 'falafels'], 'boulettes-vegetales'],
+  [['emince de poulet', 'eminces de poulet', 'emince poulet', 'eminces poulet', 'emince de volaille', 'eminces de volaille', 'aiguillettes de poulet', 'aiguillette de poulet'], 'emince-poulet'],
   [['ministars', 'mini stars', 'ministar', 'biscuit etoile', 'biscuits etoiles', 'etoiles chocolat'], 'biscuit-etoile'],
   [['dinosaurus', 'dinosaure', 'dinosaures', 'biscuit dinosaure'], 'biscuit-dinosaure'],
   [['biscuit animaux', 'biscuits animaux', 'animaux biscuit'], 'biscuit-animaux'],
