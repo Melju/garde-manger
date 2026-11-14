@@ -15,6 +15,7 @@ import {
 import { splitSize } from '../lib/contenance'
 import { estimateShelfLife, estimatedExpiryISO, durationLabel, guessDateType } from '../lib/shelfLife'
 import { DatePicker } from '../components/DatePicker'
+import { downscaleImage } from '../lib/imageResize'
 import { learn } from '../lib/learnedShelf'
 import { productImageSlug, productImageUrl, chosenIconSlug, chosenIconValue, realPhotoUrl } from '../lib/productImage'
 import { ICON_SLUGS } from '../lib/iconList'
@@ -46,10 +47,41 @@ interface ProductFormScreenProps {
 }
 
 export function ProductFormScreen({ product, initial, onClose, onSaved }: ProductFormScreenProps) {
-  const { addProduct, updateProduct, removeProduct, adjustQuantity, wasteProduct, enrichProduct, family } = useStore()
+  const { addProduct, updateProduct, removeProduct, adjustQuantity, wasteProduct, enrichProduct, scanExpiry, family } = useStore()
   const toast = useToast()
   const isEdit = product !== null
   const [enriching, setEnriching] = useState(false)
+  const [scanningDate, setScanningDate] = useState(false)
+  const dateFileRef = useRef<HTMLInputElement>(null)
+
+  async function onPickDatePhoto(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0]
+    e.target.value = ''
+    if (!file) return
+    setScanningDate(true)
+    try {
+      const { data, mediaType } = await downscaleImage(file)
+      const r = await scanExpiry(data, mediaType)
+      if (!r.date) {
+        toast('Aucune date lisible, recadre sur la date et réessaie')
+        return
+      }
+      setExpiryDate(r.date)
+      if (r.type) {
+        dateTouched.current = true
+        setDateType(r.type)
+      }
+      toast(
+        r.confident
+          ? `Date lue : ${r.raw || r.date}`
+          : `Lecture incertaine (${r.raw || r.date}), vérifie la date`,
+      )
+    } catch (err) {
+      toast(err instanceof Error ? err.message : 'Lecture impossible')
+    } finally {
+      setScanningDate(false)
+    }
+  }
   // Durées de conservation par mode, fournies par l'IA (pour adapter la DLC).
   const [aiShelf, setAiShelf] = useState<{ frais: number; refrigere: number; congele: number } | null>(null)
 
@@ -446,6 +478,23 @@ export function ProductFormScreen({ product, initial, onClose, onSaved }: Produc
       <div className="form-section">
         <label className="form-label" htmlFor="expiry">Date de péremption</label>
         <DatePicker id="expiry" value={expiryDate} onChange={setExpiryDate} />
+        <input
+          ref={dateFileRef}
+          type="file"
+          accept="image/*"
+          capture="environment"
+          hidden
+          onChange={onPickDatePhoto}
+        />
+        <button
+          type="button"
+          className="ai-complete-btn"
+          onClick={() => dateFileRef.current?.click()}
+          disabled={scanningDate}
+        >
+          <Icon name="scan" width={2.2} />
+          {scanningDate ? 'Lecture de la date…' : 'Scanner la date'}
+        </button>
         {estimate && !expiryDate && (
           <button type="button" className="estimate-hint" onClick={applyEstimate}>
             <span>

@@ -17,6 +17,7 @@ import type {
   FamilyMemberInput,
   HistoryEntry,
   HistoryKind,
+  DateType,
   MealPlan,
   Product,
   ProductInput,
@@ -70,6 +71,8 @@ interface StoreValue {
 
   // Produits
   addProduct(input: ProductInput): Promise<void>
+  /** Lit la date de péremption sur la photo d'un emballage (IA). */
+  scanExpiry(image: string, mediaType: string): Promise<{ date: string | null; type: DateType | null; raw: string; confident: boolean }>
   updateProduct(id: string, patch: Partial<ProductInput>): Promise<void>
   adjustQuantity(id: string, delta: number): Promise<void>
   removeProduct(id: string): Promise<void>
@@ -600,6 +603,19 @@ export function StoreProvider({ children }: { children: ReactNode }) {
         const items = (data as any)?.items
         if (!Array.isArray(items)) throw new Error((data as any)?.error || 'Réponse invalide')
         return items as ReceiptItem[]
+      },
+      async scanExpiry(image, mediaType) {
+        if (!supabase) throw new Error('Connecte-toi pour scanner une date')
+        const { data, error } = await supabase.functions.invoke('expiry', { body: { image, mediaType } })
+        if (error) throw new Error(error.message || 'Analyse impossible')
+        const d = data as any
+        if (!d || (d.error && !('date' in d))) throw new Error(d?.error || 'Réponse invalide')
+        return {
+          date: typeof d.date === 'string' ? d.date : null,
+          type: d.type === 'dlc' || d.type === 'ddm' ? d.type : null,
+          raw: typeof d.raw === 'string' ? d.raw : '',
+          confident: d.confident !== false,
+        }
       },
       async enrichProduct(name) {
         if (!supabase) throw new Error('Connecte-toi pour l’assistance IA')
