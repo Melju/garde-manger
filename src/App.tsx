@@ -138,6 +138,16 @@ export function App() {
     })
   const [consumeLog, setConsumeLog] = useState<{ id: string; name: string; count: number }[]>([])
 
+  // Défilement : les hooks doivent rester avant le return anticipé ci-dessous.
+  const scrollSaved = useRef<number[]>([])
+  const prevDepth = useRef(0)
+  useLayoutEffect(() => {
+    const d = stack.length
+    if (d > prevDepth.current) window.scrollTo(0, 0)
+    else if (d < prevDepth.current) window.scrollTo(0, scrollSaved.current[d] ?? 0)
+    prevDepth.current = d
+  }, [stack.length])
+
   // On attend que l'auth soit résolue (évite d'afficher « local » un bref instant
   // avant la bascule en cloud) et que les données soient chargées.
   if (!auth.ready || loading)
@@ -149,7 +159,6 @@ export function App() {
     )
 
   // Défilement : une sous-page s'ouvre toujours tout en haut, et la page d'origine retrouve sa position au retour.
-  const scrollSaved = useRef<number[]>([])
   const push = (r: Route) => {
     scrollSaved.current[stack.length] = window.scrollY
     setStack((s) => [...s, r])
@@ -167,13 +176,6 @@ export function App() {
   }
 
   const top = stack[stack.length - 1]
-  const prevDepth = useRef(0)
-  useLayoutEffect(() => {
-    const d = stack.length
-    if (d > prevDepth.current) window.scrollTo(0, 0)
-    else if (d < prevDepth.current) window.scrollTo(0, scrollSaved.current[d] ?? 0)
-    prevDepth.current = d
-  }, [stack.length])
 
   // Action d'ajout contextuelle par page (barre du bas en mobile, bouton sidebar en bureau).
   const addAction: Partial<Record<Tab, { label: string; run: () => void }>> = {
