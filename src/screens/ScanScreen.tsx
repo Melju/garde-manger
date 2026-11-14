@@ -17,6 +17,8 @@ interface ScanScreenProps {
   findKnown?: (barcode: string) => Product | null
   /** Mode ajout : ajoute n unités au produit déjà en stock. */
   onAddKnown?: (product: Product, n: number) => Promise<void>
+  /** Mode ajout : produits ajoutés pendant cette session de scan en série. */
+  added?: { name: string; count: number }[]
   /** Mode retrait : produits retirés dans la session (pour correction). */
   removed?: { id: string; name: string; count: number }[]
   /** Mode retrait : annule un retrait (remet +1). */
@@ -26,7 +28,7 @@ interface ScanScreenProps {
 
 type Phase = 'scanning' | 'looking-up' | 'error'
 
-export function ScanScreen({ mode = 'add', onResult, onConsume, findKnown, onAddKnown, removed, onUndo, onClose }: ScanScreenProps) {
+export function ScanScreen({ mode = 'add', onResult, onConsume, findKnown, onAddKnown, added, removed, onUndo, onClose }: ScanScreenProps) {
   const videoRef = useRef<HTMLVideoElement>(null)
   const controlsRef = useRef<{ stop: () => void } | null>(null)
   const handledRef = useRef(false)
@@ -210,6 +212,19 @@ export function ScanScreen({ mode = 'add', onResult, onConsume, findKnown, onAdd
             </div>
           )}
 
+          {!isConsume && added && added.length > 0 && (
+            <div className="scan-removed">
+              <div className="scan-removed-title">Ajoutés pendant ce scan</div>
+              <div className="scan-removed-list">
+                {added.map((a) => (
+                  <span key={a.name} className="removed-chip added">
+                    {a.name} ×{a.count}
+                  </span>
+                ))}
+              </div>
+            </div>
+          )}
+
           <div className="scan-bottom">
             <p className="scan-hint">
               {phase === 'looking-up'
@@ -218,9 +233,9 @@ export function ScanScreen({ mode = 'add', onResult, onConsume, findKnown, onAdd
                   ? 'Visez un produit à retirer (scan en continu)'
                   : 'Visez le code-barres du produit'}
             </p>
-            {isConsume && (
+            {(isConsume || (added && added.length > 0)) && (
               <button className="btn-primary scan-done" onClick={onClose}>
-                Terminé
+                {isConsume ? 'Terminé' : `Terminé (${added!.reduce((n, a) => n + a.count, 0)} ajouté${added!.reduce((n, a) => n + a.count, 0) > 1 ? 's' : ''})`}
               </button>
             )}
           </div>

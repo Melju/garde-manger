@@ -72,6 +72,7 @@ export function App() {
   async function addKnown(p: Product, n: number) {
     await adjustQuantity(p.id, n)
     toast(`${p.name} : +${n}, ×${p.quantity + n} en stock`)
+    logScanAdded(p.name, n)
   }
 
   // Retrait par scan : décrémente le produit correspondant au code-barres.
@@ -106,6 +107,13 @@ export function App() {
   const [tab, setTab] = useState<Tab>('inventory')
   const [stack, setStack] = useState<Route[]>([])
   const [shopAddOpen, setShopAddOpen] = useState(false)
+  // Produits ajoutés pendant une session de scan en série (pour « Terminé »).
+  const [scanAdded, setScanAdded] = useState<{ name: string; count: number }[]>([])
+  const logScanAdded = (name: string, n: number) =>
+    setScanAdded((log) => {
+      const ex = log.find((e) => e.name === name)
+      return ex ? log.map((e) => (e.name === name ? { ...e, count: e.count + n } : e)) : [...log, { name, count: n }]
+    })
   const [consumeLog, setConsumeLog] = useState<{ id: string; name: string; count: number }[]>([])
 
   // On attend que l'auth soit résolue (évite d'afficher « local » un bref instant
@@ -237,17 +245,21 @@ export function App() {
             onClose={back}
             // Produit issu d'un scan : après enregistrement, on revient au scanner
             // pour enchaîner les codes-barres.
-            onSaved={route.fromScan ? () => replace({ name: 'scan' }) : back}
+            onSaved={route.fromScan ? (saved) => { logScanAdded(saved.name, saved.quantity); replace({ name: 'scan' }) } : back}
           />
         )
       case 'scan':
         return (
           <Suspense fallback={<div className="scan-screen" />}>
             <ScanScreen
+              added={scanAdded}
               findKnown={findKnownByBarcode}
               onAddKnown={addKnown}
               onResult={(initial) => replace({ name: 'product-form', product: null, initial, fromScan: true })}
-              onClose={back}
+              onClose={() => {
+                setScanAdded([])
+                back()
+              }}
             />
           </Suspense>
         )
@@ -300,7 +312,7 @@ export function App() {
         return (
           <AddMenuScreen
             onBack={back}
-            onBarcode={() => replace({ name: 'scan' })}
+            onBarcode={() => { setScanAdded([]); replace({ name: 'scan' }) }}
             onManual={() => replace({ name: 'product-form', product: null })}
             onBulk={() => replace({ name: 'bulk-add' })}
             onTicket={() => replace({ name: 'ticket-scan' })}

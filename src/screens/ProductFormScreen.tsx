@@ -43,7 +43,7 @@ interface ProductFormScreenProps {
   /** Fermeture (annuler / retour). */
   onClose: () => void
   /** Appelé après un enregistrement réussi (par défaut = onClose). */
-  onSaved?: () => void
+  onSaved?: (saved: { name: string; quantity: number }) => void
 }
 
 export function ProductFormScreen({ product, initial, onClose, onSaved }: ProductFormScreenProps) {
@@ -246,7 +246,8 @@ export function ProductFormScreen({ product, initial, onClose, onSaved }: Produc
       await addProduct(buildInput())
       toast('Produit ajouté')
     }
-    ;(onSaved ?? onClose)()
+    if (onSaved) onSaved({ name: inp.name, quantity: inp.quantity })
+    else onClose()
   }
 
   async function handleConsume() {
