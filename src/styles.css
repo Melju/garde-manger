@@ -2428,3 +2428,7 @@ h1.logo { line-height: 0; }
 h1.logo img { display: block; height: 50px; width: auto; }
 .sidebar-logo img { display: block; height: 84px; width: auto; }
 .splash-logo-img { display: block; height: 150px; width: auto; filter: drop-shadow(0 6px 14px rgba(0,0,0,0.2)); }
+
+/* Statut (nb de produits, synchro) à côté du logo. */
+.header-left { display: flex; align-items: flex-end; gap: 10px; min-width: 0; }
+.header-left .sub-mode { margin: 0 0 6px; white-space: nowrap; font-size: 12px; }
