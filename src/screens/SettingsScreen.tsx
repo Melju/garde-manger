@@ -1,7 +1,8 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useStore } from '../data/store'
 import { useToast } from '../components/Toast'
 import { PageHeader } from '../components/PageHeader'
+import { pushState, enablePush, disablePush, testPush, type PushState } from '../lib/push'
 
 interface SettingsScreenProps {
   onBack: () => void
@@ -20,6 +21,29 @@ export function SettingsScreen({ onBack }: SettingsScreenProps) {
   const { settings, updateSettings, resetDemo, refreshFromOFF } = useStore()
   const toast = useToast()
   const [busy, setBusy] = useState(false)
+  const [push, setPush] = useState<PushState | null>(null)
+  const [pushBusy, setPushBusy] = useState(false)
+  useEffect(() => {
+    pushState().then(setPush).catch(() => setPush('unsupported'))
+  }, [])
+
+  async function togglePush(on: boolean) {
+    setPushBusy(true)
+    try {
+      if (on) {
+        await enablePush()
+        toast('Alerte quotidienne activée')
+      } else {
+        await disablePush()
+        toast('Alerte quotidienne désactivée')
+      }
+    } catch (e) {
+      toast(e instanceof Error ? e.message : 'Échec')
+    } finally {
+      setPush(await pushState().catch(() => 'unsupported' as PushState))
+      setPushBusy(false)
+    }
+  }
 
   async function refresh() {
     setBusy(true)
@@ -58,6 +82,33 @@ export function SettingsScreen({ onBack }: SettingsScreenProps) {
           </div>
           <Toggle checked={settings.notifLowStock} onChange={(v) => updateSettings({ notifLowStock: v })} />
         </div>
+      </div>
+
+      <div className="form-section">
+        <label className="form-label">Sur ce téléphone</label>
+        <div className="setting-row">
+          <div className="setting-text">
+            <div className="setting-title">Alerte chaque matin</div>
+            <div className="setting-desc">
+              {push === 'needs-install'
+                ? "Ajoute d'abord Miamm à l'écran d'accueil (Partager, puis Sur l'écran d'accueil)"
+                : push === 'denied'
+                  ? "Bloquées : autorise les notifications dans les réglages du téléphone"
+                  : push === 'unsupported'
+                    ? 'Indisponible sur cet appareil ou hors compte'
+                    : 'Un résumé des produits à consommer vite, une fois par jour'}
+            </div>
+          </div>
+          <Toggle
+            checked={push === 'on'}
+            onChange={(v) => !pushBusy && (push === 'on' || push === 'off') && togglePush(v)}
+          />
+        </div>
+        {push === 'on' && (
+          <button className="btn-secondary" onClick={() => testPush().catch(() => toast('Test impossible'))} style={{ marginTop: 10 }}>
+            Envoyer une notification test
+          </button>
+        )}
       </div>
 
       <div className="form-section">

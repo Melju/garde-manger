@@ -1,0 +1,3 @@
+{
+  "crons": [{ "path": "/api/push-digest", "schedule": "0 6 * * *" }]
+}
