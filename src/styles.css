@@ -2415,3 +2415,9 @@ input[type='date'].form-input::-webkit-calendar-picker-indicator {
 .select-choices { display: flex; gap: 8px; overflow-x: auto; padding-bottom: 2px; scrollbar-width: none; }
 .select-choices::-webkit-scrollbar { display: none; }
 .select-choices .store-opt { flex: 0 0 auto; padding: 7px 13px; white-space: nowrap; }
+/* Barre d'actions du formulaire produit : toujours visible en bas (sticky) */
+.form-footer { position: sticky; bottom: 0; z-index: 20; display: flex; align-items: center; gap: 10px; padding: 10px 16px calc(10px + env(safe-area-inset-bottom)); margin-top: 8px; background: var(--surface, #fff); border-top: 1px solid var(--border, rgba(0,0,0,0.08)); box-shadow: 0 -6px 16px rgba(0,0,0,0.05); }
+.form-footer .form-actions { margin: 0; flex: 0 0 auto; gap: 8px; }
+.form-footer .action-chip { flex: 0 0 auto; width: 46px; height: 46px; padding: 0; justify-content: center; border-radius: 14px; }
+.form-footer .form-save { flex: 1; width: auto; margin: 0; min-height: 46px; }
+.app { overflow-x: clip; } /* hidden casserait le position: sticky de la barre du formulaire */
