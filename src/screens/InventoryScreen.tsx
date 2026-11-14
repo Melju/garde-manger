@@ -313,6 +313,13 @@ export function InventoryScreen({
       </div>
 
       <div className={`product-list${selecting ? ' selecting' : ''}`}>
+        {search.trim() && (
+          <div className="list-header">
+            <span className="list-count">
+              {filtered.length} résultat{filtered.length > 1 ? 's' : ''}
+            </span>
+          </div>
+        )}
 
         {filtered.length > 0 ? (
           <>
