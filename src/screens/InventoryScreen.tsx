@@ -39,6 +39,22 @@ export function InventoryScreen({
   const spent = useMemo(() => budgetSummary(expenses, budget).spent, [expenses, budget])
   const toast = useToast()
   const [search, setSearch] = useState('')
+  // Indice de glissement : animation jouée une seule fois, à la première visite.
+  const [swipeHintSeen, setSwipeHintSeen] = useState(() => {
+    try {
+      return localStorage.getItem('miamm.swipehint.v1') === '1'
+    } catch {
+      return true
+    }
+  })
+  function doneSwipeHint() {
+    setSwipeHintSeen(true)
+    try {
+      localStorage.setItem('miamm.swipehint.v1', '1')
+    } catch {
+      /* ignore */
+    }
+  }
   // Mode sélection : associer plusieurs produits à un magasin d'un coup.
   const [selecting, setSelecting] = useState(false)
   const [picked, setPicked] = useState<Set<string>>(new Set())
@@ -328,13 +344,8 @@ export function InventoryScreen({
                 <button type="button" onClick={() => setPicked(new Set(filtered.map((p) => p.id)))}>Tout sélectionner</button>
                 <button type="button" onClick={() => setPicked(new Set())}>Aucun</button>
               </div>
-            ) : (
-              <div className="swipe-hint">
-                <Icon name="back" />
-                Glissez à gauche pour retirer · à droite si périmé
-              </div>
-            )}
-            {filtered.map((p) =>
+            ) : null}
+            {filtered.map((p, idx) =>
               selecting ? (
                 <button
                   key={p.id}
@@ -363,6 +374,8 @@ export function InventoryScreen({
                   onWaste={handleWaste}
                   onConsumePortion={handleConsumePortion}
                   onConsumeSachets={handleConsumeSachets}
+                  demo={!swipeHintSeen && idx === 0}
+                  onDemoDone={doneSwipeHint}
                 />
               ),
             )}

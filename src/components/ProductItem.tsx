@@ -28,6 +28,9 @@ interface ProductItemProps {
   onConsumePortion: (product: Product, newSize: string | null) => void
   /** Retrait de n sachets sur plusieurs boîtes. */
   onConsumeSachets?: (product: Product, n: number) => void
+  /** Joue une fois l'animation d'indice de glissement (première visite). */
+  demo?: boolean
+  onDemoDone?: () => void
 }
 
 type Swipe = 'none' | 'left' | 'right'
@@ -44,6 +47,8 @@ export function ProductItem({
   onWaste,
   onConsumePortion,
   onConsumeSachets,
+  demo,
+  onDemoDone,
 }: ProductItemProps) {
   // « kg » seul (ancienne saisie) est lu comme « 1 kg ».
   const product = normalizeBareUnit(rawProduct)
@@ -77,6 +82,7 @@ export function ProductItem({
     return v
   }
   function onPointerDown(e: React.PointerEvent) {
+    if (demo) onDemoDone?.()
     startX.current = e.clientX
     startY.current = e.clientY
     moved.current = false
@@ -152,7 +158,8 @@ export function ProductItem({
       </div>
 
       <div
-        className={`product-item${dragX !== null ? ' dragging' : ''}`}
+        className={`product-item${dragX !== null ? ' dragging' : ''}${demo && dragX === null ? ' swipe-demo' : ''}`}
+        onAnimationEnd={() => demo && onDemoDone?.()}
         style={dragX !== null ? { transform: `translateX(${dragX}px)` } : undefined}
         onPointerDown={onPointerDown}
         onPointerMove={onPointerMove}

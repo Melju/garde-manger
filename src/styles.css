@@ -2581,3 +2581,13 @@ body.is-selecting .add-bar { display: none; }
 .conso-top-qty { flex: 0 0 auto; color: var(--muted); font-size: 13px; min-width: 30px; text-align: right; }
 .conso-link { display: flex; align-items: center; justify-content: center; gap: 8px; height: 46px; border-radius: 14px; font-size: 14px; margin-bottom: 12px; }
 .conso-link svg { width: 18px; height: 18px; }
+
+/* Indice de glissement : la première ligne s'ouvre à gauche puis à droite, une seule fois. */
+@keyframes swipe-demo {
+  0%, 12% { transform: translateX(0); }
+  34%, 48% { transform: translateX(-76px); }
+  70%, 80% { transform: translateX(56px); }
+  100% { transform: translateX(0); }
+}
+.swipe-wrapper .product-item.swipe-demo { transition: none; animation: swipe-demo 2.8s cubic-bezier(.4, 0, .2, 1) 0.9s 1 both; }
+@media (prefers-reduced-motion: reduce) { .swipe-wrapper .product-item.swipe-demo { animation: none; } }
