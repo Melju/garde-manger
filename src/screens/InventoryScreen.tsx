@@ -154,7 +154,7 @@ export function InventoryScreen({
     <div className="screen-fade">
       <header className="header">
         <div className="header-left">
-          <h1 className="logo">Miamm</h1>
+          <h1 className="logo"><img src={`${import.meta.env.BASE_URL}logo.webp`} alt="Miamm" /></h1>
           <p className="sub-mode">
             {products.length} produits ·{' '}
             <Icon name={offline ? 'cloud' : cloudMode ? 'cloud' : 'phone'} />

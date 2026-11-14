@@ -24,7 +24,7 @@
       background: radial-gradient(120% 120% at 30% 20%, #2ec6d2 0%, #0c8fa0 55%, #0a7585 100%);
       z-index: 9999;
     }
-    .splash-logo { font-family: 'Caveat', cursive; color: #fff; font-size: 54px; font-weight: 700; line-height: 1; text-shadow: 0 3px 12px rgba(0,0,0,.15); }
+    .splash-logo-img { display: block; height: 150px; width: auto; filter: drop-shadow(0 6px 14px rgba(0,0,0,.2)); }
     .splash-spin { width: 30px; height: 30px; border-radius: 50%; border: 3px solid rgba(255,255,255,.35); border-top-color: #fff; animation: splash-spin .8s linear infinite; }
     @keyframes splash-spin { to { transform: rotate(360deg); } }
   </style>
@@ -32,7 +32,7 @@
 <body>
   <div id="root">
     <div class="splash">
-      <div class="splash-logo">Miamm</div>
+      <img class="splash-logo-img" src="./logo.webp" alt="Miamm" />
       <div class="splash-spin"></div>
     </div>
   </div>

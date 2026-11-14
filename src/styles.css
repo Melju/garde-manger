@@ -2423,3 +2423,8 @@ input[type='date'].form-input::-webkit-calendar-picker-indicator {
 .app { overflow-x: clip; } /* hidden casserait le position: sticky de la barre du formulaire */
 /* Formulaire produit : la barre sticky doit toucher le bas de l'écran (pas de marge de la nav en dessous) */
 .app:has(.form-footer), .app.with-fab:has(.form-footer) { padding-bottom: 0; }
+/* Logo image « Miam miam » (remplace le texte manuscrit) */
+h1.logo { line-height: 0; }
+h1.logo img { display: block; height: 50px; width: auto; }
+.sidebar-logo img { display: block; height: 84px; width: auto; }
+.splash-logo-img { display: block; height: 150px; width: auto; filter: drop-shadow(0 6px 14px rgba(0,0,0,0.2)); }
