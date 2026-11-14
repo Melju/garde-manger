@@ -54,19 +54,62 @@ export function ProductItem({
   const byWeight = product.quantity <= 1 && isWeightProduct(product.size)
   const scale = byWeight ? portionScale(product.size) : null
 
+  // Glissement progressif : la ligne suit le doigt, puis s'ouvre ou se referme selon la position relâchée.
+  const OPEN_LEFT = 216
+  const OPEN_RIGHT = 120
+  const base = swipe === 'left' ? -OPEN_LEFT : swipe === 'right' ? OPEN_RIGHT : 0
+  const [dragX, setDragX] = useState<number | null>(null)
+  const startY = useRef(0)
+  const captured = useRef(false)
+
+  function clampOffset(v: number) {
+    // Léger effet élastique au-delà des limites.
+    if (v < -OPEN_LEFT) return -OPEN_LEFT + (v + OPEN_LEFT) * 0.25
+    if (v > OPEN_RIGHT) return OPEN_RIGHT + (v - OPEN_RIGHT) * 0.25
+    return v
+  }
   function onPointerDown(e: React.PointerEvent) {
     startX.current = e.clientX
+    startY.current = e.clientY
     moved.current = false
+    captured.current = false
   }
   function onPointerMove(e: React.PointerEvent) {
     if (startX.current === null) return
     const dx = e.clientX - startX.current
-    if (Math.abs(dx) > 8) moved.current = true
-    if (dx < -40) setSwipe('left')
-    else if (dx > 40) setSwipe('right')
+    const dy = e.clientY - startY.current
+    if (!captured.current) {
+      if (Math.abs(dx) < 8) return
+      // Geste plutôt vertical : on laisse défiler la liste.
+      if (Math.abs(dy) > Math.abs(dx)) {
+        startX.current = null
+        return
+      }
+      captured.current = true
+      moved.current = true
+      try {
+        ;(e.currentTarget as HTMLElement).setPointerCapture(e.pointerId)
+      } catch {
+        /* ignore */
+      }
+    }
+    setDragX(clampOffset(base + dx))
   }
   function onPointerUp() {
+    const x = dragX
     startX.current = null
+    if (captured.current && x !== null) {
+      // Seuil : à partir de 35 % de l'ouverture, la ligne s'ouvre ; sinon elle se referme.
+      if (x < -OPEN_LEFT * 0.35) setSwipe('left')
+      else if (x > OPEN_RIGHT * 0.35) setSwipe('right')
+      else setSwipe('none')
+    }
+    captured.current = false
+    setDragX(null)
+    // Laisse le clic « fantôme » de fin de geste être ignoré, puis réarme.
+    setTimeout(() => {
+      moved.current = false
+    }, 0)
   }
   function handleClick() {
     if (moved.current) return
@@ -101,10 +144,12 @@ export function ProductItem({
       </div>
 
       <div
-        className="product-item"
+        className={`product-item${dragX !== null ? ' dragging' : ''}`}
+        style={dragX !== null ? { transform: `translateX(${dragX}px)` } : undefined}
         onPointerDown={onPointerDown}
         onPointerMove={onPointerMove}
         onPointerUp={onPointerUp}
+        onPointerCancel={onPointerUp}
         onClick={handleClick}
       >
         <div className={`product-icon${imageSlug ? ' has-img' : ''}`} style={{ background: col.bg, color: col.fg }}>

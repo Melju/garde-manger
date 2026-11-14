@@ -372,7 +372,9 @@ button { font-family: inherit; }
   position: relative;
   z-index: 2;
   transition: transform 0.28s cubic-bezier(0.22, 1, 0.36, 1);
+  touch-action: pan-y;
 }
+.swipe-wrapper .product-item.dragging { transition: none; }
 .swipe-wrapper.swiped-left .product-item { transform: translateX(-216px); }
 .swipe-wrapper.swiped-right .product-item { transform: translateX(120px); }
 .swipe-actions {
