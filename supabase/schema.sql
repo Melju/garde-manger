@@ -487,3 +487,40 @@ insert into allowed_emails (email)
   on conflict do nothing;
 update profiles set is_admin = true
   where id = (select id from auth.users order by created_at limit 1);
+
+-- ---------- Administration des quotas (réservé à l'administrateur) ----------
+create or replace function admin_ai_overview(p_default_limit int default 60)
+returns table (id uuid, name text, members bigint, used int, quota int, has_key boolean, is_default boolean)
+language plpgsql
+security definer
+set search_path = public
+as $$
+begin
+  if not is_admin() then raise exception 'Réservé à l''administrateur'; end if;
+  return query
+    select h.id, h.name,
+           (select count(*) from profiles p where p.household_id = h.id),
+           coalesce((select u.calls from ai_usage u where u.household_id = h.id and u.month = to_char(now(), 'YYYY-MM')), 0),
+           coalesce(h.ai_quota, p_default_limit),
+           exists (select 1 from ai_keys k where k.household_id = h.id),
+           h.ai_quota is null
+    from households h
+    order by h.created_at;
+end;
+$$;
+
+-- p_quota : nombre d'appels par mois, -1 = illimité, null = quota par défaut.
+create or replace function admin_set_quota(p_household uuid, p_quota int)
+returns void
+language plpgsql
+security definer
+set search_path = public
+as $$
+begin
+  if not is_admin() then raise exception 'Réservé à l''administrateur'; end if;
+  update households set ai_quota = p_quota where id = p_household;
+end;
+$$;
+
+grant execute on function admin_ai_overview(int) to authenticated;
+grant execute on function admin_set_quota(uuid, int) to authenticated;

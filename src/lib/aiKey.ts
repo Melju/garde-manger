@@ -70,3 +70,30 @@ export async function removeAllowedEmail(email: string): Promise<void> {
   const { error } = await supabase.rpc('admin_remove_email', { p_email: email })
   if (error) throw new Error(error.message)
 }
+
+// ----- Quotas IA par foyer (administrateur) -----
+
+export interface HouseholdQuota {
+  id: string
+  name: string
+  members: number
+  used: number
+  /** -1 = illimité */
+  quota: number
+  has_key: boolean
+  is_default: boolean
+}
+
+export async function aiOverview(): Promise<HouseholdQuota[]> {
+  if (!supabase) return []
+  const { data, error } = await supabase.rpc('admin_ai_overview')
+  if (error) throw new Error(error.message)
+  return (data ?? []) as HouseholdQuota[]
+}
+
+/** quota : nombre par mois, -1 = illimité, null = défaut. */
+export async function setHouseholdQuota(id: string, quota: number | null): Promise<void> {
+  if (!supabase) throw new Error('Connecte-toi')
+  const { error } = await supabase.rpc('admin_set_quota', { p_household: id, p_quota: quota })
+  if (error) throw new Error(error.message)
+}

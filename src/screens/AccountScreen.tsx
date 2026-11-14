@@ -3,8 +3,8 @@ import { useAuth } from '../data/auth'
 import { useStore } from '../data/store'
 import { useToast } from '../components/Toast'
 import { PageHeader } from '../components/PageHeader'
-import { aiStatus, setAiKey, clearAiKey, isAdmin, allowedEmails, allowEmail, removeAllowedEmail, type AiStatus } from '../lib/aiKey'
-import { useConfirm } from '../components/Confirm'
+import { aiStatus, setAiKey, clearAiKey, isAdmin, allowedEmails, allowEmail, removeAllowedEmail, aiOverview, setHouseholdQuota, type AiStatus, type HouseholdQuota } from '../lib/aiKey'
+import { useConfirm, usePrompt } from '../components/Confirm'
 
 interface AccountScreenProps {
   onBack: () => void
@@ -24,6 +24,8 @@ export function AccountScreen({ onBack }: AccountScreenProps) {
   const [ai, setAi] = useState<AiStatus | null>(null)
   const [aiKey, setAiKeyField] = useState('')
   const askConfirm = useConfirm()
+  const askPrompt = usePrompt()
+  const [quotas, setQuotas] = useState<HouseholdQuota[]>([])
   const [admin, setAdmin] = useState(false)
   const [allowed, setAllowed] = useState<string[]>([])
   const [newEmail, setNewEmail] = useState('')
@@ -31,7 +33,10 @@ export function AccountScreen({ onBack }: AccountScreenProps) {
   useEffect(() => {
     isAdmin().then((a) => {
       setAdmin(a)
-      if (a) allowedEmails().then(setAllowed).catch(() => {})
+      if (a) {
+        allowedEmails().then(setAllowed).catch(() => {})
+        aiOverview().then(setQuotas).catch(() => {})
+      }
     })
   }, [auth.householdId])
 
@@ -47,6 +52,34 @@ export function AccountScreen({ onBack }: AccountScreenProps) {
       toast(e instanceof Error ? e.message : 'Ajout impossible')
     } finally {
       setBusy(false)
+    }
+  }
+
+  async function editQuota(h: HouseholdQuota) {
+    const v = await askPrompt({
+      title: `Quota IA de « ${h.name} »`,
+      defaultValue: h.quota < 0 ? '' : String(h.quota),
+      placeholder: 'Appels par mois (0 = bloqué)',
+      inputMode: 'numeric',
+      confirmLabel: 'Enregistrer',
+    })
+    if (v === null) return
+    const n = Math.floor(Number(v.trim()))
+    if (v.trim() === '' || isNaN(n) || n < 0) return toast('Entre un nombre entier (0 ou plus)')
+    try {
+      await setHouseholdQuota(h.id, n)
+      setQuotas(await aiOverview())
+    } catch (e) {
+      toast(e instanceof Error ? e.message : 'Modification impossible')
+    }
+  }
+
+  async function quotaUnlimited(h: HouseholdQuota) {
+    try {
+      await setHouseholdQuota(h.id, -1)
+      setQuotas(await aiOverview())
+    } catch (e) {
+      toast(e instanceof Error ? e.message : 'Modification impossible')
     }
   }
 
@@ -368,6 +401,35 @@ export function AccountScreen({ onBack }: AccountScreenProps) {
           <button className="btn-secondary" style={{ marginTop: 8 }} disabled={busy || !newEmail.includes('@')} onClick={addAllowed}>
             Autoriser et inviter
           </button>
+        </div>
+      )}
+
+      {admin && quotas.length > 0 && (
+        <div className="form-section">
+          <label className="form-label">Quotas IA par foyer (ce mois-ci)</label>
+          {quotas.map((h) => (
+            <div className="setting-row" key={h.id}>
+              <div className="setting-text">
+                <div className="setting-title" style={{ fontSize: 15 }}>{h.name}</div>
+                <div className="setting-desc">
+                  {h.members} membre{h.members > 1 ? 's' : ''} ·{' '}
+                  {h.has_key
+                    ? `clé perso (${h.used} appels)`
+                    : h.quota < 0
+                      ? `illimité (${h.used} appels)`
+                      : `${h.used} / ${h.quota}${h.is_default ? ' (défaut)' : ''}`}
+                </div>
+              </div>
+              {!h.has_key && (
+                <>
+                  <button className="btn-secondary store-edit-btn" onClick={() => editQuota(h)}>Modifier</button>
+                  {h.quota >= 0 && (
+                    <button className="btn-secondary store-edit-btn" onClick={() => quotaUnlimited(h)}>Illimité</button>
+                  )}
+                </>
+              )}
+            </div>
+          ))}
         </div>
       )}
 
