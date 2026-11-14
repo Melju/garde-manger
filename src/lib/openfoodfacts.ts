@@ -39,6 +39,22 @@ function guessCategory(tags: string[]): Category {
  * Recherche un produit par code-barres sur Open Food Facts (API publique, sans clé).
  * Renvoie toujours un résultat ; `found: false` si le produit est inconnu.
  */
+/**
+ * Boîtes de biscuits, barres, portions : Open Food Facts donne le grammage (« 300 g (10 x 30 g) »).
+ * On préfère le nombre de sachets, plus utile à compter. Renvoie null si rien de dénombrable.
+ */
+export function packCount(quantity: string, category: string): string | null {
+  const q = quantity.toLowerCase().replace(/\u00a0/g, ' ')
+  // « 10 sachets », « 12 barres », « 8 portions »...
+  const direct = q.match(/(\d+)\s*(?:sachets?|portions?|barres?|biscuits?|galettes?|gaufrettes?|madeleines?)\b/)
+  if (direct) return `${direct[1]} sachet`
+  // « 10 x 30 g » seulement pour les produits secs (pas un pack de 6 x 1 L d'eau)
+  const dry = ['sucreries', 'apero', 'epicerie'].includes(category)
+  const multi = q.match(/(\d+)\s*[x×]\s*[\d.,]+\s*(?:g|kg)\b/)
+  if (dry && multi && Number(multi[1]) > 1) return `${multi[1]} sachet`
+  return null
+}
+
 export async function lookupBarcode(barcode: string): Promise<BarcodeLookup> {
   const base: BarcodeLookup = { found: false, barcode, prefill: { barcode, category: 'epicerie', quantity: 1 } }
   try {
@@ -92,7 +108,7 @@ export async function lookupBarcode(barcode: string): Promise<BarcodeLookup> {
         name: displayName || undefined,
         category: guessCategory(tags),
         quantity: 1,
-        size: (p.quantity || '').trim() || undefined,
+        size: packCount(String(p.quantity || ''), guessCategory(tags)) ?? ((p.quantity || '').trim() || undefined),
         imageUrl: p.image_front_url || p.image_url || undefined,
         nutriscore: grade,
         nova,
