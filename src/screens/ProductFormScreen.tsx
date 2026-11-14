@@ -25,6 +25,7 @@ import { learn } from '../lib/learnedShelf'
 import { productImageSlug, productImageUrl, chosenIconSlug, chosenIconValue, realPhotoUrl } from '../lib/productImage'
 import { ICON_SLUGS } from '../lib/iconList'
 import { normalize } from '../lib/productIcon'
+import { addBrand, getCustomBrands } from '../lib/brands'
 import { familyAllergenWarnings, allergenLabel } from '../lib/allergens'
 
 /** Unités de contenance proposées. */
@@ -130,6 +131,7 @@ export function ProductFormScreen({ product, initial, onClose, onSaved }: Produc
       const shared = words(p.name).filter((w) => mine.has(w)).length
       if (shared) corr.set(k, { label: b, score: (corr.get(k)?.score ?? 0) + shared })
     }
+    for (const b of getCustomBrands()) if (!count.has(normalize(b))) count.set(normalize(b), { label: b, n: 0 })
     return {
       knownBrands: [...count.values()].sort((a, b) => b.n - a.n || a.label.localeCompare(b.label)).map((x) => x.label),
       correlated: [...corr.values()].sort((a, b) => b.score - a.score).map((x) => x.label).slice(0, 5),
@@ -450,7 +452,7 @@ export function ProductFormScreen({ product, initial, onClose, onSaved }: Produc
                   </button>
                 ))}
                 {brandIsNew && (
-                  <button type="button" className="brand-opt add" onMouseDown={(e) => e.preventDefault()} onClick={() => { setBrand(brand.trim()); setBrandOpen(false) }}>
+                  <button type="button" className="brand-opt add" onMouseDown={(e) => e.preventDefault()} onClick={() => { addBrand(brand); setBrand(brand.trim()); setBrandOpen(false) }}>
                     + Ajouter « {brand.trim()} »
                   </button>
                 )}

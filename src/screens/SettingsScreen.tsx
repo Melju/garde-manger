@@ -2,6 +2,8 @@ import { useEffect, useState } from 'react'
 import { useStore } from '../data/store'
 import { useToast } from '../components/Toast'
 import { PageHeader } from '../components/PageHeader'
+import { addBrand, getCustomBrands, removeCustomBrand, renameCustomBrand } from '../lib/brands'
+import { normalize } from '../lib/productIcon'
 import { addStore, getStores, removeStore, renameStore } from '../lib/stores'
 import { pushState, enablePush, disablePush, testPush, type PushState } from '../lib/push'
 
@@ -19,7 +21,7 @@ function Toggle({ checked, onChange }: { checked: boolean; onChange: (v: boolean
 }
 
 export function SettingsScreen({ onBack }: SettingsScreenProps) {
-  const { settings, updateSettings, resetDemo, refreshFromOFF } = useStore()
+  const { settings, updateSettings, resetDemo, refreshFromOFF, products, updateProduct } = useStore()
   const toast = useToast()
   const [busy, setBusy] = useState(false)
   const [push, setPush] = useState<PushState | null>(null)
@@ -29,6 +31,37 @@ export function SettingsScreen({ onBack }: SettingsScreenProps) {
   const [draft, setDraft] = useState('')
   const [newStore, setNewStore] = useState('')
   const reloadStores = () => setStores(getStores())
+  // Marques : celles des produits + celles ajoutées à la main.
+  const [brandTick, setBrandTick] = useState(0)
+  const [editingBrand, setEditingBrand] = useState<string | null>(null)
+  const [brandDraft, setBrandDraft] = useState('')
+  const [newBrand, setNewBrand] = useState('')
+  const brandList = (() => {
+    void brandTick
+    const m = new Map<string, { label: string; n: number }>()
+    for (const p of products) {
+      const b = p.brand?.trim()
+      if (b) m.set(normalize(b), { label: b, n: (m.get(normalize(b))?.n ?? 0) + 1 })
+    }
+    for (const b of getCustomBrands()) if (!m.has(normalize(b))) m.set(normalize(b), { label: b, n: 0 })
+    return [...m.values()].sort((a, b) => a.label.localeCompare(b.label))
+  })()
+  async function saveBrandEdit() {
+    const from = editingBrand
+    const to = brandDraft.trim()
+    setEditingBrand(null)
+    if (!from || !to || to === from) return
+    renameCustomBrand(from, to)
+    for (const p of products) if (p.brand && normalize(p.brand) === normalize(from)) await updateProduct(p.id, { brand: to })
+    setBrandTick((t) => t + 1)
+  }
+  async function deleteBrand(b: string, n: number) {
+    const msg = n ? `Supprimer ${b} ? La marque sera retirée de ${n} produit${n > 1 ? 's' : ''} (les produits restent).` : `Supprimer ${b} de la liste ?`
+    if (!window.confirm(msg)) return
+    removeCustomBrand(b)
+    for (const p of products) if (p.brand && normalize(p.brand) === normalize(b)) await updateProduct(p.id, { brand: undefined })
+    setBrandTick((t) => t + 1)
+  }
   function saveEdit() {
     if (editing && draft.trim()) renameStore(editing, draft)
     setEditing(null)
@@ -198,6 +231,62 @@ export function SettingsScreen({ onBack }: SettingsScreenProps) {
               addStore(newStore)
               setNewStore('')
               reloadStores()
+            }}
+          >
+            +
+          </button>
+        </div>
+      </div>
+
+      <div className="form-section">
+        <label className="form-label">Mes marques</label>
+        {brandList.length === 0 && <div className="setting-desc">Aucune marque pour l'instant.</div>}
+        {brandList.map((b) => (
+          <div className="setting-row store-edit-row" key={b.label}>
+            {editingBrand === b.label ? (
+              <>
+                <input
+                  className="store-edit-input"
+                  value={brandDraft}
+                  autoFocus
+                  onChange={(e) => setBrandDraft(e.target.value)}
+                  onKeyDown={(e) => e.key === 'Enter' && saveBrandEdit()}
+                />
+                <button className="btn-secondary store-edit-btn" onClick={saveBrandEdit}>OK</button>
+              </>
+            ) : (
+              <>
+                <div className="setting-text">
+                  <div className="setting-title">{b.label}</div>
+                  <div className="setting-desc">{b.n ? `${b.n} produit${b.n > 1 ? 's' : ''}` : 'Aucun produit'}</div>
+                </div>
+                <button className="btn-secondary store-edit-btn" onClick={() => { setEditingBrand(b.label); setBrandDraft(b.label) }}>Renommer</button>
+                <button className="btn-secondary btn-danger store-edit-btn" onClick={() => deleteBrand(b.label, b.n)}>Supprimer</button>
+              </>
+            )}
+          </div>
+        ))}
+        <div className="store-new" style={{ marginTop: 10 }}>
+          <input
+            className="form-input"
+            placeholder="Nouvelle marque"
+            value={newBrand}
+            onChange={(e) => setNewBrand(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter' && newBrand.trim()) {
+                addBrand(newBrand)
+                setNewBrand('')
+                setBrandTick((t) => t + 1)
+              }
+            }}
+          />
+          <button
+            className="btn-secondary"
+            disabled={!newBrand.trim()}
+            onClick={() => {
+              addBrand(newBrand)
+              setNewBrand('')
+              setBrandTick((t) => t + 1)
             }}
           >
             +
