@@ -2449,3 +2449,9 @@ h1.logo img { display: block; height: 50px; width: auto; }
 /* Écran Profil : les cartes sont dans un .form-section, elles ont besoin de leur marge intérieure. */
 .form-section > .form-group { margin: 0 0 16px; padding: 18px 18px 6px; }
 .form-section > .form-group > .form-label { display: block; margin-bottom: 10px; }
+
+/* Carte « recette créative » : titre sur toute la largeur, menus en dessous côte à côte. */
+.ai-suggest-card { flex-wrap: wrap; row-gap: 14px; }
+.ai-suggest-card .ai-text { flex: 1 1 0; }
+.ai-suggest-card .ai-selects { flex: 1 1 100%; flex-direction: row; gap: 10px; align-self: stretch; }
+.ai-suggest-card .ai-select { flex: 1 1 0; width: auto; min-width: 0; padding: 11px 12px; font-size: 14px; border-radius: 12px; }
