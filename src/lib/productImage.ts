@@ -8,6 +8,10 @@ import { normalize } from './productIcon'
  * Retourne null si rien ne correspond : l'appelant retombe sur le pictogramme de secours.
  */
 const RULES: [string[], string][] = [
+  [['ministars', 'mini stars', 'ministar', 'biscuit etoile', 'biscuits etoiles', 'etoiles chocolat'], 'biscuit-etoile'],
+  [['dinosaurus', 'dinosaure', 'dinosaures', 'biscuit dinosaure'], 'biscuit-dinosaure'],
+  [['biscuit animaux', 'biscuits animaux', 'animaux biscuit'], 'biscuit-animaux'],
+  [['prince', 'prince chocolat', 'mini biscuit chocolat', 'mini biscuits chocolat', 'pims', 'pim s', 'chocolat au lait biscuit'], 'biscuit-mini-chocolat'],
   [['speculoos', 'biscuit caramelise', 'biscoff'], 'speculoos'],
   [['petit beurre', 'petits beurre', 'petit-beurre', 'biscuit sec', 'biscuits secs'], 'petit-beurre'],
   [['cookie', 'cookies', 'pepites de chocolat'], 'cookie'],

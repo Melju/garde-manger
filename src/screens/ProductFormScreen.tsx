@@ -17,6 +17,8 @@ import { DatePicker } from '../components/DatePicker'
 import { DateScanner, type ScannedDate } from '../components/DateScanner'
 import { getCurrentStore, getStores, setProductStores, storesFor } from '../lib/stores'
 import { rememberProduct } from '../lib/productMemory'
+import { learnPlace, placeFor, defaultPlace } from '../lib/learnedPlace'
+import { guessCategoryFromName } from '../lib/categoryGuess'
 import { learn } from '../lib/learnedShelf'
 import { productImageSlug, productImageUrl, chosenIconSlug, chosenIconValue, realPhotoUrl } from '../lib/productImage'
 import { ICON_SLUGS } from '../lib/iconList'
@@ -177,6 +179,36 @@ export function ProductFormScreen({ product, initial, onClose, onSaved }: Produc
       if (days > 0) setExpiryDate(isoInDays(days))
     }
   }
+  const catTouched = useRef(isEdit || !!initial?.category)
+  const locTouched = useRef(isEdit || !!initial?.location)
+  const [placeSource, setPlaceSource] = useState<'name' | 'similar' | 'category' | null>(null)
+  function userPickLocation(l: string) {
+    locTouched.current = true
+    setPlaceSource(null)
+    pickLocation(l)
+  }
+  // Déduction : catégorie d'après le nom, puis rangement habituel (appris), sinon par défaut selon la catégorie.
+  useEffect(() => {
+    if (isEdit) return
+    const n = name.trim()
+    if (n.length < 3) return
+    let cat = category
+    if (!catTouched.current) {
+      const g = guessCategoryFromName(n)
+      if (g && g !== 'autre' && g !== category) {
+        cat = g
+        setCategory(g)
+      }
+    }
+    if (!locTouched.current) {
+      const learned = placeFor(n, cat)
+      const l = learned?.loc ?? defaultPlace(cat)
+      setPlaceSource(learned?.source ?? null)
+      if (l && l !== location) pickLocation(l)
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [name])
+
   function pickConservation(c: Conservation) {
     if (c === 'refrigere') pickLocation('Réfrigérateur')
     else if (c === 'congele') pickLocation('Congélateur')
@@ -185,6 +217,7 @@ export function ProductFormScreen({ product, initial, onClose, onSaved }: Produc
 
   // Quand on change de catégorie, on aligne la conservation par défaut (et l'emplacement).
   function pickCategory(c: Category) {
+    catTouched.current = true
     setCategory(c)
     pickConservation(defaultConservation(c))
   }
@@ -239,6 +272,7 @@ export function ProductFormScreen({ product, initial, onClose, onSaved }: Produc
     if (!canSave) return
     const inp = buildInput()
     rememberProduct(inp)
+    learnPlace(inp.name, inp.category, inp.location)
     setProductStores(inp.name, inp.category, undefined, undefined, shops)
     learn({
       name: inp.name,
@@ -534,6 +568,7 @@ export function ProductFormScreen({ product, initial, onClose, onSaved }: Produc
         {!showDeduced && (
           <div className="deduced-summary">
             {CATEGORIES.find((c) => c.id === category)?.label ?? category} · {location || 'Emplacement ?'} · {dateType === 'dlc' ? 'DLC' : 'DDM'}
+            {placeSource && <span className="deduced-learned"> (rangement appris)</span>}
           </div>
         )}
         {showDeduced && (
@@ -562,7 +597,7 @@ export function ProductFormScreen({ product, initial, onClose, onSaved }: Produc
               key={l}
               type="button"
               className={`opt-btn${location === l ? ' active' : ''}`}
-              onClick={() => pickLocation(location === l ? '' : l)}
+              onClick={() => userPickLocation(location === l ? '' : l)}
             >
               {l}
             </button>
@@ -574,7 +609,7 @@ export function ProductFormScreen({ product, initial, onClose, onSaved }: Produc
           style={{ marginTop: 10 }}
           placeholder="Autre emplacement…"
           value={LOCATIONS.includes(location) ? '' : location}
-          onChange={(e) => pickLocation(e.target.value)}
+          onChange={(e) => userPickLocation(e.target.value)}
         />
       </div>
 

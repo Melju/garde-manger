@@ -2323,3 +2323,4 @@ input[type='date'].form-input::-webkit-calendar-picker-indicator {
 .deduced-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; }
 .deduced-toggle { border: none; background: transparent; color: var(--accent, #3a9a9a); font-weight: 700; font-size: 14px; padding: 6px 4px; cursor: pointer; font-family: inherit; }
 .deduced-summary { font-size: 16px; font-weight: 600; padding: 2px 0 12px; }
+.deduced-learned { font-weight: 500; font-size: 13px; color: var(--muted); }
