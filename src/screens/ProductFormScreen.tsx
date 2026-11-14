@@ -159,9 +159,14 @@ export function ProductFormScreen({ product, initial, onClose, onSaved }: Produc
   useEffect(() => {
     if (!dateTouched.current && name.trim().length >= 2) setDateType(dateGuess.type)
   }, [dateGuess, name])
+  // Date posée par l'estimation (et non saisie à la main) : elle suit alors l'emplacement choisi.
+  const autoDate = useRef<string | null>(null)
   function applyEstimate() {
     const iso = estimatedExpiryISO(name, conservation, category)
-    if (iso) setExpiryDate(iso)
+    if (iso) {
+      autoDate.current = iso
+      setExpiryDate(iso)
+    }
   }
 
   // La conservation (frais / réfrigéré / congelé) se déduit de l'emplacement : plus de double saisie.
@@ -171,14 +176,25 @@ export function ProductFormScreen({ product, initial, onClose, onSaved }: Produc
     if (n.includes('frigo') || n.includes('refrig') || n.includes('réfrig')) return 'refrigere'
     return 'frais'
   }
-  function pickLocation(l: string) {
+  function pickLocation(l: string, cat: Category = category) {
     setLocation(l)
     const c = consOfLocation(l)
     setConservation(c)
     // Si l'IA a fourni des durées, la DLC suit l'emplacement choisi.
     if (aiShelf) {
       const days = aiShelf[c]
-      if (days > 0) setExpiryDate(isoInDays(days))
+      if (days > 0) {
+        const iso = isoInDays(days)
+        autoDate.current = iso
+        setExpiryDate(iso)
+      }
+    } else if (autoDate.current && expiryDate === autoDate.current) {
+      // Date issue de l'estimation : on la recalcule pour ce nouvel emplacement.
+      const iso = estimatedExpiryISO(name, c, cat)
+      if (iso) {
+        autoDate.current = iso
+        setExpiryDate(iso)
+      }
     }
   }
   const catTouched = useRef(isEdit || !!initial?.category)
@@ -206,7 +222,7 @@ export function ProductFormScreen({ product, initial, onClose, onSaved }: Produc
       const learned = placeFor(n, cat)
       const l = isFrozenName(n) ? 'Congélateur' : (learned?.loc ?? defaultPlace(cat))
       setPlaceSource(learned?.source ?? null)
-      if (l && l !== location) pickLocation(l)
+      if (l && l !== location) pickLocation(l, cat)
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [name])
@@ -236,7 +252,11 @@ export function ProductFormScreen({ product, initial, onClose, onSaved }: Produc
       // On RESPECTE le mode de conservation déjà choisi : la DLC est calculée
       // pour CE mode. (Change de mode → la date se recalcule automatiquement.)
       const days = r.shelfLife[conservation]
-      if (days > 0) setExpiryDate(isoInDays(days))
+      if (days > 0) {
+        const iso = isoInDays(days)
+        autoDate.current = iso
+        setExpiryDate(iso)
+      }
       toast(`Pré-rempli par l’IA (${conservation}) — vérifie et ajuste`)
     } catch (e) {
       toast(e instanceof Error ? e.message : 'Assistance indisponible')
@@ -541,7 +561,7 @@ export function ProductFormScreen({ product, initial, onClose, onSaved }: Produc
                 ? estimate.learned.exact
                   ? '(déjà renseigné pour ce produit)'
                   : `(d'après ${estimate.learned.count} produit${estimate.learned.count > 1 ? 's' : ''} similaire${estimate.learned.count > 1 ? 's' : ''})`
-                : `(${estimate.group})`}
+                : `(${estimate.group}${conservation === 'congele' ? ', congélateur' : conservation === 'refrigere' ? ', frigo' : ''})`}
             </span>
             <span className="estimate-apply">Appliquer</span>
           </button>
