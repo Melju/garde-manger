@@ -2401,3 +2401,17 @@ input[type='date'].form-input::-webkit-calendar-picker-indicator {
 .select-tabs { display: flex; gap: 6px; }
 .select-tabs button { flex: 1; border: 1px solid var(--border); background: none; color: var(--fg-2); border-radius: 10px; padding: 8px 6px; font: inherit; font-size: 13px; font-weight: 700; cursor: pointer; }
 .select-tabs button.on { background: var(--accent-soft); color: var(--fg); border-color: var(--brand); }
+/* Barre de sélection compacte : fixée en bas, choix sur une seule ligne défilante */
+.product-list.selecting { padding-bottom: 190px; }
+.select-bar { position: fixed; left: 0; right: 0; bottom: calc(76px + env(safe-area-inset-bottom, 0px)); margin: 0 auto; max-width: 620px; width: calc(100% - 24px); padding: 10px 12px 12px; gap: 8px; }
+@media (min-width: 760px) { .select-bar { bottom: 16px; left: 248px; } }
+.select-bar-top { display: flex; align-items: center; gap: 10px; }
+.select-bar-top .select-bar-title { flex: 1; }
+.select-close { width: 36px; height: 36px; flex: 0 0 auto; border-radius: 10px; border: 1px solid var(--border); background: none; color: var(--fg); display: grid; place-items: center; cursor: pointer; }
+.select-close svg { width: 16px; height: 16px; }
+.select-apply { display: flex; align-items: center; gap: 6px; border: none; border-radius: 12px; padding: 9px 16px; background: var(--brand-grad); color: #fff; font: inherit; font-weight: 800; cursor: pointer; white-space: nowrap; }
+.select-apply:disabled { opacity: 0.4; cursor: default; }
+.select-apply svg { width: 16px; height: 16px; }
+.select-choices { display: flex; gap: 8px; overflow-x: auto; padding-bottom: 2px; scrollbar-width: none; }
+.select-choices::-webkit-scrollbar { display: none; }
+.select-choices .store-opt { flex: 0 0 auto; padding: 7px 13px; white-space: nowrap; }

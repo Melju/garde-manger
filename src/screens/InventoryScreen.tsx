@@ -245,7 +245,7 @@ export function InventoryScreen({
         ))}
       </div>
 
-      <div className="product-list">
+      <div className={`product-list${selecting ? ' selecting' : ''}`}>
         <div className="list-header">
           <span className="list-title">
             {filter === 'tout' ? 'Tous les produits' : CATEGORIES.find((c) => c.id === filter)?.label}
@@ -313,8 +313,16 @@ export function InventoryScreen({
 
       {selecting && (
         <div className="select-bar">
-          <div className="select-bar-title">
-            {picked.size} produit{picked.size > 1 ? 's' : ''} sélectionné{picked.size > 1 ? 's' : ''}
+          <div className="select-bar-top">
+            <button type="button" className="select-close" onClick={stopSelecting} aria-label="Annuler la sélection">
+              <Icon name="back" width={2.4} />
+            </button>
+            <div className="select-bar-title">
+              {picked.size} sélectionné{picked.size > 1 ? 's' : ''}
+            </div>
+            <button type="button" className="select-apply" disabled={!canApply} onClick={applyBatch}>
+              <Icon name="check" width={2.6} /> Appliquer
+            </button>
           </div>
           <div className="select-tabs">
             {([['store', 'Magasin'], ['category', 'Catégorie'], ['location', 'Emplacement']] as [PickMode, string][]).map(([id, label]) => (
@@ -323,7 +331,7 @@ export function InventoryScreen({
               </button>
             ))}
           </div>
-          <div className="store-grid">
+          <div className="select-choices">
             {pickMode === 'store' &&
               storeChoices.map((n) => (
                 <button
@@ -347,12 +355,6 @@ export function InventoryScreen({
                   {l}
                 </button>
               ))}
-          </div>
-          <div className="select-bar-actions">
-            <button type="button" className="btn-secondary" onClick={stopSelecting}>Annuler</button>
-            <button type="button" className="btn-primary" disabled={!canApply} onClick={applyBatch}>
-              <Icon name="check" width={2.4} /> Appliquer
-            </button>
           </div>
         </div>
       )}
