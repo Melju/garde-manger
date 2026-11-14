@@ -92,7 +92,7 @@ export function TicketScanScreen({ onClose, onAdded }: TicketScanScreenProps) {
           <button className="btn-secondary" onClick={() => setItems(null)}>Réessayer</button>
         </div>
       ) : (
-        <ReviewItems items={items} onDone={onAdded} onRetry={() => setItems(null)} />
+        <ReviewItems items={items} onDone={onAdded} onRetry={() => setItems(null)} matchRecent />
       )}
     </div>
   )

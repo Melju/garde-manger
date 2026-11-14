@@ -2592,3 +2592,11 @@ body.is-selecting .add-bar { display: none; }
 .swipe-wrapper .product-item.swipe-demo { transition: none; animation: swipe-demo 2.8s cubic-bezier(.4, 0, .2, 1) 0.9s 1 both; }
 @media (prefers-reduced-motion: reduce) { .swipe-wrapper .product-item.swipe-demo { animation: none; } }
 .ingredient-item > svg { width: 18px; height: 18px; flex: 0 0 18px; color: var(--muted); }
+
+/* Champ prix + scan d'étiquette */
+.price-row { display: flex; gap: 8px; }
+.price-row .form-input { flex: 1; min-width: 0; }
+.price-scan-btn { flex: 0 0 48px; height: 48px; border-radius: 14px; border: 1px solid var(--border); background: var(--surface); color: var(--brand); display: grid; place-items: center; cursor: pointer; }
+.price-scan-btn svg { width: 22px; height: 22px; }
+
+.ticket-match { font-size: 12px; color: var(--success); font-weight: 600; margin-bottom: 4px; }

@@ -19,6 +19,7 @@ import { conservationOfLocation } from '../lib/location'
 import { estimateShelfLife, estimatedExpiryISO, durationLabel, guessDateType, isFrozenName } from '../lib/shelfLife'
 import { DatePicker } from '../components/DatePicker'
 import { DateScanner, type ScannedDate } from '../components/DateScanner'
+import { PriceScanner } from '../components/PriceScanner'
 import { getCurrentStore, getStores, setProductStores, storeInName, storesFor } from '../lib/stores'
 import { rememberProduct } from '../lib/productMemory'
 import { learnPlace, placeFor, defaultPlace } from '../lib/learnedPlace'
@@ -62,6 +63,7 @@ export function ProductFormScreen({ product, initial, onClose, onSaved }: Produc
   const isEdit = product !== null
   const [enriching, setEnriching] = useState(false)
   const [scanningDate, setScanningDate] = useState(false)
+  const [scanningPrice, setScanningPrice] = useState(false)
   // Magasins où ce produit s'achète : ceux déjà connus, sinon le magasin courant pour un nouveau produit.
   const [shops, setShops] = useState<string[]>(() => {
     const known = storesFor(product?.name ?? '')
@@ -775,15 +777,30 @@ export function ProductFormScreen({ product, initial, onClose, onSaved }: Produc
 
       <div className="form-section">
         <label className="form-label" htmlFor="price">Prix en € (optionnel)</label>
-        <input
-          id="price"
-          type="text"
-          inputMode="decimal"
-          className="form-input"
-          placeholder="Ex : 2.50 — alimente le budget"
-          value={price}
-          onChange={(e) => setPrice(e.target.value)}
-        />
+        <div className="price-row">
+          <input
+            id="price"
+            type="text"
+            inputMode="decimal"
+            className="form-input"
+            placeholder="Ex : 2.50 — alimente le budget"
+            value={price}
+            onChange={(e) => setPrice(e.target.value)}
+          />
+          <button type="button" className="price-scan-btn" onClick={() => setScanningPrice(true)} aria-label="Scanner l'étiquette de prix">
+            <Icon name="scan" width={2.2} />
+          </button>
+        </div>
+        {scanningPrice && (
+          <PriceScanner
+            onResult={(r) => {
+              setPrice(String(r.price).replace('.', ','))
+              setScanningPrice(false)
+              toast(`Prix lu : ${r.price.toFixed(2).replace('.', ',')} €${r.confident ? '' : ' (à vérifier)'}`)
+            }}
+            onClose={() => setScanningPrice(false)}
+          />
+        )}
       </div>
 
           </>
