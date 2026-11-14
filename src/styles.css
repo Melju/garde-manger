@@ -2429,12 +2429,7 @@ h1.logo img { display: block; height: 50px; width: auto; }
 .sidebar-logo img { display: block; height: 84px; width: auto; }
 .splash-logo-img { display: block; height: 150px; width: auto; filter: drop-shadow(0 6px 14px rgba(0,0,0,0.2)); }
 
-/* Statut de synchro : icône nuage + info-bulle. */
-.sync-wrap { position: relative; }
-.sync-btn.off { color: var(--danger); }
-.sync-tip {
-  position: absolute; top: calc(100% + 8px); right: 0; z-index: 60;
-  background: var(--fg); color: var(--surface); font-size: 12px; font-weight: 600;
-  padding: 7px 11px; border-radius: 9px; white-space: nowrap;
-  box-shadow: 0 6px 18px rgba(0,0,0,.18);
-}
+/* Statut de synchro : simple icône (nuage = synchronisé, rouge = hors-ligne). */
+.sync-ico { display: inline-flex; align-items: center; justify-content: center; width: 32px; height: 40px; color: var(--success); }
+.sync-ico svg { width: 20px; height: 20px; }
+.sync-ico.off { color: var(--danger); }

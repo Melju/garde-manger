@@ -35,7 +35,6 @@ export function InventoryScreen({
   const spent = useMemo(() => budgetSummary(expenses, budget).spent, [expenses, budget])
   const toast = useToast()
   const [search, setSearch] = useState('')
-  const [showSync, setShowSync] = useState(false)
   const [filter, setFilter] = useState<Filter>('tout')
   // Mode sélection : associer plusieurs produits à un magasin d'un coup.
   const [selecting, setSelecting] = useState(false)
@@ -160,17 +159,9 @@ export function InventoryScreen({
           <h1 className="logo"><img src={`${import.meta.env.BASE_URL}logo.webp`} alt="Miamm" /></h1>
         </div>
         <div className="header-actions">
-          <div className="sync-wrap">
-            <button
-              className={`icon-btn sync-btn${offline ? ' off' : ''}`}
-              onClick={() => { setShowSync(true); window.setTimeout(() => setShowSync(false), 2500) }}
-              aria-label={syncLabel}
-              title={syncLabel}
-            >
-              <Icon name={cloudMode && !offline ? 'cloud' : 'phone'} />
-            </button>
-            {showSync && <div className="sync-tip" role="status">{syncLabel}</div>}
-          </div>
+          <span className={`sync-ico${offline ? ' off' : ''}`} role="img" aria-label={syncLabel} title={syncLabel}>
+            <Icon name={cloudMode && !offline ? 'cloud' : 'phone'} />
+          </span>
           <button
             className={`icon-btn${selecting ? ' on' : ''}`}
             onClick={() => (selecting ? stopSelecting() : setSelecting(true))}
