@@ -120,6 +120,8 @@ export function ProductFormScreen({ product, initial, onClose, onSaved }: Produc
   }, [iconQuery])
   const [dateType, setDateType] = useState<DateType>(product?.dateType ?? initial?.dateType ?? 'dlc')
   const dateTouched = useRef(isEdit || !!initial?.dateType)
+  // Zone « déduite » repliée si tout est renseigné ; sinon ouverte pour requalifier.
+  const [editDeduced, setEditDeduced] = useState(false)
   const [expiryDate, setExpiryDate] = useState(product?.expiryDate ?? initial?.expiryDate ?? '')
   // Nouveau produit en plusieurs exemplaires : une date de péremption par article (le 1er utilise la date ci-dessus).
   const [perDate, setPerDate] = useState(false)
@@ -135,6 +137,7 @@ export function ProductFormScreen({ product, initial, onClose, onSaved }: Produc
         ? 'Congélateur'
         : '')
   const [location, setLocation] = useState(initLocation)
+  const showDeduced = editDeduced || category === 'autre' || !location
   const [price, setPrice] = useState(product?.price != null ? String(product.price) : '')
   const barcode = product?.barcode ?? initial?.barcode
 
@@ -420,22 +423,8 @@ export function ProductFormScreen({ product, initial, onClose, onSaved }: Produc
         </div>
       )}
 
-      <div className="form-section">
-        <label className="form-label">Catégorie</label>
-        <div className="opt-grid">
-          {CATEGORIES.map((c) => (
-            <button
-              key={c.id}
-              type="button"
-              className={`opt-btn${category === c.id ? ' active' : ''}`}
-              onClick={() => pickCategory(c.id)}
-            >
-              {c.label}
-            </button>
-          ))}
-        </div>
-      </div>
-
+      <div className="form-group">
+        <h2 className="form-group-title">Stock</h2>
       <div className="form-section">
         <label className="form-label">Quantité</label>
         <div className="qty-stepper">
@@ -471,26 +460,6 @@ export function ProductFormScreen({ product, initial, onClose, onSaved }: Produc
               <option key={u} value={u}>{u}</option>
             ))}
           </select>
-        </div>
-      </div>
-
-      <div className="form-section">
-        <label className="form-label">Type de date</label>
-        <div className="opt-grid two">
-          <button
-            type="button"
-            className={`opt-btn date${dateType === 'dlc' ? ' active' : ''}`}
-            onClick={() => { dateTouched.current = true; setDateType('dlc') }}
-          >
-            DLC<span className="sub">À consommer jusqu'au</span>
-          </button>
-          <button
-            type="button"
-            className={`opt-btn date${dateType === 'ddm' ? ' active' : ''}`}
-            onClick={() => { dateTouched.current = true; setDateType('ddm') }}
-          >
-            DDM<span className="sub">À consommer de préférence avant</span>
-          </button>
         </div>
       </div>
 
@@ -551,17 +520,35 @@ export function ProductFormScreen({ product, initial, onClose, onSaved }: Produc
         )}
       </div>
 
+      </div>
+
+      <div className="form-group deduced">
+        <div className="deduced-head">
+          <h2 className="form-group-title" style={{ margin: 0 }}>Déduit automatiquement</h2>
+          {(editDeduced || !(category === 'autre' || !location)) && (
+            <button type="button" className="deduced-toggle" onClick={() => setEditDeduced((v) => !v)}>
+              {editDeduced ? 'Replier' : 'Modifier'}
+            </button>
+          )}
+        </div>
+        {!showDeduced && (
+          <div className="deduced-summary">
+            {CATEGORIES.find((c) => c.id === category)?.label ?? category} · {location || 'Emplacement ?'} · {dateType === 'dlc' ? 'DLC' : 'DDM'}
+          </div>
+        )}
+        {showDeduced && (
+          <>
       <div className="form-section">
-        <label className="form-label">Acheté chez (optionnel)</label>
-        <div className="store-grid">
-          {shopChoices.map((n) => (
+        <label className="form-label">Catégorie</label>
+        <div className="opt-grid">
+          {CATEGORIES.map((c) => (
             <button
-              key={n}
+              key={c.id}
               type="button"
-              className={`store-opt${shops.includes(n) ? ' active' : ''}`}
-              onClick={() => toggleShop(n)}
+              className={`opt-btn${category === c.id ? ' active' : ''}`}
+              onClick={() => pickCategory(c.id)}
             >
-              {n}
+              {c.label}
             </button>
           ))}
         </div>
@@ -592,6 +579,48 @@ export function ProductFormScreen({ product, initial, onClose, onSaved }: Produc
       </div>
 
       <div className="form-section">
+        <label className="form-label">Type de date</label>
+        <div className="opt-grid two">
+          <button
+            type="button"
+            className={`opt-btn date${dateType === 'dlc' ? ' active' : ''}`}
+            onClick={() => { dateTouched.current = true; setDateType('dlc') }}
+          >
+            DLC<span className="sub">À consommer jusqu'au</span>
+          </button>
+          <button
+            type="button"
+            className={`opt-btn date${dateType === 'ddm' ? ' active' : ''}`}
+            onClick={() => { dateTouched.current = true; setDateType('ddm') }}
+          >
+            DDM<span className="sub">À consommer de préférence avant</span>
+          </button>
+        </div>
+      </div>
+
+          </>
+        )}
+      </div>
+
+      <div className="form-group">
+        <h2 className="form-group-title">Achat</h2>
+      <div className="form-section">
+        <label className="form-label">Acheté chez (optionnel)</label>
+        <div className="store-grid">
+          {shopChoices.map((n) => (
+            <button
+              key={n}
+              type="button"
+              className={`store-opt${shops.includes(n) ? ' active' : ''}`}
+              onClick={() => toggleShop(n)}
+            >
+              {n}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      <div className="form-section">
         <label className="form-label" htmlFor="price">Prix en € (optionnel)</label>
         <input
           id="price"
@@ -602,6 +631,8 @@ export function ProductFormScreen({ product, initial, onClose, onSaved }: Produc
           value={price}
           onChange={(e) => setPrice(e.target.value)}
         />
+      </div>
+
       </div>
 
       <div className="btn-row" style={{ marginBottom: isEdit ? 12 : 0 }}>

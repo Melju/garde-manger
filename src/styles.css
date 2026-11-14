@@ -2315,3 +2315,11 @@ input[type='date'].form-input::-webkit-calendar-picker-indicator {
 .form-multi .scan-known-multi-row { border-top: 1px solid rgba(0,0,0,0.08); padding-top: 12px; position: relative; }
 .form-multi .scan-known-multi-row:first-child { border-top: none; padding-top: 0; }
 .form-multi .scan-known-multi-n { font-size: 12px; font-weight: 700; color: var(--muted); margin-bottom: 4px; }
+
+.form-group { background: var(--surface, #fff); border: 1px solid rgba(0,0,0,0.07); border-radius: 18px; padding: 14px 14px 4px; margin-bottom: 16px; }
+.form-group .form-section { margin-bottom: 16px; }
+.form-group-title { font-size: 13px; font-weight: 800; letter-spacing: 0.04em; text-transform: uppercase; color: var(--muted); margin: 0 0 12px; }
+.form-group.deduced { background: rgba(70, 160, 160, 0.07); }
+.deduced-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; }
+.deduced-toggle { border: none; background: transparent; color: var(--accent, #3a9a9a); font-weight: 700; font-size: 14px; padding: 6px 4px; cursor: pointer; font-family: inherit; }
+.deduced-summary { font-size: 16px; font-weight: 600; padding: 2px 0 12px; }
