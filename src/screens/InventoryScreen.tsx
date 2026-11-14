@@ -4,6 +4,7 @@ import { useToast } from '../components/Toast'
 import { Icon } from '../components/Icon'
 import { ProductItem } from '../components/ProductItem'
 import { CATEGORIES, type Category, type Product } from '../types'
+import { remainingLabel } from '../lib/contenance'
 import { expiryLabel, priorityProducts, urgentCount } from '../lib/expiry'
 import { budgetSummary } from '../lib/analytics'
 
@@ -61,7 +62,7 @@ export function InventoryScreen({
       toast(`${product.name} terminé`)
     } else {
       await updateProduct(product.id, { size: newSize })
-      toast(`${product.name} : ${newSize} restant`)
+      toast(`${product.name} : ${remainingLabel(newSize)} restant`)
     }
   }
 

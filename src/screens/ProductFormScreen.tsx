@@ -12,6 +12,7 @@ import {
   type Product,
   type ProductInput,
 } from '../types'
+import { splitSize } from '../lib/contenance'
 import { estimateShelfLife, estimatedExpiryISO, durationLabel } from '../lib/shelfLife'
 import { familyAllergenWarnings, allergenLabel } from '../lib/allergens'
 
@@ -24,6 +25,7 @@ const LOCATIONS = ['Placard', 'Réfrigérateur', 'Congélateur', 'Cellier', 'Gar
 /** Sépare une contenance « 400 g » en valeur + unité. */
 function parseSize(s?: string): { value: string; unit: string } {
   if (!s) return { value: '', unit: '' }
+  s = splitSize(s).current
   const m = s.trim().match(/^([\d.,]+)\s*(.*)$/)
   if (m) return { value: m[1], unit: m[2].trim() }
   return { value: '', unit: s.trim() }
@@ -151,7 +153,11 @@ export function ProductFormScreen({ product, initial, onClose, onSaved }: Produc
       category,
       conservation,
       quantity,
-      size: sizeStr || undefined,
+      // Entamé (« 700 g/1 kg ») et contenance inchangée : on garde la quantité d'origine.
+      size:
+        product?.size && splitSize(product.size).full && splitSize(product.size).current.replace(/\s+/g, '') === sizeStr.replace(/\s+/g, '')
+          ? product.size
+          : sizeStr || undefined,
       dateType,
       expiryDate: expiryDate || undefined,
       location: location.trim() || undefined,

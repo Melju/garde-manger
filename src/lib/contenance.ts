@@ -12,14 +12,30 @@ interface Parsed {
   unit: string
 }
 
-/** Sépare une contenance « 1 kg » / « 400 g » en { value, unit }. */
+/**
+ * La contenance peut mémoriser la quantité d'origine : « 700 g/1 kg » = il reste 700 g sur 1 kg.
+ * Sans « / », il n'y a que la quantité actuelle (« 1 kg »).
+ */
+export function splitSize(size?: string): { current: string; full?: string } {
+  if (!size) return { current: '' }
+  const i = size.indexOf('/')
+  if (i < 0) return { current: size.trim() }
+  return { current: size.slice(0, i).trim(), full: size.slice(i + 1).trim() || undefined }
+}
+
+/** Sépare une contenance « 1 kg » / « 400 g » en { value, unit } (partie actuelle uniquement). */
 export function parseContenance(size?: string): Parsed | null {
   if (!size) return null
-  const m = size.trim().match(/^([\d.,]+)\s*(.+)$/)
+  const m = splitSize(size).current.match(/^([\d.,]+)\s*(.+)$/)
   if (!m) return null
   const value = Number(m[1].replace(',', '.'))
   if (!isFinite(value) || value <= 0) return null
   return { value, unit: m[2].trim() }
+}
+
+/** Vrai si l'unité est au poids ou au volume (g, kg, mL, cl, L). */
+export function isWeightUnit(unit?: string): boolean {
+  return !!unit && WEIGHT_UNITS.includes(unit)
 }
 
 /** Vrai si la contenance est exprimée dans une unité au poids/volume. */
@@ -123,6 +139,29 @@ export function formatContenance(value: number, unit: string): string {
 }
 
 /**
+ * Libellé de quantité d'un produit au poids / volume :
+ * « 1 kg » (plein), « 700 g / 1 kg » (entamé), « 3 × 1 kg » (plusieurs paquets).
+ * Renvoie null pour les produits comptés à l'unité.
+ */
+export function stockLabel(p: { quantity: number; size?: string }): string | null {
+  if (!isWeightProduct(p.size)) return null
+  const { current, full } = splitSize(p.size)
+  const cur = parseContenance(current)!
+  const curLabel = formatContenance(cur.value, cur.unit)
+  if (p.quantity > 1) return `${p.quantity} × ${curLabel}`
+  const fu = parseContenance(full)
+  if (fu && family(fu.unit) === family(cur.unit) && toBase(cur.value, cur.unit) < toBase(fu.value, fu.unit) - 0.001) {
+    return `${curLabel} / ${formatContenance(fu.value, fu.unit)}`
+  }
+  return curLabel
+}
+
+/** Contenance restante seule (sans la quantité d'origine), pour les messages. */
+export function remainingLabel(size: string): string {
+  return splitSize(size).current
+}
+
+/**
  * Calcule la nouvelle contenance après consommation d'une fraction (0–1).
  * Renvoie la chaîne de contenance, ou null si tout est consommé (≈ 0).
  */
@@ -131,7 +170,7 @@ export function consumeFraction(size: string, fraction: number): string | null {
   if (!p) return null
   const remaining = p.value * (1 - fraction)
   if (remaining <= p.value * 0.02) return null // reste négligeable → terminé
-  return formatContenance(remaining, p.unit)
+  return withFull(formatContenance(remaining, p.unit), size, p)
 }
 
 /**
@@ -146,5 +185,11 @@ export function consumeAmount(size: string, amount: number, amountUnit: string):
   if (remainingBase <= toBase(p.value, p.unit) * 0.02) return null
   // On reste dans l'unité d'origine du produit.
   const factor = toBase(1, p.unit)
-  return formatContenance(remainingBase / factor, p.unit)
+  return withFull(formatContenance(remainingBase / factor, p.unit), size, p)
+}
+
+/** Ajoute la quantité d'origine (« /1 kg ») à une contenance restante. */
+function withFull(remaining: string, oldSize: string, p: Parsed): string {
+  const full = splitSize(oldSize).full ?? formatContenance(p.value, p.unit)
+  return `${remaining}/${full}`
 }

@@ -8,6 +8,7 @@ import {
   consumeAmount,
   portionScale,
   formatContenance,
+  stockLabel,
 } from '../lib/contenance'
 import { Icon, categoryIcon } from './Icon'
 import { FoodIcon, hasFoodIcon } from './FoodIcon'
@@ -73,8 +74,11 @@ export function ProductItem({
     onSelect(product)
   }
 
-  const meta = [categoryLabel(product.category), product.size].filter(Boolean).join(' · ')
-  const qtyLabel = product.unit ? `×${product.quantity} ${product.unit}` : `×${product.quantity}`
+  const weightLabel = stockLabel(product)
+  // Au poids / volume, la quantité est affichée à droite (« 700 g / 1 kg ») : pas de doublon dans la ligne de détail.
+  const meta = [categoryLabel(product.category), weightLabel ? null : product.size].filter(Boolean).join(' · ')
+  const qtyLabel =
+    weightLabel ?? (product.unit ? `×${product.quantity} ${product.unit}` : `×${product.quantity}`)
 
   return (
     <div

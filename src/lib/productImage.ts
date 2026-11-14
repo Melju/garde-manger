@@ -172,7 +172,7 @@ const RULES: [string[], string][] = [
   [['soba'], 'soba'],
   [['udon'], 'udon'],
   [['nouille', 'nouilles', 'noodles', 'ramen nouilles'], 'nouilles'],
-  [['pates'], 'pates'],
+  [['pates', 'pasta'], 'pates'],
   [['semoule'], 'semoule'],
   [['quinoa'], 'quinoa'],
   [['polenta'], 'polenta'],
