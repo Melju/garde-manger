@@ -2324,3 +2324,10 @@ input[type='date'].form-input::-webkit-calendar-picker-indicator {
 .deduced-toggle { border: none; background: transparent; color: var(--accent, #3a9a9a); font-weight: 700; font-size: 14px; padding: 6px 4px; cursor: pointer; font-family: inherit; }
 .deduced-summary { font-size: 16px; font-weight: 600; padding: 2px 0 12px; }
 .deduced-learned { font-weight: 500; font-size: 13px; color: var(--muted); }
+/* Zones du formulaire : marges nettes entre les boxes */
+.form-group { margin: 0 16px 28px; padding: 18px 0 6px; border: 1px solid rgba(0,0,0,0.09); box-shadow: 0 1px 3px rgba(0,0,0,0.04); }
+.form-group .form-section { padding: 0 18px; }
+.form-group-title { padding: 0 18px; margin-bottom: 16px; }
+.form-group.deduced .deduced-head { padding: 0 18px; }
+.form-group.deduced .form-group-title { padding: 0; }
+.form-group.deduced .deduced-summary { padding: 2px 18px 14px; }
