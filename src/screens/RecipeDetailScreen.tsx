@@ -1,3 +1,4 @@
+import { MemberAvatar } from '../components/MemberAvatar'
 import { useConfirm } from '../components/Confirm'
 import { useStore } from '../data/store'
 import { useToast } from '../components/Toast'
@@ -109,9 +110,7 @@ export function RecipeDetailScreen({ recipe, onBack, onGoShopping, onEdit }: Rec
           {adaptations.map(({ m, note }) => (
             <div className="adaptation-card" key={m.id}>
               <div className="adaptation-member">
-                <div className="member-avatar" style={{ background: m.color }}>
-                  {m.name.charAt(0)}
-                </div>
+                <MemberAvatar member={m} />
                 <span>{m.name}</span>
               </div>
               <p className="adaptation-note">{note ?? 'Aucune adaptation nécessaire'}</p>

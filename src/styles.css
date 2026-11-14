@@ -2600,3 +2600,15 @@ body.is-selecting .add-bar { display: none; }
 .price-scan-btn svg { width: 22px; height: 22px; }
 
 .ticket-match { font-size: 12px; color: var(--success); font-weight: 600; margin-bottom: 4px; }
+
+/* Avatars illustrés des membres */
+.member-avatar.has-img { background: #fff; border: 1px solid rgba(0,0,0,0.08); overflow: hidden; border-radius: 28%; }
+.member-avatar.has-img img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.avatar-edit { display: flex; flex-direction: column; align-items: center; gap: 8px; margin: 0 auto; border: none; background: transparent; padding: 0; font: inherit; cursor: pointer; }
+.avatar-edit-hint { font-size: 13px; font-weight: 600; color: var(--brand); }
+.avatar-sheet { max-height: 82vh; }
+.avatar-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 8px; overflow-y: auto; padding: 2px 2px 12px; }
+.avatar-opt { aspect-ratio: 1; border-radius: 22%; border: 2px solid transparent; background: #fff; padding: 0; cursor: pointer; overflow: hidden; box-shadow: 0 0 0 1px rgba(0,0,0,0.08); }
+.avatar-opt img { width: 100%; height: 100%; display: block; object-fit: cover; }
+.avatar-opt.on { border-color: var(--brand); }
+.avatar-reset { flex: 0 0 auto; height: 46px; border-radius: 14px; font-size: 15px; }

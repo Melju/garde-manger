@@ -524,3 +524,6 @@ $$;
 
 grant execute on function admin_ai_overview(int) to authenticated;
 grant execute on function admin_set_quota(uuid, int) to authenticated;
+
+-- Avatar illustré du membre (ex : animal-07)
+alter table family_members add column if not exists avatar text;

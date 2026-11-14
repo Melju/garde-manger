@@ -77,6 +77,7 @@ function toMember(r: any): FamilyMember {
     restrictions: r.restrictions ?? [],
     aversions: r.aversions ?? undefined,
     color: r.color,
+    avatar: r.avatar ?? undefined,
   }
 }
 
@@ -282,6 +283,7 @@ export class SupabaseRepository implements Repository {
         diet: m.diet,
         restrictions: m.restrictions,
         aversions: m.aversions ?? null,
+        avatar: m.avatar ?? null,
         color: m.color,
       })),
     )

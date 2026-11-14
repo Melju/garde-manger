@@ -218,6 +218,8 @@ export interface FamilyMember {
   aversions?: string
   /** Couleur de l'avatar (dégradé CSS ou couleur unie). */
   color: string
+  /** Avatar illustré choisi (ex : « animal-07 »), sinon l'initiale sur fond de couleur. */
+  avatar?: string
 }
 
 export type FamilyMemberInput = Omit<FamilyMember, 'id'>

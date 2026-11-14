@@ -1,3 +1,4 @@
+import { MemberAvatar } from '../components/MemberAvatar'
 import { useStore } from '../data/store'
 import { PageHeader } from '../components/PageHeader'
 import { Icon } from '../components/Icon'
@@ -18,9 +19,7 @@ export function FamilyScreen({ onBack, onEditMember }: FamilyScreenProps) {
       <div className="product-list">
         {family.map((m) => (
           <div className="family-member" key={m.id} onClick={() => onEditMember(m)}>
-            <div className="member-avatar large" style={{ background: m.color }}>
-              {m.name.charAt(0).toUpperCase()}
-            </div>
+            <MemberAvatar member={m} size="large" />
             <div className="member-info">
               <div className="member-name">{m.name}</div>
               <div className="member-diet">{DIET_LABELS[m.diet]}</div>

@@ -4,6 +4,8 @@ import { useState } from 'react'
 import { useStore, AVATAR_COLORS } from '../data/store'
 import { useToast } from '../components/Toast'
 import { PageHeader } from '../components/PageHeader'
+import { MemberAvatar } from '../components/MemberAvatar'
+import { AvatarPicker } from '../components/AvatarPicker'
 import { DIETS, RESTRICTIONS, type Diet, type FamilyMember } from '../types'
 
 interface MemberEditScreenProps {
@@ -21,6 +23,8 @@ export function MemberEditScreen({ member, onBack }: MemberEditScreenProps) {
   const [diet, setDiet] = useState<Diet>(member?.diet ?? 'omnivore')
   const [restrictions, setRestrictions] = useState<string[]>(member?.restrictions ?? [])
   const [aversions, setAversions] = useState(member?.aversions ?? '')
+  const [avatar, setAvatar] = useState<string | undefined>(member?.avatar)
+  const [picking, setPicking] = useState(false)
 
   const canSave = name.trim().length > 0
 
@@ -35,6 +39,7 @@ export function MemberEditScreen({ member, onBack }: MemberEditScreenProps) {
       diet,
       restrictions,
       aversions: aversions.trim() || undefined,
+      avatar,
     }
     if (isEdit && member) {
       await updateMember(member.id, data)
@@ -62,12 +67,20 @@ export function MemberEditScreen({ member, onBack }: MemberEditScreenProps) {
       <PageHeader title="Profil" onBack={onBack} />
 
       <div className="form-section" style={{ textAlign: 'center', paddingTop: 20 }}>
-        <div
-          className="member-avatar large"
-          style={{ background: color, width: 80, height: 80, fontSize: 32, margin: '0 auto' }}
-        >
-          {(name.charAt(0) || '?').toUpperCase()}
-        </div>
+        <button type="button" className="avatar-edit" onClick={() => setPicking(true)} aria-label="Changer d'avatar">
+          <MemberAvatar member={{ name, color, avatar }} size="large" style={{ width: 96, height: 96, fontSize: 38 }} />
+          <span className="avatar-edit-hint">Changer d'avatar</span>
+        </button>
+        {picking && (
+          <AvatarPicker
+            value={avatar}
+            onPick={(id) => {
+              setAvatar(id)
+              setPicking(false)
+            }}
+            onClose={() => setPicking(false)}
+          />
+        )}
       </div>
 
       <div className="form-section">
