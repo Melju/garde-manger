@@ -728,7 +728,15 @@ export function StoreProvider({ children }: { children: ReactNode }) {
         // Décrémente d'1 chaque ingrédient présent en stock (sans log unitaire).
         for (const ing of recipe.ingredients) {
           const match = linkedProduct(ing, products)
-          if (match && match.quantity > 0) await repo.adjustQuantity(match.id, -1)
+          if (match && match.quantity > 0) {
+            await repo.adjustQuantity(match.id, -1)
+            await logHistory('consomme', `${match.name} consommé (×1)`, match.price ?? undefined, {
+              name: match.name,
+              qty: 1,
+              category: match.category,
+              conservation: match.conservation,
+            })
+          }
         }
         setProducts(await repo.listProducts())
         await logHistory('prepare', `${recipe.title} préparée`)

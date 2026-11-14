@@ -9,6 +9,7 @@ import { RecipeFormScreen } from './screens/RecipeFormScreen'
 import { NotificationsScreen } from './screens/NotificationsScreen'
 import { PlanningScreen } from './screens/PlanningScreen'
 import { StatsScreen } from './screens/StatsScreen'
+import { ConsumptionScreen } from './screens/ConsumptionScreen'
 import { BudgetScreen } from './screens/BudgetScreen'
 import { WasteScreen } from './screens/WasteScreen'
 import { FamilyScreen } from './screens/FamilyScreen'
@@ -54,6 +55,7 @@ type Route =
   | { name: 'bulk-add' }
   | { name: 'notifications' }
   | { name: 'stats' }
+  | { name: 'consumption' }
   | { name: 'budget' }
   | { name: 'waste' }
   | { name: 'recipe-detail'; recipe: Recipe }
@@ -318,9 +320,11 @@ export function App() {
       case 'notifications':
         return <NotificationsScreen onBack={back} />
       case 'stats':
-        return <StatsScreen onBack={back} onOpenWaste={() => push({ name: 'waste' })} />
+        return <StatsScreen onBack={back} onOpenWaste={() => push({ name: 'waste' })} onOpenConsumption={() => push({ name: 'consumption' })} />
       case 'budget':
         return <BudgetScreen onBack={back} />
+      case 'consumption':
+        return <ConsumptionScreen onBack={back} />
       case 'waste':
         return <WasteScreen onBack={back} />
       case 'recipe-detail':

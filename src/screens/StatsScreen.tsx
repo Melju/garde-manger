@@ -9,9 +9,10 @@ import { formatMonthYear, formatTime, fromISODate, MONTHS_FR } from '../lib/date
 interface StatsScreenProps {
   onBack: () => void
   onOpenWaste: () => void
+  onOpenConsumption: () => void
 }
 
-export function StatsScreen({ onBack, onOpenWaste }: StatsScreenProps) {
+export function StatsScreen({ onBack, onOpenWaste, onOpenConsumption }: StatsScreenProps) {
   const { products, history, expenses, undoHistory } = useStore()
   const toast = useToast()
   const askConfirm = useConfirm()
@@ -57,6 +58,10 @@ export function StatsScreen({ onBack, onOpenWaste }: StatsScreenProps) {
 
       <div className="chart-section">
         <div className="chart-title">Consommation par semaine</div>
+        <button className="btn-secondary conso-link" onClick={onOpenConsumption}>
+          <Icon name="trendUp" width={2} />
+          Historique jour par jour et mois par mois
+        </button>
         {stats.weekly.every((v) => v === 0) ? (
           <p className="chart-empty">
             Pas encore de consommation enregistrée ce mois-ci. Retire des produits (swipe, scan ou « consommé ») pour voir la courbe se remplir.

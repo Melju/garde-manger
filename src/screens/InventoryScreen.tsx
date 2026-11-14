@@ -313,12 +313,12 @@ export function InventoryScreen({
       </div>
 
       <div className={`product-list${selecting ? ' selecting' : ''}`}>
-        <div className="list-header">
-          <span className="list-title">
-            {search.trim() ? 'Résultats' : 'Tous les produits'}
-          </span>
-          <span className="list-count">{filtered.length} articles</span>
-        </div>
+        {search.trim() && (
+          <div className="list-header">
+            <span className="list-title">Résultats</span>
+            <span className="list-count">{filtered.length} article{filtered.length > 1 ? 's' : ''}</span>
+          </div>
+        )}
 
         {filtered.length > 0 ? (
           <>

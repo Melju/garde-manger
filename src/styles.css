@@ -2553,8 +2553,31 @@ body.is-selecting .add-bar { display: none; }
 .btn-row > .btn-primary, .btn-row > .btn-secondary { height: 46px; border-radius: 14px; font-size: 15px; display: flex; align-items: center; justify-content: center; }
 .form-footer .action-chip.cancel { width: auto; height: 46px; flex-direction: row; padding: 0 18px; font-size: 15px; }
 
-/* Bandeau de stats compact : valeur et libellé sur une seule ligne. */
+/* Bandeau de stats compact : chiffre au-dessus du libellé, marges serrées (supporte 3 à 4 chiffres). */
 .stats-strip { gap: 8px; margin-bottom: 14px; }
-.stat-box { padding: 9px 10px; border-radius: 14px; display: flex; align-items: baseline; justify-content: center; gap: 6px; min-width: 0; }
-.stat-box .value { font-size: 20px; line-height: 1.2; }
-.stat-box .label { margin-top: 0; font-size: 12px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.stat-box { padding: 8px 6px; border-radius: 14px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 0; min-width: 0; text-align: center; }
+.stat-box .value { font-size: 20px; line-height: 1.15; font-variant-numeric: tabular-nums; white-space: nowrap; max-width: 100%; }
+.stat-box .label { margin-top: 0; font-size: 11px; line-height: 1.2; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%; }
+
+/* Écran Consommation */
+.conso-seg { display: flex; gap: 6px; margin: 0 16px 14px; padding: 4px; border-radius: 14px; background: rgba(0,0,0,0.05); }
+.conso-seg button { flex: 1; height: 38px; border: none; border-radius: 11px; background: transparent; font: inherit; font-size: 14px; font-weight: 600; color: var(--muted); cursor: pointer; }
+.conso-seg button.on { background: var(--surface, #fff); color: var(--fg); box-shadow: 0 1px 4px rgba(0,0,0,0.1); }
+.conso-kpis { display: flex; gap: 8px; padding: 0 16px; }
+.conso-kpis .stat-box { flex-direction: column; align-items: center; gap: 0; cursor: default; padding: 10px; }
+.conso-kpis .stat-box:hover { border-color: var(--border); }
+.conso-note { margin: 8px 20px 14px; font-size: 12px; color: var(--muted); text-align: center; }
+.conso-chart { display: flex; align-items: stretch; gap: 3px; height: 170px; padding: 8px 4px 0; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); }
+.conso-col { flex: 1; min-width: 0; display: flex; flex-direction: column; border: none; background: transparent; padding: 0; cursor: pointer; font: inherit; }
+.conso-bar-wrap { flex: 1; display: flex; align-items: flex-end; }
+.conso-bar { width: 100%; background: var(--brand); opacity: 0.4; border-radius: 4px 4px 0 0; min-height: 2px; }
+.conso-col.sel .conso-bar { opacity: 1; }
+.conso-lbl { height: 22px; line-height: 22px; font-size: 10px; color: var(--muted); text-align: center; white-space: nowrap; overflow: visible; }
+.conso-col.sel .conso-lbl { color: var(--fg); font-weight: 700; }
+.conso-top-row { display: flex; align-items: center; gap: 10px; padding: 8px 0; font-size: 14px; }
+.conso-top-name { flex: 0 0 38%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.conso-top-track { flex: 1; height: 8px; border-radius: 4px; background: rgba(0,0,0,0.06); overflow: hidden; }
+.conso-top-track i { display: block; height: 100%; background: var(--brand); border-radius: 4px; }
+.conso-top-qty { flex: 0 0 auto; color: var(--muted); font-size: 13px; min-width: 30px; text-align: right; }
+.conso-link { display: flex; align-items: center; justify-content: center; gap: 8px; height: 46px; border-radius: 14px; font-size: 14px; margin-bottom: 12px; }
+.conso-link svg { width: 18px; height: 18px; }

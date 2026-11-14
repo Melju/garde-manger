@@ -311,12 +311,19 @@ export class SupabaseRepository implements Repository {
 
   // ---------- Historique ----------
   async getHistory(): Promise<HistoryEntry[]> {
-    const { data, error } = await this.sb
-      .from('history')
-      .select('*')
-      .order('at', { ascending: false })
-    if (error) throw error
-    return (data ?? []).map((r: any) => ({
+    // Pagination : PostgREST plafonne à 1000 lignes, l'historique de conso doit rester complet.
+    const rows: any[] = []
+    for (let from = 0; ; from += 1000) {
+      const { data, error } = await this.sb
+        .from('history')
+        .select('*')
+        .order('at', { ascending: false })
+        .range(from, from + 999)
+      if (error) throw error
+      rows.push(...(data ?? []))
+      if (!data || data.length < 1000) break
+    }
+    return rows.map((r: any) => ({
       id: r.id,
       date: r.entry_date,
       at: r.at,
