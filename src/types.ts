@@ -122,6 +122,8 @@ export interface ReceiptItem {
   name: string
   quantity: number
   unit: string
+  /** Contenance d'UN paquet (« 500 g », « 12 sachets ») si lisible. */
+  size?: string | null
   price: number | null
   category: Category
 }

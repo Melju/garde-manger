@@ -1,14 +1,16 @@
 import { getCurrentStore, recordPurchases } from '../lib/stores'
 import { guessDateType } from '../lib/shelfLife'
-import { isWeightUnit, formatContenance } from '../lib/contenance'
+import { extractPackSize, normalizeSize } from '../lib/packSize'
 import { useState } from 'react'
 import { useStore } from '../data/store'
 import { useToast } from './Toast'
 import { Icon } from './Icon'
 import { CATEGORIES, defaultConservation, type Category, type ReceiptItem } from '../types'
 
-interface Row extends ReceiptItem {
+interface Row extends Omit<ReceiptItem, 'size'> {
   include: boolean
+  /** Contenance d'un paquet, modifiable (« 500 g », « 12 sachets »). */
+  size: string
 }
 
 interface ReviewItemsProps {
@@ -23,7 +25,11 @@ interface ReviewItemsProps {
 export function ReviewItems({ items, onDone, onRetry }: ReviewItemsProps) {
   const { addProduct } = useStore()
   const toast = useToast()
-  const [rows, setRows] = useState<Row[]>(items.map((it) => ({ ...it, include: true })))
+  const [rows, setRows] = useState<Row[]>(items.map((it) => ({
+      ...it,
+      include: true,
+      size: normalizeSize(it.size) ?? extractPackSize(it.name) ?? '',
+    })),)
   const [busy, setBusy] = useState(false)
 
   const selected = rows.filter((r) => r.include)
@@ -41,9 +47,9 @@ export function ReviewItems({ items, onDone, onRetry }: ReviewItemsProps) {
           name: it.name,
           category: it.category,
           conservation: defaultConservation(it.category),
-          // Au poids / volume : 1 paquet de « 500 g » ; sinon la quantité reste un nombre d'unités.
-          quantity: isWeightUnit(it.unit) ? 1 : it.quantity,
-          size: isWeightUnit(it.unit) ? formatContenance(it.quantity, it.unit!) : it.unit ? `${it.unit}` : undefined,
+          // quantité = nombre de paquets achetés ; contenance = celle d'UN paquet.
+          quantity: it.quantity,
+          size: normalizeSize(it.size),
           dateType: guessDateType(it.name, defaultConservation(it.category), it.category).type,
           price: it.price ?? undefined,
         })
@@ -99,6 +105,12 @@ export function ReviewItems({ items, onDone, onRetry }: ReviewItemsProps) {
                 </div>
                 {row.price != null && <span className="ticket-price">{row.price.toFixed(2)}€</span>}
               </div>
+              <input
+                className="form-input ticket-size"
+                placeholder="Contenance d'un paquet (500 g, 12 sachets…)"
+                value={row.size}
+                onChange={(e) => patch(i, { size: e.target.value })}
+              />
             </div>
           </div>
         ))}

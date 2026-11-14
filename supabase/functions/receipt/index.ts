@@ -32,13 +32,17 @@ la TVA, le magasin, la carte de fidélité, les remises non liées à un produit
 
 Pour chaque article, donne :
 - name : nom lisible et corrigé du produit (développe les abréviations si évident, en français)
-- quantity : nombre d'unités (entier, 1 par défaut)
-- unit : "" si à l'unité, sinon "g","kg","mL","L" si une contenance au poids/volume est visible
+- quantity : nombre de paquets / unités achetés (entier, 1 par défaut ; « 2 x 3,49 » = 2)
+- size : contenance d'UN seul paquet telle qu'elle apparaît dans le libellé : poids ou volume
+  (« 500 g », « 1 kg », « 1,5 L », « 33 cl ») OU nombre de sachets (« 12 sachets ») pour les boîtes de
+  biscuits, thés, infusions, etc. Pour un lot (« 6X33CL »), donne la contenance d'une unité (« 33 cl »)
+  et mets le nombre d'unités dans quantity. null si rien n'est lisible : ne devine jamais.
+- unit : "" (obsolète, laisse vide)
 - price : prix payé en euros (nombre) si visible, sinon null
 - category : une seule valeur parmi [${CATEGORIES}]
 
 Réponds STRICTEMENT en JSON valide, sans texte autour :
-{"items":[{"name":string,"quantity":number,"unit":string,"price":number|null,"category":string}]}
+{"items":[{"name":string,"quantity":number,"size":string|null,"unit":string,"price":number|null,"category":string}]}
 Si l'image n'est pas un ticket lisible, renvoie {"items":[]}.`
 
   const res = await callClaude({
@@ -57,6 +61,7 @@ Si l'image n'est pas un ticket lisible, renvoie {"items":[]}.`
     .map((i: any) => ({
       name: String(i.name).slice(0, 80).trim(),
       quantity: Math.max(1, Math.round(Number(i.quantity) || 1)),
+      size: typeof i.size === 'string' && i.size.trim() ? String(i.size).slice(0, 24).trim() : null,
       unit: typeof i.unit === 'string' && ['g', 'kg', 'mL', 'L'].includes(i.unit) ? i.unit : '',
       price: i.price != null && !isNaN(Number(i.price)) ? Number(i.price) : null,
       category: cats.includes(i.category) ? i.category : 'autre',
