@@ -1,5 +1,5 @@
 import { useConfirm } from './components/Confirm'
-import { lazy, Suspense, useState } from 'react'
+import { lazy, Suspense, useLayoutEffect, useRef, useState } from 'react'
 import { InventoryScreen } from './screens/InventoryScreen'
 import { ShoppingScreen } from './screens/ShoppingScreen'
 import { ProductFormScreen } from './screens/ProductFormScreen'
@@ -148,16 +148,32 @@ export function App() {
       </div>
     )
 
-  const push = (r: Route) => setStack((s) => [...s, r])
+  // Défilement : une sous-page s'ouvre toujours tout en haut, et la page d'origine retrouve sa position au retour.
+  const scrollSaved = useRef<number[]>([])
+  const push = (r: Route) => {
+    scrollSaved.current[stack.length] = window.scrollY
+    setStack((s) => [...s, r])
+  }
   const back = () => setStack((s) => s.slice(0, -1))
   const goTab = (t: Tab) => {
+    scrollSaved.current = []
     setTab(t)
     setStack([])
   }
   /** Remplace la sous-page courante (ex : scan → formulaire). */
-  const replace = (r: Route) => setStack((s) => [...s.slice(0, -1), r])
+  const replace = (r: Route) => {
+    window.scrollTo(0, 0)
+    setStack((s) => [...s.slice(0, -1), r])
+  }
 
   const top = stack[stack.length - 1]
+  const prevDepth = useRef(0)
+  useLayoutEffect(() => {
+    const d = stack.length
+    if (d > prevDepth.current) window.scrollTo(0, 0)
+    else if (d < prevDepth.current) window.scrollTo(0, scrollSaved.current[d] ?? 0)
+    prevDepth.current = d
+  }, [stack.length])
 
   // Action d'ajout contextuelle par page (barre du bas en mobile, bouton sidebar en bureau).
   const addAction: Partial<Record<Tab, { label: string; run: () => void }>> = {
