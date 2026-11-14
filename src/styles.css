@@ -2214,3 +2214,4 @@ input[type='date'].form-input::-webkit-calendar-picker-indicator {
   font-weight: 700;
   cursor: pointer;
 }
+.product-img { width: 38px; height: 38px; object-fit: contain; pointer-events: none; user-select: none; }

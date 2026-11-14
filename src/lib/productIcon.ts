@@ -123,7 +123,7 @@ const RULES: [string[], FoodIconKey][] = [
 ]
 
 /** Minuscules, sans accent, ponctuation remplacée par des espaces (« jus d'orange » → « jus d orange »). */
-function normalize(s: string): string {
+export function normalize(s: string): string {
   return s
     .toLowerCase()
     .normalize('NFD')
