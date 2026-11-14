@@ -351,39 +351,17 @@ export function ProductFormScreen({ product, initial, onClose, onSaved }: Produc
         <h1 style={{ flex: 1 }}>{isEdit ? 'Modifier le produit' : 'Ajouter un produit'}</h1>
       </div>
 
-      <div className="form-section">
-        <label className="form-label" htmlFor="name">Nom du produit</label>
-        <input
-          id="name"
-          className="form-input"
-          placeholder="Ex : Tomates, Poulet, Lait…"
-          value={name}
-          autoFocus={!isEdit}
-          onChange={(e) => setName(e.target.value)}
-        />
-        {name.trim() && (
-          <button type="button" className="ai-complete-btn" onClick={aiComplete} disabled={enriching}>
-            <Icon name="sparkles" width={2.2} />
-            {enriching ? 'Analyse…' : 'Compléter avec l’IA'}
+      <div className="form-group product-hero">
+        <div className="hero-icon-wrap">
+          <button type="button" className="hero-icon" onClick={() => setPickingIcon((v) => !v)} aria-label="Changer l'icône">
+            {shownIcon ? <img src={productImageUrl(shownIcon)} alt="" /> : <span>?</span>}
           </button>
-        )}
-        {barcode && (
-          <p style={{ fontSize: 12, color: 'var(--muted)', marginTop: 6 }}>Code-barres : {barcode}</p>
-        )}
-      </div>
-
-      <div className="form-section">
-        <label className="form-label">Icône</label>
-        <div className="icon-pick-row">
-          <div className="icon-pick-current">
-            {shownIcon ? <img src={productImageUrl(shownIcon)} alt="" width={48} height={48} /> : <span>?</span>}
-          </div>
-          <div style={{ flex: 1, fontSize: 13, color: 'var(--muted)' }}>
+          <button type="button" className="hero-icon-change" onClick={() => setPickingIcon((v) => !v)}>
+            {pickingIcon ? 'Fermer' : 'Changer l’icône'}
+          </button>
+          <div className="hero-icon-source">
             {chosenIcon ? 'Choisie par toi' : shownIcon ? 'Choisie automatiquement' : 'Aucune icône trouvée'}
           </div>
-          <button type="button" className="ai-complete-btn" style={{ margin: 0 }} onClick={() => setPickingIcon((v) => !v)}>
-            {pickingIcon ? 'Fermer' : 'Changer'}
-          </button>
         </div>
         {pickingIcon && (
           <div className="icon-picker">
@@ -424,11 +402,30 @@ export function ProductFormScreen({ product, initial, onClose, onSaved }: Produc
             </div>
           </div>
         )}
-      </div>
 
-      {hasEnrich && (
         <div className="form-section">
-          <div className="enrich-card">
+          <label className="form-label" htmlFor="name">Nom du produit</label>
+          <input
+            id="name"
+            className="form-input"
+            placeholder="Ex : Tomates, Poulet, Lait…"
+            value={name}
+            autoFocus={!isEdit}
+            onChange={(e) => setName(e.target.value)}
+          />
+          {name.trim() && (
+            <button type="button" className="ai-complete-btn" onClick={aiComplete} disabled={enriching}>
+              <Icon name="sparkles" width={2.2} />
+              {enriching ? 'Analyse…' : 'Compléter avec l’IA'}
+            </button>
+          )}
+          {barcode && (
+            <p style={{ fontSize: 12, color: 'var(--muted)', marginTop: 6 }}>Code-barres : {barcode}</p>
+          )}
+        </div>
+
+        {hasEnrich && (
+          <div className="form-section hero-nutri">
             {enrich.imageUrl && <img className="enrich-photo" src={enrich.imageUrl} alt="" />}
             <div className="enrich-info">
               <div className="enrich-badges">
@@ -455,8 +452,8 @@ export function ProductFormScreen({ product, initial, onClose, onSaved }: Produc
               )}
             </div>
           </div>
-        </div>
-      )}
+        )}
+      </div>
 
       <div className="form-group">
         <h2 className="form-group-title">Stock</h2>

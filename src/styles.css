@@ -2331,3 +2331,13 @@ input[type='date'].form-input::-webkit-calendar-picker-indicator {
 .form-group.deduced .deduced-head { padding: 0 18px; }
 .form-group.deduced .form-group-title { padding: 0; }
 .form-group.deduced .deduced-summary { padding: 2px 18px 14px; }
+/* Fiche produit : grande icône en tête */
+.product-hero { padding-top: 22px; }
+.hero-icon-wrap { display: flex; flex-direction: column; align-items: center; gap: 8px; margin-bottom: 22px; }
+.hero-icon { width: 148px; height: 148px; border-radius: 32px; background: #fff; border: 1px solid rgba(0,0,0,0.08); box-shadow: 0 2px 10px rgba(0,0,0,0.06); display: grid; place-items: center; padding: 0; cursor: pointer; font-size: 42px; color: var(--muted); }
+.hero-icon img { width: 120px; height: 120px; object-fit: contain; }
+.hero-icon-change { border: 1px solid var(--accent, #3a9a9a); color: var(--accent, #3a9a9a); background: transparent; border-radius: 999px; padding: 8px 18px; font-weight: 700; font-size: 14px; font-family: inherit; cursor: pointer; }
+.hero-icon-source { font-size: 12px; color: var(--muted); }
+.product-hero .icon-picker { margin: 0 18px 20px; }
+.hero-nutri { display: flex; align-items: center; gap: 12px; padding-top: 4px; }
+.hero-nutri .enrich-info { flex: 1; }
