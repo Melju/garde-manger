@@ -2188,3 +2188,29 @@ input[type='date'].form-input::-webkit-calendar-picker-indicator {
 /* Fade entre écrans */
 .screen-fade { animation: fadeIn 0.2s ease; }
 @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+
+/* Bandeau : cloud configuré mais pas de session (données locales uniquement) */
+.local-banner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin: 0 0 12px;
+  padding: 10px 12px;
+  border: 1px solid var(--warn);
+  border-radius: 12px;
+  background: #fef6e6;
+  font-size: 13px;
+}
+.local-banner div { display: flex; flex-direction: column; gap: 2px; }
+.local-banner strong { font-weight: 700; }
+.local-banner button {
+  flex-shrink: 0;
+  padding: 8px 12px;
+  border: 0;
+  border-radius: 10px;
+  background: var(--warn);
+  color: #1d1d1d;
+  font-weight: 700;
+  cursor: pointer;
+}

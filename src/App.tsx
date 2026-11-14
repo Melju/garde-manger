@@ -154,6 +154,16 @@ export function App() {
       </aside>
 
       <main className={`app${!top && add ? ' with-fab' : ''}`}>
+        {/* Cloud configuré mais aucune session : l'app tourne sur le stockage local de cet appareil. */}
+        {!top && auth.cloudEnabled && !auth.householdId && (
+          <div className="local-banner" role="alert">
+            <div>
+              <strong>Non connecté</strong>
+              <span>Tu vois uniquement les données de cet appareil, pas celles de ton foyer.</span>
+            </div>
+            <button onClick={() => push({ name: 'account' })}>Se connecter</button>
+          </div>
+        )}
         {top ? (
           renderRoute(top)
         ) : (
