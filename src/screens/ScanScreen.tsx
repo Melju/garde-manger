@@ -5,6 +5,9 @@ import { Icon } from '../components/Icon'
 import { useToast } from '../components/Toast'
 import { lookupBarcode } from '../lib/openfoodfacts'
 import type { Product, ProductInput } from '../types'
+import { DatePicker } from '../components/DatePicker'
+import { DateScanner } from '../components/DateScanner'
+import { estimatedExpiryISO } from '../lib/shelfLife'
 import { chosenIconSlug, productImageSlug, productImageUrl } from '../lib/productImage'
 
 interface ScanScreenProps {
@@ -15,8 +18,10 @@ interface ScanScreenProps {
   onConsume?: (barcode: string) => void
   /** Mode ajout : renvoie le produit déjà en stock pour ce code-barres (null si inconnu). */
   findKnown?: (barcode: string) => Product | null
-  /** Mode ajout : ajoute n unités au produit déjà en stock. */
-  onAddKnown?: (product: Product, n: number) => Promise<void>
+  /** Mode ajout : ajoute n unités (avec leur péremption) au produit déjà en stock. */
+  onAddKnown?: (product: Product, n: number, expiry: string) => Promise<void>
+  /** Mode ajout : fiche mémorisée pour un code-barres qui n'est plus en stock. */
+  findMemory?: (barcode: string) => Partial<ProductInput> | null
   /** Mode ajout : produits ajoutés pendant cette session de scan en série. */
   added?: { name: string; count: number }[]
   /** Mode retrait : produits retirés dans la session (pour correction). */
@@ -28,17 +33,19 @@ interface ScanScreenProps {
 
 type Phase = 'scanning' | 'looking-up' | 'error'
 
-export function ScanScreen({ mode = 'add', onResult, onConsume, findKnown, onAddKnown, added, removed, onUndo, onClose }: ScanScreenProps) {
+export function ScanScreen({ mode = 'add', onResult, onConsume, findKnown, onAddKnown, findMemory, added, removed, onUndo, onClose }: ScanScreenProps) {
   const videoRef = useRef<HTMLVideoElement>(null)
   const controlsRef = useRef<{ stop: () => void } | null>(null)
   const handledRef = useRef(false)
   const lastRef = useRef<{ code: string; t: number }>({ code: '', t: 0 })
   // Callbacks dans une ref pour ne pas relancer la caméra à chaque rendu.
-  const cb = useRef({ mode, onResult, onConsume, findKnown })
-  cb.current = { mode, onResult, onConsume, findKnown }
+  const cb = useRef({ mode, onResult, onConsume, findKnown, findMemory })
+  cb.current = { mode, onResult, onConsume, findKnown, findMemory }
   const pausedRef = useRef(false)
   const [known, setKnown] = useState<Product | null>(null)
   const [knownQty, setKnownQty] = useState(1)
+  const [knownExpiry, setKnownExpiry] = useState('')
+  const [scanningDate, setScanningDate] = useState(false)
   const toast = useToast()
   const [phase, setPhase] = useState<Phase>('scanning')
   const [errorMsg, setErrorMsg] = useState('')
@@ -48,7 +55,7 @@ export function ScanScreen({ mode = 'add', onResult, onConsume, findKnown, onAdd
     let cancelled = false
 
     async function onDetected(barcode: string) {
-      const { mode, onResult, onConsume, findKnown } = cb.current
+      const { mode, onResult, onConsume, findKnown, findMemory } = cb.current
       if (mode === 'consume') {
         // Anti-rebond : ignore le même code scanné dans la dernière seconde et demie.
         const now = Date.now()
@@ -64,12 +71,19 @@ export function ScanScreen({ mode = 'add', onResult, onConsume, findKnown, onAdd
       if (k) {
         pausedRef.current = true
         setKnownQty(1)
+        setKnownExpiry('')
         setKnown(k)
         return
       }
       handledRef.current = true
       controlsRef.current?.stop()
       setPhase('looking-up')
+      const mem = findMemory?.(barcode)
+      if (mem) {
+        // Déjà ajouté par le passé : on reprend la fiche, la péremption est à renseigner.
+        onResult?.({ ...mem, expiryDate: undefined, quantity: 1 }, true)
+        return
+      }
       const result = await lookupBarcode(barcode)
       if (cancelled) return
       if (!result.found) toast('Produit inconnu — à compléter manuellement')
@@ -123,7 +137,7 @@ export function ScanScreen({ mode = 'add', onResult, onConsume, findKnown, onAdd
     const p = known
     const n = knownQty
     setKnown(null)
-    await onAddKnown?.(p, n)
+    await onAddKnown?.(p, n, knownExpiry)
     // Petit délai pour ne pas re-scanner immédiatement le même code.
     setTimeout(() => {
       pausedRef.current = false
@@ -182,6 +196,15 @@ export function ScanScreen({ mode = 'add', onResult, onConsume, findKnown, onAdd
             </div>
           )}
 
+          {known && scanningDate && (
+            <DateScanner
+              onResult={(r) => {
+                setKnownExpiry(r.date)
+                setScanningDate(false)
+              }}
+              onClose={() => setScanningDate(false)}
+            />
+          )}
           {known && (
             <div className="scan-known">
               <div className="scan-known-card">
@@ -201,6 +224,23 @@ export function ScanScreen({ mode = 'add', onResult, onConsume, findKnown, onAdd
                   <button type="button" onClick={() => setKnownQty((q) => q + 1)} aria-label="Plus">
                     <Icon name="plus" width={3} />
                   </button>
+                </div>
+                <div className="scan-known-exp">
+                  <label className="form-label">Date de péremption de ce produit</label>
+                  <DatePicker value={knownExpiry} onChange={setKnownExpiry} />
+                  <div className="scan-known-exp-actions">
+                    <button type="button" className="usual-chip" onClick={() => setScanningDate(true)}>
+                      Scanner la date
+                    </button>
+                    {!knownExpiry && (() => {
+                      const est = estimatedExpiryISO(known.name, known.conservation, known.category)
+                      return est ? (
+                        <button type="button" className="usual-chip" onClick={() => setKnownExpiry(est)}>
+                          Utiliser l'estimation
+                        </button>
+                      ) : null
+                    })()}
+                  </div>
                 </div>
                 <button className="btn-primary" onClick={confirmKnown}>
                   Ajouter {knownQty}

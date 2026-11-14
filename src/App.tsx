@@ -24,6 +24,8 @@ import { useToast } from './components/Toast'
 import { useStore } from './data/store'
 import { useAuth } from './data/auth'
 import { lookupBarcode } from './lib/openfoodfacts'
+import { recallProduct } from './lib/productMemory'
+import { splitSize } from './lib/contenance'
 import type { FamilyMember, Product, ProductInput, Recipe } from './types'
 
 // Chargé à la demande : la bibliothèque de scan (ZXing) est lourde.
@@ -61,7 +63,7 @@ type Route =
   | { name: 'add-menu' }
 
 export function App() {
-  const { loading, products, adjustQuantity } = useStore()
+  const { loading, products, adjustQuantity, addProduct } = useStore()
   const auth = useAuth()
   const toast = useToast()
 
@@ -69,10 +71,22 @@ export function App() {
   function findKnownByBarcode(barcode: string) {
     return products.find((x) => x.barcode && x.barcode === barcode) ?? null
   }
-  async function addKnown(p: Product, n: number) {
-    await adjustQuantity(p.id, n)
-    toast(`${p.name} : +${n}, ×${p.quantity + n} en stock`)
+  async function addKnown(p: Product, n: number, expiry: string) {
+    if (!expiry || expiry === p.expiryDate) {
+      await adjustQuantity(p.id, n)
+      toast(`${p.name} : +${n}, ×${p.quantity + n} en stock`)
+    } else {
+      // Nouvelle péremption : nouveau lot, copié depuis le produit connu (contenance d'origine).
+      const { id: _id, createdAt: _c, updatedAt: _u, ...rest } = p
+      const full = splitSize(p.size).full
+      await addProduct({ ...rest, size: full ?? p.size, quantity: n, expiryDate: expiry })
+      toast(`${p.name} : +${n} avec la nouvelle date`)
+    }
     logScanAdded(p.name, n)
+  }
+  // Produit scanné mais plus en stock : on reprend sa dernière fiche (sans péremption).
+  function recallForScan(barcode: string) {
+    return recallProduct(barcode)
   }
 
   // Retrait par scan : décrémente le produit correspondant au code-barres.
@@ -254,6 +268,7 @@ export function App() {
             <ScanScreen
               added={scanAdded}
               findKnown={findKnownByBarcode}
+              findMemory={recallForScan}
               onAddKnown={addKnown}
               onResult={(initial) => replace({ name: 'product-form', product: null, initial, fromScan: true })}
               onClose={() => {

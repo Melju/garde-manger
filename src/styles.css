@@ -2282,3 +2282,7 @@ input[type='date'].form-input::-webkit-calendar-picker-indicator {
 .store-msg { margin: 0 20px 12px; padding: 10px 14px; border-radius: var(--radius-sm); background: var(--accent-soft); color: var(--fg-2); font-size: 14px; }
 
 .removed-chip.added { cursor: default; }
+
+.scan-known-exp .form-label { display: block; margin-bottom: 6px; }
+.scan-known-exp-actions { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+.scan-known-card { max-height: 88vh; overflow-y: auto; }

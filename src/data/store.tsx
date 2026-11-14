@@ -1,4 +1,5 @@
 import { seedFromProducts } from '../lib/learnedShelf'
+import { seedProductMemory } from '../lib/productMemory'
 import {
   createContext,
   useCallback,
@@ -203,6 +204,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
         repo.getShopCatalog(),
       ])
       seedFromProducts(p)
+      seedProductMemory(p)
       setProducts(p)
       setShopping(s)
       setRecipes(r)

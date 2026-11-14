@@ -16,6 +16,7 @@ import { estimateShelfLife, estimatedExpiryISO, durationLabel, guessDateType } f
 import { DatePicker } from '../components/DatePicker'
 import { DateScanner, type ScannedDate } from '../components/DateScanner'
 import { getCurrentStore, getStores, setProductStores, storesFor } from '../lib/stores'
+import { rememberProduct } from '../lib/productMemory'
 import { learn } from '../lib/learnedShelf'
 import { productImageSlug, productImageUrl, chosenIconSlug, chosenIconValue, realPhotoUrl } from '../lib/productImage'
 import { ICON_SLUGS } from '../lib/iconList'
@@ -229,6 +230,7 @@ export function ProductFormScreen({ product, initial, onClose, onSaved }: Produc
   async function handleSave() {
     if (!canSave) return
     const inp = buildInput()
+    rememberProduct(inp)
     setProductStores(inp.name, inp.category, undefined, undefined, shops)
     learn({
       name: inp.name,
