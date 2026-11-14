@@ -2225,3 +2225,21 @@ input[type='date'].form-input::-webkit-calendar-picker-indicator {
 .icon-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(56px, 1fr)); gap: 6px; margin-top: 10px; max-height: 280px; overflow-y: auto; }
 .icon-cell { aspect-ratio: 1; border-radius: 12px; border: 1px solid var(--border, #e6e0d6); background: var(--card, #fff); display: grid; place-items: center; padding: 2px; }
 .icon-cell.active { border-color: var(--primary, #2f7d4f); box-shadow: 0 0 0 2px var(--primary, #2f7d4f) inset; }
+
+/* Calendrier maison */
+.dp { position: relative; }
+.dp-field { display: flex; align-items: center; justify-content: space-between; text-align: left; cursor: pointer; }
+.dp-field.empty { color: var(--muted); }
+.dp-ico { color: var(--muted); font-size: 12px; }
+.dp-pop { margin-top: 8px; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 12px; box-shadow: 0 10px 30px oklch(0.24 0.02 220 / 0.12); }
+.dp-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; text-transform: capitalize; }
+.dp-nav { width: 34px; height: 34px; border-radius: 10px; border: 1px solid var(--border); background: var(--surface); color: var(--fg); display: grid; place-items: center; }
+.dp-nav svg { width: 16px; height: 16px; }
+.dp-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; }
+.dp-week { margin-bottom: 4px; text-align: center; font-size: 12px; font-weight: 700; color: var(--muted); }
+.dp-day { aspect-ratio: 1; border-radius: 10px; border: none; background: none; color: var(--fg); font: inherit; font-weight: 600; }
+.dp-day.today { box-shadow: 0 0 0 1.5px var(--brand) inset; }
+.dp-day.sel { background: var(--brand-grad); color: #fff; }
+.dp-quick { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; }
+.dp-quick button { border: 1px solid var(--border); background: var(--accent-soft); color: var(--fg); border-radius: 999px; padding: 6px 12px; font: inherit; font-size: 13px; font-weight: 700; }
+.dp-quick .clear { color: var(--danger); background: none; }

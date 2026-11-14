@@ -14,6 +14,7 @@ import {
 } from '../types'
 import { splitSize } from '../lib/contenance'
 import { estimateShelfLife, estimatedExpiryISO, durationLabel, guessDateType } from '../lib/shelfLife'
+import { DatePicker } from '../components/DatePicker'
 import { learn } from '../lib/learnedShelf'
 import { productImageSlug, productImageUrl, chosenIconSlug, chosenIconValue, realPhotoUrl } from '../lib/productImage'
 import { ICON_SLUGS } from '../lib/iconList'
@@ -444,13 +445,7 @@ export function ProductFormScreen({ product, initial, onClose, onSaved }: Produc
 
       <div className="form-section">
         <label className="form-label" htmlFor="expiry">Date de péremption</label>
-        <input
-          id="expiry"
-          type="date"
-          className="form-input"
-          value={expiryDate}
-          onChange={(e) => setExpiryDate(e.target.value)}
-        />
+        <DatePicker id="expiry" value={expiryDate} onChange={setExpiryDate} />
         {estimate && !expiryDate && (
           <button type="button" className="estimate-hint" onClick={applyEstimate}>
             <span>
