@@ -2286,3 +2286,22 @@ input[type='date'].form-input::-webkit-calendar-picker-indicator {
 .scan-known-exp .form-label { display: block; margin-bottom: 6px; }
 .scan-known-exp-actions { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
 .scan-known-card { max-height: 88vh; overflow-y: auto; }
+
+.scan-added-card {
+  position: absolute;
+  bottom: calc(108px + env(safe-area-inset-bottom));
+  left: 16px;
+  right: 16px;
+  background: rgba(255, 255, 255, 0.96);
+  color: var(--fg);
+  border-radius: 16px;
+  padding: 10px 14px;
+  box-shadow: 0 6px 24px rgba(0, 0, 0, 0.3);
+}
+.scan-added-title { font-size: 12px; font-weight: 700; color: var(--muted); margin-bottom: 6px; text-transform: uppercase; letter-spacing: 0.03em; }
+.scan-added-list { list-style: none; margin: 0; padding: 0; max-height: 28vh; overflow-y: auto; }
+.scan-added-row { display: flex; align-items: center; gap: 10px; padding: 8px 0; border-top: 1px solid rgba(0, 0, 0, 0.07); font-size: 15px; font-weight: 600; }
+.scan-added-row:first-child { border-top: none; }
+.scan-added-check { width: 22px; height: 22px; border-radius: 50%; background: #2e9e5b; color: #fff; display: inline-flex; align-items: center; justify-content: center; font-size: 13px; flex-shrink: 0; }
+.scan-added-name { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.scan-added-count { font-weight: 800; font-size: 16px; }

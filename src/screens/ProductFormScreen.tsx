@@ -27,7 +27,7 @@ import { familyAllergenWarnings, allergenLabel } from '../lib/allergens'
 const SIZE_UNITS = ['g', 'kg', 'mL', 'cl', 'L', 'pièce', 'pack', 'boîte', 'sachet', 'pot', 'tranches']
 
 /** Emplacements proposés (boutons). */
-const LOCATIONS = ['Placard', 'Réfrigérateur', 'Congélateur', 'Cellier', 'Garde-manger', 'Cave', 'Corbeille']
+const LOCATIONS = ['Placard', 'Réfrigérateur', 'Congélateur', 'Cellier', 'Cave', 'Corbeille']
 
 /** Sépare une contenance « 400 g » en valeur + unité. */
 function parseSize(s?: string): { value: string; unit: string } {

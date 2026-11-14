@@ -253,15 +253,17 @@ export function ScanScreen({ mode = 'add', onResult, onConsume, findKnown, onAdd
           )}
 
           {!isConsume && added && added.length > 0 && (
-            <div className="scan-removed">
-              <div className="scan-removed-title">Ajoutés pendant ce scan</div>
-              <div className="scan-removed-list">
-                {added.map((a) => (
-                  <span key={a.name} className="removed-chip added">
-                    {a.name} ×{a.count}
-                  </span>
+            <div className="scan-added-card">
+              <div className="scan-added-title">Ajoutés pendant ce scan</div>
+              <ul className="scan-added-list">
+                {[...added].reverse().map((a) => (
+                  <li key={a.name} className="scan-added-row">
+                    <span className="scan-added-check">✓</span>
+                    <span className="scan-added-name">{a.name}</span>
+                    <span className="scan-added-count">×{a.count}</span>
+                  </li>
                 ))}
-              </div>
+              </ul>
             </div>
           )}
 
