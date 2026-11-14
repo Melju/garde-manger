@@ -121,6 +121,11 @@ export function ProductFormScreen({ product, initial, onClose, onSaved }: Produc
   const [dateType, setDateType] = useState<DateType>(product?.dateType ?? initial?.dateType ?? 'dlc')
   const dateTouched = useRef(isEdit || !!initial?.dateType)
   const [expiryDate, setExpiryDate] = useState(product?.expiryDate ?? initial?.expiryDate ?? '')
+  // Nouveau produit en plusieurs exemplaires : une date de péremption par article (le 1er utilise la date ci-dessus).
+  const [perDate, setPerDate] = useState(false)
+  const [extraDates, setExtraDates] = useState<string[]>([])
+  const [extraScan, setExtraScan] = useState<number | null>(null)
+  const setExtraAt = (i: number, v: string) => setExtraDates((d) => { const c = [...d]; c[i] = v; return c })
   const initLocation =
     product?.location ??
     initial?.location ??
@@ -245,8 +250,20 @@ export function ProductFormScreen({ product, initial, onClose, onSaved }: Produc
       await updateProduct(product.id, inp)
       toast('Produit mis à jour')
     } else {
-      await addProduct(buildInput())
-      toast('Produit ajouté')
+      const base = buildInput()
+      if (perDate && quantity > 1) {
+        // Regroupe les exemplaires par date : un lot par date différente.
+        const groups = new Map<string, number>()
+        for (let i = 0; i < quantity; i++) {
+          const d = (i === 0 ? expiryDate : extraDates[i - 1]) || ''
+          groups.set(d, (groups.get(d) ?? 0) + 1)
+        }
+        for (const [d, count] of groups) await addProduct({ ...base, quantity: count, expiryDate: d || undefined })
+        toast(`${quantity} articles ajoutés (${groups.size} date${groups.size > 1 ? 's' : ''})`)
+      } else {
+        await addProduct(base)
+        toast('Produit ajouté')
+      }
     }
     if (onSaved) onSaved({ name: inp.name, quantity: inp.quantity })
     else onClose()
@@ -471,6 +488,40 @@ export function ProductFormScreen({ product, initial, onClose, onSaved }: Produc
           Scanner la date
         </button>
         {scanningDate && <DateScanner onResult={onDateScanned} onClose={() => setScanningDate(false)} />}
+        {!isEdit && quantity > 1 && (
+          <div className="scan-known-exp-actions" style={{ marginTop: 10 }}>
+            <button type="button" className={`usual-chip${!perDate ? ' on' : ''}`} onClick={() => setPerDate(false)}>
+              Même date pour tous
+            </button>
+            <button type="button" className={`usual-chip${perDate ? ' on' : ''}`} onClick={() => setPerDate(true)}>
+              Une date par article
+            </button>
+          </div>
+        )}
+        {!isEdit && perDate && quantity > 1 && (
+          <div className="scan-known-multi" style={{ marginTop: 10 }}>
+            {Array.from({ length: quantity - 1 }, (_, k) => (
+              <div key={k} className="scan-known-multi-row">
+                <div className="scan-known-multi-n">Article {k + 2}</div>
+                <DatePicker value={extraDates[k] || ''} onChange={(v) => setExtraAt(k, v)} />
+                <div className="scan-known-exp-actions">
+                  <button type="button" className="usual-chip" onClick={() => setExtraScan(k)}>Scanner</button>
+                  {(k === 0 ? expiryDate : extraDates[k - 1]) && (extraDates[k] || '') !== (k === 0 ? expiryDate : extraDates[k - 1]) && (
+                    <button type="button" className="usual-chip" onClick={() => setExtraAt(k, (k === 0 ? expiryDate : extraDates[k - 1]) || '')}>
+                      Idem article {k + 1}
+                    </button>
+                  )}
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+        {extraScan !== null && (
+          <DateScanner
+            onResult={(r) => { setExtraAt(extraScan, r.date); setExtraScan(null) }}
+            onClose={() => setExtraScan(null)}
+          />
+        )}
         {estimate && !expiryDate && (
           <button type="button" className="estimate-hint" onClick={applyEstimate}>
             <span>
