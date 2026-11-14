@@ -2256,3 +2256,19 @@ input[type='date'].form-input::-webkit-calendar-picker-indicator {
 .scan-known-stepper button { width: 54px; height: 54px; border-radius: 16px; border: 1px solid var(--border); background: var(--accent-soft); color: var(--fg); display: grid; place-items: center; }
 .scan-known-stepper span { font-size: 34px; font-weight: 800; min-width: 56px; text-align: center; }
 .scan-known-cancel { background: none; border: none; color: var(--fg-2); font: inherit; font-weight: 700; padding: 8px; }
+
+/* Magasin courant */
+.store-bar { margin: 0 20px 10px; }
+.store-chip { display: inline-flex; align-items: center; gap: 8px; border: 1px solid var(--border); background: var(--surface); color: var(--fg); border-radius: 999px; padding: 9px 14px; font: inherit; font-weight: 700; }
+.store-chip svg { width: 18px; height: 18px; }
+.store-picker { margin: 0 20px 12px; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 12px; }
+.store-grid { display: flex; flex-wrap: wrap; gap: 8px; }
+.store-opt { border: 1px solid var(--border); background: var(--accent-soft); color: var(--fg); border-radius: 999px; padding: 8px 14px; font: inherit; font-weight: 700; }
+.store-opt.active { background: var(--brand-grad); color: #fff; border-color: transparent; }
+.store-opt.none { background: none; color: var(--fg-2); }
+.store-new { display: flex; gap: 8px; margin-top: 10px; }
+.store-new .form-input { flex: 1; }
+.usual-here { margin: 0 20px 14px; }
+.usual-title { font-size: 12px; font-weight: 800; letter-spacing: 0.04em; text-transform: uppercase; color: var(--muted); margin-bottom: 8px; }
+.usual-list { display: flex; flex-wrap: wrap; gap: 6px; }
+.usual-chip { border: 1px solid var(--brand); background: var(--brand-soft); color: var(--brand-strong); border-radius: 999px; padding: 6px 12px; font: inherit; font-size: 14px; font-weight: 700; }

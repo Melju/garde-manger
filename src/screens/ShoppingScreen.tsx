@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useStore } from '../data/store'
+import { addStore, getCurrentStore, getStores, habitsFor, isUsualAt, recordPurchases, setCurrentStore } from '../lib/stores'
 import { useToast } from '../components/Toast'
 import { Icon } from '../components/Icon'
 import { QuantityWheel } from '../components/QuantityWheel'
@@ -40,6 +41,31 @@ export function ShoppingScreen({ addOpen, onCloseAdd }: ShoppingScreenProps) {
   const [name, setName] = useState('')
   const [qty, setQty] = useState(1)
   const [browseAll, setBrowseAll] = useState(false)
+  const [store, setStore] = useState(getCurrentStore())
+  const [pickingStore, setPickingStore] = useState(false)
+  const [newStore, setNewStore] = useState('')
+  const [storeTick, setStoreTick] = useState(0)
+  function chooseStore(n: string) {
+    setCurrentStore(n)
+    setStore(n)
+    setPickingStore(false)
+    setNewStore('')
+  }
+
+  // Articles que tu achètes d'habitude dans ce magasin et qui manquent (stock faible ou absent), pas encore dans la liste.
+  const usualHere = useMemo(() => {
+    if (!store) return []
+    const inList = new Set(shopping.map((it) => it.name.trim().toLowerCase()))
+    return habitsFor(store)
+      .filter((h) => {
+        const k = h.name.trim().toLowerCase()
+        if (inList.has(k)) return false
+        const inStock = products.find((p) => p.name.trim().toLowerCase() === k)
+        return !inStock || inStock.quantity <= 1
+      })
+      .slice(0, 12)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [store, shopping, products, storeTick])
 
   const remaining = shopping.filter((it) => !it.checked).length
 
@@ -105,10 +131,11 @@ export function ShoppingScreen({ addOpen, onCloseAdd }: ShoppingScreenProps) {
       arr.push(it)
       map.set(it.category, arr)
     }
+    if (store) for (const arr of map.values()) arr.sort((a, b) => isUsualAt(store, b.name) - isUsualAt(store, a.name))
     return CATEGORIES.map((c) => ({ category: c.id, items: map.get(c.id) ?? [] })).filter(
       (g) => g.items.length > 0,
     )
-  }, [shopping])
+  }, [shopping, store, storeTick])
 
   function qtyLabel(quantity: number, unit?: string) {
     return unit ? formatContenance(quantity, unit) : `×${quantity}`
@@ -161,6 +188,10 @@ export function ShoppingScreen({ addOpen, onCloseAdd }: ShoppingScreenProps) {
         expiryDate: estimatedExpiryISO(it.name, conservation, it.category) || undefined,
       })
     }
+    if (store) {
+      recordPurchases(store, checked.map((it) => ({ name: it.name, category: it.category, unit: it.unit, quantity: it.quantity })))
+      setStoreTick((t) => t + 1)
+    }
     await clearCheckedShopping()
     toast(`${checked.length} article${checked.length > 1 ? 's' : ''} rangé${checked.length > 1 ? 's' : ''} dans le stock`)
   }
@@ -202,6 +233,60 @@ export function ShoppingScreen({ addOpen, onCloseAdd }: ShoppingScreenProps) {
           <button className="btn-primary" onClick={addCheckedToStock}>
             Ranger au stock ({shopping.filter((it) => it.checked).length})
           </button>
+        </div>
+      )}
+
+      <div className="store-bar">
+        <button type="button" className="store-chip" onClick={() => setPickingStore((v) => !v)}>
+          <Icon name="cart" width={2} />
+          {store ? `Magasin : ${store}` : 'Choisir le magasin'}
+        </button>
+      </div>
+      {pickingStore && (
+        <div className="store-picker">
+          <div className="store-grid">
+            {getStores().map((n) => (
+              <button key={n} type="button" className={`store-opt${n === store ? ' active' : ''}`} onClick={() => chooseStore(n)}>
+                {n}
+              </button>
+            ))}
+            {store && (
+              <button type="button" className="store-opt none" onClick={() => chooseStore('')}>
+                Aucun
+              </button>
+            )}
+          </div>
+          <div className="store-new">
+            <input className="form-input" placeholder="Autre magasin…" value={newStore} onChange={(e) => setNewStore(e.target.value)} />
+            <button
+              type="button"
+              className="btn-secondary"
+              disabled={!newStore.trim()}
+              onClick={() => {
+                addStore(newStore)
+                chooseStore(newStore.trim())
+              }}
+            >
+              Ajouter
+            </button>
+          </div>
+        </div>
+      )}
+      {store && usualHere.length > 0 && (
+        <div className="usual-here">
+          <div className="usual-title">Habituels chez {store} à racheter</div>
+          <div className="usual-list">
+            {usualHere.map((h) => (
+              <button
+                key={h.name}
+                type="button"
+                className="usual-chip"
+                onClick={() => addShoppingItem({ name: h.name, category: h.category, quantity: h.qty || 1, unit: h.unit || undefined, source: 'auto' })}
+              >
+                + {h.name}
+              </button>
+            ))}
+          </div>
         </div>
       )}
 

@@ -1,3 +1,4 @@
+import { getCurrentStore, recordPurchases } from '../lib/stores'
 import { guessDateType } from '../lib/shelfLife'
 import { isWeightUnit, formatContenance } from '../lib/contenance'
 import { useState } from 'react'
@@ -47,6 +48,8 @@ export function ReviewItems({ items, onDone, onRetry }: ReviewItemsProps) {
           price: it.price ?? undefined,
         })
       }
+      const store = getCurrentStore()
+      if (store) recordPurchases(store, selected.map((it) => ({ name: it.name, category: it.category, unit: it.unit, quantity: it.quantity })))
       toast(`${selected.length} produit${selected.length > 1 ? 's' : ''} ajouté${selected.length > 1 ? 's' : ''}`)
       onDone()
     } catch (err) {
