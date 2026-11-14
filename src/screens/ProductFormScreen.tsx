@@ -103,8 +103,11 @@ export function ProductFormScreen({ product, initial, onClose, onSaved }: Produc
     enrich.imageUrl || enrich.nutriscore || enrich.nova || enrich.kcal != null || warnings.length > 0
 
   const initCategory = product?.category ?? initial?.category ?? 'autre'
-  const initConservation =
-    product?.conservation ?? initial?.conservation ?? defaultConservation(initCategory)
+  // L'emplacement prime sur la conservation enregistrée : « Congélateur » = congelé, même si la fiche dit « frais ».
+  const initLoc = product?.location ?? initial?.location
+  const initConservation = initLoc
+    ? consOfLocation(initLoc)
+    : (product?.conservation ?? initial?.conservation ?? defaultConservation(initCategory))
   const [name, setName] = useState(product?.name ?? initial?.name ?? '')
   const [category, setCategory] = useState<Category>(initCategory)
   const [conservation, setConservation] = useState<Conservation>(initConservation)
