@@ -9,8 +9,10 @@ import type { DateType } from '../types'
  */
 interface ShelfEntry {
   kw: string // mot-clé (normalisé, sans accent)
-  days: number
+  days: number // durée « frais » (ou au réfrigérateur pour viandes/poissons/laitiers)
   group: string // libellé du groupe d'aliments
+  fridge?: number // durée au réfrigérateur quand elle est documentée
+  freezer?: number // durée au congélateur (qualité) quand elle est documentée
 }
 
 const TABLE: ShelfEntry[] = [
@@ -22,26 +24,34 @@ const TABLE: ShelfEntry[] = [
   ['ananas', 5], ['avocat', 4], ['figue', 3],
 ].map(([kw, days]) => ({ kw: kw as string, days: days as number, group: 'Fruits' }))
 
-const VEG: ShelfEntry[] = [
-  ['salade', 5], ['laitue', 5], ['epinard', 4], ['mache', 4], ['roquette', 4],
-  ['tomate', 7], ['concombre', 7], ['courgette', 7], ['aubergine', 7], ['poivron', 10],
-  ['carotte', 21], ['pomme de terre', 30], ['patate', 30], ['oignon', 30], ['echalote', 30],
-  ['ail', 60], ['brocoli', 5], ['chou-fleur', 6], ['chou', 14], ['champignon', 4],
-  ['haricot', 5], ['courge', 30], ['potiron', 30], ['celeri', 10], ['radis', 7],
-  ['poireau', 10], ['betterave', 21], ['navet', 21], ['fenouil', 10], ['asperge', 4],
+/**
+ * Sources : USDA FoodKeeper (FSIS/Cornell/FMI) et tableau « Cold Food Storage » de FoodSafety.gov (USDA/FDA).
+ * Légumes : [mot-clé, jours « frais », jours au frigo, jours au congélateur]. Congélateur = qualité, pas sécurité.
+ * Sans valeur documentée, on garde l'ancienne estimation (frigo = frais x 2,2, congélateur = 240 jours).
+ */
+const VEG_ROWS: [string, number, number?, number?][] = [
+  ['salade', 5, 4, 60], ['laitue', 5, 4, 60], ['epinard', 4, 4, 330], ['mache', 4], ['roquette', 4],
+  ['tomate', 5, 5, 60], ['concombre', 4, 5, 60], ['courgette', 4, 4, 330], ['aubergine', 7], ['poivron', 10],
+  ['carotte', 14, 14, 330], ['pomme de terre', 30, 30, 330], ['patate', 30], ['oignon', 30, 60, 330], ['echalote', 30],
+  ['ail', 60], ['brocoli', 3, 3, 330], ['chou-fleur', 3, 3, 330], ['chou de bruxelles', 4, 4, 330], ['chou', 7, 7, 330],
+  ['champignon', 3, 3], ['haricot', 5], ['courge', 30, 7, 330], ['potiron', 30, 7, 330], ['celeri', 7, 7, 330],
+  ['radis', 7], ['poireau', 10], ['betterave', 14, 14, 270], ['navet', 21], ['fenouil', 10], ['asperge', 3, 3, 150],
   ['petit pois', 4], ['mais', 5], ['endive', 7],
-].map(([kw, days]) => ({ kw: kw as string, days: days as number, group: 'Légumes' }))
+]
+const VEG: ShelfEntry[] = VEG_ROWS.map(([kw, days, fridge, freezer]) => ({ kw, days, group: 'Légumes', fridge, freezer }))
 
-const MEAT: ShelfEntry[] = [
-  ['poulet', 3], ['dinde', 3], ['boeuf', 3], ['porc', 3], ['veau', 3], ['agneau', 3],
-  ['viande', 3], ['steak', 3], ['hache', 2], ['saucisse', 3], ['merguez', 3],
-  ['lardon', 7], ['jambon', 5], ['charcuterie', 5], ['bacon', 7],
-].map(([kw, days]) => ({ kw: kw as string, days: days as number, group: 'Viandes' }))
+/** Viandes : [mot-clé, jours au frigo, jours au congélateur] (valeurs prudentes des fourchettes USDA). */
+const MEAT_ROWS: [string, number, number][] = [
+  ['poulet', 2, 270], ['dinde', 2, 270], ['boeuf', 3, 240], ['porc', 3, 240], ['veau', 3, 240], ['agneau', 3, 240],
+  ['viande', 3, 240], ['steak', 3, 240], ['hache', 2, 90], ['steak hache', 2, 90], ['entrecote', 3, 240], ['rumsteck', 3, 240], ['bavette', 3, 240], ['cotelette', 3, 240], ['escalope', 2, 270], ['gigot', 3, 240], ['magret', 2, 270], ['canard', 2, 270], ['lapin', 3, 240], ['blanc de poulet', 2, 270], ['saucisse', 2, 60], ['merguez', 2, 60],
+  ['lardon', 7, 30], ['jambon', 5, 45], ['charcuterie', 5, 45], ['bacon', 7, 30],
+]
+const MEAT: ShelfEntry[] = MEAT_ROWS.map(([kw, days, freezer]) => ({ kw, days, group: 'Viandes', freezer }))
 
 const FISH: ShelfEntry[] = [
-  ['poisson', 2], ['saumon', 2], ['thon', 2], ['cabillaud', 2], ['crevette', 2],
-  ['moule', 2], ['fruits de mer', 2], ['truite', 2], ['colin', 2],
-].map(([kw, days]) => ({ kw: kw as string, days: days as number, group: 'Poissons' }))
+  ['poisson', 2, 90], ['saumon', 2, 60], ['thon', 2, 60], ['cabillaud', 2, 180], ['crevette', 2, 90],
+  ['moule', 2, 90], ['fruits de mer', 2, 90], ['truite', 2, 60], ['colin', 2, 180],
+].map(([kw, days, freezer]) => ({ kw: kw as string, days: days as number, group: 'Poissons', freezer: freezer as number }))
 
 const DAIRY: ShelfEntry[] = [
   ['lait', 7], ['yaourt', 14], ['fromage', 14], ['comte', 25], ['parmesan', 40],
@@ -128,12 +138,16 @@ export function estimateShelfLife(
 
   // 1) Match par mot-clé (le plus spécifique).
   let base: ShelfEstimate | null = null
+  let hit: ShelfEntry | null = null
   if (n.trim().length >= 2) {
     let best: ShelfEntry | null = null
     for (const e of ALL) {
       if (n.includes(e.kw) && (!best || e.kw.length > best.kw.length)) best = e
     }
-    if (best) base = { days: best.days, group: best.group }
+    if (best) {
+      base = { days: best.days, group: best.group }
+      hit = best
+    }
   }
   // 2) Repli par catégorie.
   if (!base && category) base = CAT_BASE[category] ?? null
@@ -143,9 +157,10 @@ export function estimateShelfLife(
   const group = base.group
 
   if (conservation === 'congele') {
-    days = Math.max(days, FREEZER_DAYS[group] ?? 180)
+    days = hit?.freezer ?? Math.max(days, FREEZER_DAYS[group] ?? 180)
   } else if (conservation === 'refrigere') {
-    if (PRODUCE.has(group)) days = Math.round(days * 2.2)
+    if (hit?.fridge) days = hit.fridge
+    else if (PRODUCE.has(group)) days = Math.round(days * 2.2)
   } else {
     // Frais / température ambiante : risqué pour les denrées qui exigent le froid.
     if (PERISHABLE.has(group)) days = Math.max(1, Math.round(days / 3))
