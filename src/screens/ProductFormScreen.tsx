@@ -17,7 +17,7 @@ import { conservationOfLocation } from '../lib/location'
 import { estimateShelfLife, estimatedExpiryISO, durationLabel, guessDateType, isFrozenName } from '../lib/shelfLife'
 import { DatePicker } from '../components/DatePicker'
 import { DateScanner, type ScannedDate } from '../components/DateScanner'
-import { getCurrentStore, getStores, setProductStores, storesFor } from '../lib/stores'
+import { getCurrentStore, getStores, setProductStores, storeInName, storesFor } from '../lib/stores'
 import { rememberProduct } from '../lib/productMemory'
 import { learnPlace, placeFor, defaultPlace } from '../lib/learnedPlace'
 import { guessCategoryFromName } from '../lib/categoryGuess'
@@ -62,6 +62,9 @@ export function ProductFormScreen({ product, initial, onClose, onSaved }: Produc
   const [shops, setShops] = useState<string[]>(() => {
     const known = storesFor(product?.name ?? '')
     if (known.length) return known
+    // Marque de distributeur dans le nom (ex : « Farce veggie Auchan ») : on coche ce magasin.
+    const brandStore = product ? undefined : storeInName(initial?.name ?? '')
+    if (brandStore) return [brandStore]
     const cur = getCurrentStore()
     return !product && cur ? [cur] : []
   })

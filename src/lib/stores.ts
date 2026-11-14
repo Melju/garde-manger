@@ -176,3 +176,9 @@ export function addProductsToStores(
     setProductStores(it.name, it.category, it.unit, it.quantity, merged)
   }
 }
+
+/** Magasin cité dans un nom de produit (marque de distributeur), s'il y en a un. */
+export function storeInName(name: string): string | undefined {
+  const words = ` ${normalize(name).replace(/[^a-z0-9]+/g, ' ').trim()} `
+  return getStores().find((s) => words.includes(` ${normalize(s).replace(/[^a-z0-9]+/g, ' ').trim()} `))
+}
