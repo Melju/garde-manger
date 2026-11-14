@@ -352,6 +352,17 @@ export function ProductFormScreen({ product, initial, onClose, onSaved }: Produc
       </div>
 
       <div className="form-group product-hero">
+        <div className="hero-name">
+          <label className="form-label" htmlFor="name">Nom du produit</label>
+          <input
+            id="name"
+            className="form-input"
+            placeholder="Ex : Tomates, Poulet, Lait…"
+            value={name}
+            autoFocus={!isEdit}
+            onChange={(e) => setName(e.target.value)}
+          />
+        </div>
         <div className="hero-row">
           <div className="hero-icon-col">
             <button type="button" className="hero-icon" onClick={() => setPickingIcon((v) => !v)} aria-label="Changer l'icône">
@@ -363,15 +374,6 @@ export function ProductFormScreen({ product, initial, onClose, onSaved }: Produc
             </button>
           </div>
           <div className="hero-info">
-            <label className="form-label" htmlFor="name">Nom du produit</label>
-            <input
-              id="name"
-              className="form-input"
-              placeholder="Ex : Tomates, Poulet, Lait…"
-              value={name}
-              autoFocus={!isEdit}
-              onChange={(e) => setName(e.target.value)}
-            />
             {hasEnrich && (
               <div className="enrich-badges hero-badges">
                 {enrich.nutriscore && (
