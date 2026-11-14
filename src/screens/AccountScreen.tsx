@@ -42,6 +42,7 @@ export function AccountScreen({ onBack }: AccountScreenProps) {
       setNewEmail('')
       setAllowed(await allowedEmails())
       toast('Adresse autorisée')
+      await shareInvite()
     } catch (e) {
       toast(e instanceof Error ? e.message : 'Ajout impossible')
     } finally {
@@ -103,7 +104,7 @@ export function AccountScreen({ onBack }: AccountScreenProps) {
 
   async function shareInvite() {
     const codeStr = auth.inviteCode ?? ''
-    const text = `Rejoins notre garde-manger Miamm ! Va sur https://food.graphikeo.com → Plus → Compte → Rejoindre un foyer, et entre le code : ${codeStr}`
+    const text = `Rejoins notre garde-manger Miamm ! 1) Ouvre https://food.graphikeo.com et saisis ton adresse e-mail pour recevoir ton code de connexion. 2) Va dans Plus > Compte > Rejoindre un foyer et entre le code : ${codeStr}`
     try {
       if (navigator.share) {
         await navigator.share({ title: 'Miamm — code du foyer', text })
@@ -350,6 +351,7 @@ export function AccountScreen({ onBack }: AccountScreenProps) {
           {allowed.map((e) => (
             <div className="setting-row" key={e}>
               <div className="setting-text"><div className="setting-title" style={{ fontSize: 14 }}>{e}</div></div>
+              <button className="btn-secondary store-edit-btn" onClick={() => shareInvite()}>Inviter</button>
               <button className="btn-secondary btn-danger store-edit-btn" onClick={() => dropAllowed(e)}>Retirer</button>
             </div>
           ))}
@@ -364,7 +366,7 @@ export function AccountScreen({ onBack }: AccountScreenProps) {
             style={{ marginTop: 8 }}
           />
           <button className="btn-secondary" style={{ marginTop: 8 }} disabled={busy || !newEmail.includes('@')} onClick={addAllowed}>
-            Autoriser cette adresse
+            Autoriser et inviter
           </button>
         </div>
       )}
