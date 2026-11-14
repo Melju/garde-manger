@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useStore } from '../data/store'
+import { detectNearbyStores, type NearbyStore } from '../lib/geoStore'
 import { addStore, getCurrentStore, getStores, habitsFor, isUsualAt, recordPurchases, setCurrentStore } from '../lib/stores'
 import { useToast } from '../components/Toast'
 import { Icon } from '../components/Icon'
@@ -45,6 +46,50 @@ export function ShoppingScreen({ addOpen, onCloseAdd }: ShoppingScreenProps) {
   const [pickingStore, setPickingStore] = useState(false)
   const [newStore, setNewStore] = useState('')
   const [storeTick, setStoreTick] = useState(0)
+  const [nearby, setNearby] = useState<NearbyStore[] | null>(null)
+  const [locating, setLocating] = useState(false)
+  async function locate(auto = false) {
+    if (locating) return
+    setLocating(true)
+    try {
+      const found = await detectNearbyStores()
+      if (found.length === 0) {
+        if (!auto) toast('Aucun magasin trouvé à proximité')
+        setNearby(null)
+      } else if (auto && found[0].name === store) {
+        setNearby(null)
+      } else {
+        setNearby(found.slice(0, 4))
+      }
+    } catch (e) {
+      if (!auto) {
+        const code = (e as { code?: number })?.code
+        toast(
+          code === 1
+            ? 'Position refusée : autorise-la dans les réglages du navigateur'
+            : e instanceof Error && e.message
+              ? e.message
+              : 'Position indisponible',
+        )
+      }
+    } finally {
+      setLocating(false)
+    }
+  }
+  // Si la position est déjà autorisée, on propose le magasin à l'ouverture (sans redemander l'autorisation).
+  useEffect(() => {
+    let off = false
+    navigator.permissions
+      ?.query({ name: 'geolocation' as PermissionName })
+      .then((r) => {
+        if (!off && r.state === 'granted') void locate(true)
+      })
+      .catch(() => {})
+    return () => {
+      off = true
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
   function chooseStore(n: string) {
     setCurrentStore(n)
     setStore(n)
@@ -241,7 +286,34 @@ export function ShoppingScreen({ addOpen, onCloseAdd }: ShoppingScreenProps) {
           <Icon name="cart" width={2} />
           {store ? `Magasin : ${store}` : 'Choisir le magasin'}
         </button>
+        <button type="button" className="store-chip" onClick={() => locate(false)} disabled={locating}>
+          {locating ? 'Recherche…' : 'Où suis-je ?'}
+        </button>
       </div>
+      {nearby && nearby.length > 0 && (
+        <div className="store-picker">
+          <div className="usual-title">Tu es chez…</div>
+          <div className="store-grid">
+            {nearby.map((n) => (
+              <button
+                key={n.name}
+                type="button"
+                className="store-opt"
+                onClick={() => {
+                  addStore(n.name)
+                  chooseStore(n.name)
+                  setNearby(null)
+                }}
+              >
+                {n.name} · {n.distance} m
+              </button>
+            ))}
+            <button type="button" className="store-opt none" onClick={() => setNearby(null)}>
+              Aucun
+            </button>
+          </div>
+        </div>
+      )}
       {pickingStore && (
         <div className="store-picker">
           <div className="store-grid">

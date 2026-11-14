@@ -2276,3 +2276,5 @@ input[type='date'].form-input::-webkit-calendar-picker-indicator {
 .scan-frame.date-frame { width: 86%; max-width: 420px; height: 120px; aspect-ratio: auto; }
 .store-new .form-input { flex: 1 1 0; width: auto; min-width: 0; }
 .store-new .btn-secondary { flex: 0 0 auto; width: auto; height: 50px; padding: 0 20px; }
+
+.store-bar { display: flex; flex-wrap: wrap; gap: 8px; }
