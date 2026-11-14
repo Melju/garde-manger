@@ -1,3 +1,4 @@
+import { useConfirm } from '../components/Confirm'
 import { useState } from 'react'
 import { useStore, AVATAR_COLORS } from '../data/store'
 import { useToast } from '../components/Toast'
@@ -12,6 +13,7 @@ interface MemberEditScreenProps {
 export function MemberEditScreen({ member, onBack }: MemberEditScreenProps) {
   const { addMember, updateMember, removeMember, family } = useStore()
   const toast = useToast()
+  const askConfirm = useConfirm()
   const isEdit = member !== null
 
   const [name, setName] = useState(member?.name ?? '')
@@ -46,7 +48,7 @@ export function MemberEditScreen({ member, onBack }: MemberEditScreenProps) {
 
   async function del() {
     if (!member) return
-    if (!confirm(`Supprimer ${member.name} ?`)) return
+    if (!(await askConfirm({ title: `Supprimer ${member.name} ?`, confirmLabel: 'Supprimer', danger: true }))) return
     await removeMember(member.id)
     toast('Membre supprimé')
     onBack()

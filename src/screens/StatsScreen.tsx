@@ -1,3 +1,4 @@
+import { useConfirm } from '../components/Confirm'
 import { useMemo } from 'react'
 import { useStore } from '../data/store'
 import { useToast } from '../components/Toast'
@@ -13,6 +14,7 @@ interface StatsScreenProps {
 export function StatsScreen({ onBack, onOpenWaste }: StatsScreenProps) {
   const { products, history, expenses, undoHistory } = useStore()
   const toast = useToast()
+  const askConfirm = useConfirm()
   const stats = useMemo(() => monthlyStats(products, history, expenses), [products, history, expenses])
   const nut = useMemo(() => nutritionStats(products), [products])
   const maxWeek = Math.max(1, ...stats.weekly)
@@ -138,7 +140,7 @@ export function StatsScreen({ onBack, onOpenWaste }: StatsScreenProps) {
                     const msg = reversible
                       ? 'Annuler cette action et corriger le stock ?'
                       : 'Retirer cette entrée de l’historique ?'
-                    if (!confirm(msg)) return
+                    if (!(await askConfirm({ title: msg, confirmLabel: reversible ? 'Annuler l’action' : 'Retirer', danger: !reversible }))) return
                     await undoHistory(h)
                     toast(reversible ? 'Action annulée' : 'Entrée retirée')
                   }}

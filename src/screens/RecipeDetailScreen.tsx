@@ -1,3 +1,4 @@
+import { useConfirm } from '../components/Confirm'
 import { useStore } from '../data/store'
 import { useToast } from '../components/Toast'
 import { PageHeader } from '../components/PageHeader'
@@ -15,9 +16,10 @@ interface RecipeDetailScreenProps {
 export function RecipeDetailScreen({ recipe, onBack, onGoShopping, onEdit }: RecipeDetailScreenProps) {
   const { products, family, addManyShopping, prepareRecipe, removeRecipe } = useStore()
   const toast = useToast()
+  const askConfirm = useConfirm()
 
   async function handleDelete() {
-    if (!confirm(`Supprimer la recette « ${recipe.title} » ?`)) return
+    if (!(await askConfirm({ title: `Supprimer la recette « ${recipe.title} » ?`, message: 'Cette action est définitive.', confirmLabel: 'Supprimer', danger: true }))) return
     await removeRecipe(recipe.id)
     toast('Recette supprimée')
     onBack()

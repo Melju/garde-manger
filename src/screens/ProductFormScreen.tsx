@@ -1,3 +1,4 @@
+import { useConfirm } from '../components/Confirm'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { useStore } from '../data/store'
 import { useToast } from '../components/Toast'
@@ -56,6 +57,7 @@ interface ProductFormScreenProps {
 export function ProductFormScreen({ product, initial, onClose, onSaved }: ProductFormScreenProps) {
   const { addProduct, updateProduct, removeProduct, adjustQuantity, wasteProduct, enrichProduct, family, products } = useStore()
   const toast = useToast()
+  const askConfirm = useConfirm()
   const isEdit = product !== null
   const [enriching, setEnriching] = useState(false)
   const [scanningDate, setScanningDate] = useState(false)
@@ -391,14 +393,14 @@ export function ProductFormScreen({ product, initial, onClose, onSaved }: Produc
   }
   async function handleWaste() {
     if (!product) return
-    if (!confirm(`Marquer « ${product.name} » comme jeté ?`)) return
+    if (!(await askConfirm({ title: `Marquer « ${product.name} » comme jeté ?`, confirmLabel: 'Jeté' }))) return
     await wasteProduct(product.id)
     toast('Produit jeté')
     onClose()
   }
   async function handleDelete() {
     if (!product) return
-    if (!confirm(`Supprimer « ${product.name} » ?`)) return
+    if (!(await askConfirm({ title: `Supprimer « ${product.name} » ?`, message: 'Cette action est définitive.', confirmLabel: 'Supprimer', danger: true }))) return
     await removeProduct(product.id)
     toast('Produit supprimé')
     onClose()

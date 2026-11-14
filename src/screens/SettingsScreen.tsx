@@ -1,3 +1,4 @@
+import { useConfirm } from '../components/Confirm'
 import { useEffect, useState } from 'react'
 import { useStore } from '../data/store'
 import { useToast } from '../components/Toast'
@@ -23,6 +24,7 @@ function Toggle({ checked, onChange }: { checked: boolean; onChange: (v: boolean
 export function SettingsScreen({ onBack }: SettingsScreenProps) {
   const { settings, updateSettings, resetDemo, refreshFromOFF, products, updateProduct } = useStore()
   const toast = useToast()
+  const askConfirm = useConfirm()
   const [busy, setBusy] = useState(false)
   const [push, setPush] = useState<PushState | null>(null)
   const [pushBusy, setPushBusy] = useState(false)
@@ -56,8 +58,7 @@ export function SettingsScreen({ onBack }: SettingsScreenProps) {
     setBrandTick((t) => t + 1)
   }
   async function deleteBrand(b: string, n: number) {
-    const msg = n ? `Supprimer ${b} ? La marque sera retirée de ${n} produit${n > 1 ? 's' : ''} (les produits restent).` : `Supprimer ${b} de la liste ?`
-    if (!window.confirm(msg)) return
+    if (!(await askConfirm({ title: `Supprimer ${b} ?`, message: n ? `La marque sera retirée de ${n} produit${n > 1 ? 's' : ''}. Les produits restent.` : undefined, confirmLabel: 'Supprimer', danger: true }))) return
     removeCustomBrand(b)
     for (const p of products) if (p.brand && normalize(p.brand) === normalize(b)) await updateProduct(p.id, { brand: undefined })
     setBrandTick((t) => t + 1)
@@ -98,7 +99,7 @@ export function SettingsScreen({ onBack }: SettingsScreenProps) {
   }
 
   async function reset() {
-    if (!confirm('Réinitialiser toutes les données avec le jeu de démonstration ?')) return
+    if (!(await askConfirm({ title: 'Réinitialiser les données ?', message: 'Toutes les données seront remplacées par le jeu de démonstration.', confirmLabel: 'Réinitialiser', danger: true }))) return
     await resetDemo()
     toast('Données réinitialisées')
     onBack()
@@ -197,8 +198,8 @@ export function SettingsScreen({ onBack }: SettingsScreenProps) {
                 <button className="btn-secondary store-edit-btn" onClick={() => { setEditing(st); setDraft(st) }}>Renommer</button>
                 <button
                   className="btn-secondary btn-danger store-edit-btn"
-                  onClick={() => {
-                    if (window.confirm(`Supprimer ${st} de la liste ?`)) {
+                  onClick={async () => {
+                    if (await askConfirm({ title: `Supprimer ${st} ?`, message: 'Le magasin et ses habitudes d’achat seront retirés.', confirmLabel: 'Supprimer', danger: true })) {
                       removeStore(st)
                       reloadStores()
                     }

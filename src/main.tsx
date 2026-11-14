@@ -4,6 +4,7 @@ import { App } from './App'
 import { AuthProvider } from './data/auth'
 import { StoreProvider } from './data/store'
 import { ToastProvider } from './components/Toast'
+import { ConfirmProvider } from './components/Confirm'
 import { Tooltip } from './components/Tooltip'
 import './styles.css'
 
@@ -11,10 +12,12 @@ createRoot(document.getElementById('root')!).render(
   <StrictMode>
     <AuthProvider>
       <ToastProvider>
+        <ConfirmProvider>
         <StoreProvider>
           <App />
           <Tooltip />
         </StoreProvider>
+        </ConfirmProvider>
       </ToastProvider>
     </AuthProvider>
   </StrictMode>,

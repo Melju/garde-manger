@@ -1,3 +1,4 @@
+import { useConfirm } from './components/Confirm'
 import { lazy, Suspense, useState } from 'react'
 import { InventoryScreen } from './screens/InventoryScreen'
 import { ShoppingScreen } from './screens/ShoppingScreen'
@@ -65,6 +66,7 @@ type Route =
 
 export function App() {
   const { loading, products, adjustQuantity, addProduct } = useStore()
+  const askConfirm = useConfirm()
   const auth = useAuth()
   const toast = useToast()
 
@@ -100,7 +102,7 @@ export function App() {
     const p = products.find((x) => x.barcode && x.barcode === barcode)
     if (!p) {
       // Produit inconnu : on propose de l'ajouter (bascule vers le mode ajout).
-      if (confirm("Ce produit n'est pas dans ton stock. L'ajouter ?")) {
+      if (await askConfirm({ title: "Ce produit n'est pas dans ton stock", message: 'Veux-tu l\'ajouter ?', confirmLabel: 'Ajouter' })) {
         const res = await lookupBarcode(barcode)
         push({ name: 'product-form', product: null, initial: res.prefill })
       }
