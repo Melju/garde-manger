@@ -10,7 +10,8 @@ import {
   formatContenance,
 } from '../lib/contenance'
 import { Icon, categoryIcon } from './Icon'
-import { productEmoji } from '../lib/productEmoji'
+import { FoodIcon, hasFoodIcon } from './FoodIcon'
+import { productIconKey } from '../lib/productIcon'
 import { SwipeWheel } from './SwipeWheel'
 
 interface ProductItemProps {
@@ -42,7 +43,7 @@ export function ProductItem({
 
   const status = expiryStatus(product)
   const col = categoryColor(product.category)
-  const emoji = productEmoji(product.name)
+  const iconKey = productIconKey(product.name)
   // Produit au poids/volume si une seule unité en stock avec une contenance continue.
   const byWeight = product.quantity <= 1 && isWeightProduct(product.size)
   const scale = byWeight ? portionScale(product.size) : null
@@ -98,8 +99,8 @@ export function ProductItem({
         onClick={handleClick}
       >
         <div className="product-icon" style={{ background: col.bg, color: col.fg }}>
-          {emoji ? (
-            <span className="product-emoji" aria-hidden="true">{emoji}</span>
+          {iconKey && hasFoodIcon(iconKey) ? (
+            <FoodIcon name={iconKey} />
           ) : (
             <Icon name={categoryIcon(product.category)} width={1.7} />
           )}
