@@ -8,6 +8,7 @@ import { conservationOfLocation } from '../lib/location'
 import { remainingLabel, isBareWeightUnit, countPerPack, countLabel } from '../lib/contenance'
 import { urgentCount } from '../lib/expiry'
 import { budgetSummary } from '../lib/analytics'
+import { normalize } from '../lib/productIcon'
 import { splitBrand } from '../lib/brandSplit'
 import { splitWeight } from '../lib/weightSplit'
 import { extractPackSize } from '../lib/packSize'
@@ -40,6 +41,15 @@ export function InventoryScreen({
   const toast = useToast()
   const [search, setSearch] = useState('')
   const [filter, setFilter] = useState<Filter>('tout')
+  // Recherche : par nom, catégorie, marque ou magasin.
+  const [searchBy, setSearchBy] = useState<'nom' | 'categorie' | 'marque' | 'magasin'>('nom')
+  const [storeFilter, setStoreFilter] = useState('')
+  function changeSearchBy(m: 'nom' | 'categorie' | 'marque' | 'magasin') {
+    setSearchBy(m)
+    setSearch('')
+    setFilter('tout')
+    setStoreFilter('')
+  }
   // Mode sélection : associer plusieurs produits à un magasin d'un coup.
   const [selecting, setSelecting] = useState(false)
   const [picked, setPicked] = useState<Set<string>>(new Set())
@@ -141,13 +151,15 @@ export function InventoryScreen({
   const urgent = useMemo(() => urgentCount(products), [products])
 
   const filtered = useMemo(() => {
-    const q = search.trim().toLowerCase()
+    const q = normalize(search).trim()
     return products.filter((p) => {
-      if (filter !== 'tout' && p.category !== filter) return false
-      if (q && !p.name.toLowerCase().includes(q)) return false
-      return true
+      if (searchBy === 'categorie') return filter === 'tout' || p.category === filter
+      if (searchBy === 'magasin') return !storeFilter || storesFor(p.name).includes(storeFilter)
+      if (searchBy === 'marque') return !q || normalize(p.brand ?? '').includes(q)
+      return !q || normalize(p.name).includes(q)
     })
-  }, [products, search, filter])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [products, search, filter, searchBy, storeFilter, selecting])
 
   function togglePick(id: string) {
     setPicked((prev) => {
@@ -290,37 +302,50 @@ export function InventoryScreen({
       <div className="search-row">
         <div className="search-input">
           <Icon name="search" />
-          <input
-            type="text"
-            placeholder="Rechercher un produit..."
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-          />
-        </div>
-      </div>
-
-      <div className="filter-tabs">
-        <button
-          className={`filter-tab${filter === 'tout' ? ' active' : ''}`}
-          onClick={() => setFilter('tout')}
-        >
-          Tout
-        </button>
-        {CATEGORIES.map((c) => (
-          <button
-            key={c.id}
-            className={`filter-tab${filter === c.id ? ' active' : ''}`}
-            onClick={() => setFilter(c.id)}
+          <select
+            className="search-by"
+            aria-label="Rechercher par"
+            value={searchBy}
+            onChange={(e) => changeSearchBy(e.target.value as typeof searchBy)}
           >
-            {c.label}
-          </button>
-        ))}
+            <option value="nom">Nom</option>
+            <option value="categorie">Catégorie</option>
+            <option value="marque">Marque</option>
+            <option value="magasin">Magasin</option>
+          </select>
+          {searchBy === 'categorie' ? (
+            <select className="search-value" aria-label="Catégorie" value={filter} onChange={(e) => setFilter(e.target.value as Filter)}>
+              <option value="tout">Toutes les catégories</option>
+              {CATEGORIES.map((c) => (
+                <option key={c.id} value={c.id}>{c.label}</option>
+              ))}
+            </select>
+          ) : searchBy === 'magasin' ? (
+            <select className="search-value" aria-label="Magasin" value={storeFilter} onChange={(e) => setStoreFilter(e.target.value)}>
+              <option value="">Tous les magasins</option>
+              {getStores().map((n) => (
+                <option key={n} value={n}>{n}</option>
+              ))}
+            </select>
+          ) : (
+            <input
+              type="text"
+              placeholder={searchBy === 'marque' ? 'Rechercher une marque...' : 'Rechercher un produit...'}
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+            />
+          )}
+        </div>
       </div>
 
       <div className={`product-list${selecting ? ' selecting' : ''}`}>
         <div className="list-header">
           <span className="list-title">
-            {filter === 'tout' ? 'Tous les produits' : CATEGORIES.find((c) => c.id === filter)?.label}
+            {searchBy === 'categorie' && filter !== 'tout'
+              ? CATEGORIES.find((c) => c.id === filter)?.label
+              : searchBy === 'magasin' && storeFilter
+                ? storeFilter
+                : 'Tous les produits'}
           </span>
           <span className="list-count">{filtered.length} articles</span>
         </div>

@@ -2493,3 +2493,8 @@ body.is-selecting .add-bar { display: none; }
 .confirm-btn.primary.danger { background: var(--danger); }
 @keyframes confirm-fade { from { opacity: 0 } to { opacity: 1 } }
 @keyframes confirm-pop { from { opacity: 0; transform: scale(.94) } to { opacity: 1; transform: scale(1) } }
+
+/* Recherche : choix du critère (nom, catégorie, marque, magasin). */
+.search-by, .search-value { border: none; background: none; font: inherit; color: var(--fg); outline: none; -webkit-appearance: none; appearance: none; }
+.search-by { flex: 0 0 auto; font-weight: 800; font-size: 14px; color: var(--brand-strong); padding: 0 22px 0 4px; margin-right: 6px; border-right: 1px solid var(--border); background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' fill='none' stroke='%23888' stroke-width='1.6'%3E%3Cpath d='M1 1l4 4 4-4'/%3E%3C/svg%3E") no-repeat right 8px center; }
+.search-value { flex: 1; min-width: 0; font-size: 16px; }
