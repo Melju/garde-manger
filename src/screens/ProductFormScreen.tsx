@@ -124,6 +124,7 @@ export function ProductFormScreen({ product, initial, onClose, onSaved }: Produc
   const dateTouched = useRef(isEdit || !!initial?.dateType)
   // Zone « déduite » repliée si tout est renseigné ; sinon ouverte pour requalifier.
   const [editDeduced, setEditDeduced] = useState(false)
+  const [openBuy, setOpenBuy] = useState(false)
   const [expiryDate, setExpiryDate] = useState(product?.expiryDate ?? initial?.expiryDate ?? '')
   // Nouveau produit en plusieurs exemplaires : une date de péremption par article (le 1er utilise la date ci-dessus).
   const [perDate, setPerDate] = useState(false)
@@ -637,8 +638,22 @@ export function ProductFormScreen({ product, initial, onClose, onSaved }: Produc
         )}
       </div>
 
-      <div className="form-group">
-        <h2 className="form-group-title">Achat</h2>
+      <div className="form-group deduced">
+        <div className="deduced-head">
+          <h2 className="form-group-title" style={{ margin: 0 }}>Achat</h2>
+          <button type="button" className="deduced-toggle" onClick={() => setOpenBuy((v) => !v)}>
+            {openBuy ? 'Replier' : 'Modifier'}
+          </button>
+        </div>
+        {!openBuy && (
+          <div className="deduced-summary">
+            {shops.length || price.trim()
+              ? [shops.join(', '), price.trim() ? `${price.trim().replace('.', ',')} €` : ''].filter(Boolean).join(' · ')
+              : 'Non renseigné'}
+          </div>
+        )}
+        {openBuy && (
+          <>
       <div className="form-section">
         <label className="form-label">Acheté chez (optionnel)</label>
         <div className="store-grid">
@@ -668,6 +683,8 @@ export function ProductFormScreen({ product, initial, onClose, onSaved }: Produc
         />
       </div>
 
+          </>
+        )}
       </div>
 
       <div className="btn-row" style={{ marginBottom: isEdit ? 12 : 0 }}>

@@ -1,13 +1,9 @@
 /**
- * Caméra partagée : un seul flux réutilisé entre les écrans de scan, pour limiter les demandes
- * d'autorisation d'iOS (une par ouverture de l'appli au lieu d'une par scan).
- * En quittant un scanner, la caméra est seulement désactivée (voyant éteint) ; elle est
- * vraiment arrêtée après quelques minutes d'inactivité.
+ * Caméra : active uniquement pendant un scan. En quittant un scanner, le flux est coupé
+ * tout de suite (plus aucune capture en arrière-plan). Un nouveau scan redemande le flux.
  */
 let stream: MediaStream | null = null
 let idleTimer: number | undefined
-
-const IDLE_MS = 5 * 60 * 1000
 
 function alive(s: MediaStream | null): s is MediaStream {
   return !!s && s.getVideoTracks().some((t) => t.readyState === 'live')
@@ -26,14 +22,18 @@ export async function acquireCamera(): Promise<MediaStream> {
 }
 
 export function releaseCamera() {
-  if (!stream) return
-  stream.getVideoTracks().forEach((t) => (t.enabled = false))
-  window.clearTimeout(idleTimer)
-  idleTimer = window.setTimeout(hardStopCamera, IDLE_MS)
+  hardStopCamera()
 }
 
 export function hardStopCamera() {
   window.clearTimeout(idleTimer)
   stream?.getTracks().forEach((t) => t.stop())
   stream = null
+}
+
+// Sécurité : si l'appli passe en arrière-plan, la caméra est coupée.
+if (typeof document !== 'undefined') {
+  document.addEventListener('visibilitychange', () => {
+    if (document.hidden) hardStopCamera()
+  })
 }
