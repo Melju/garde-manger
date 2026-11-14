@@ -1,12 +1,39 @@
 import type { Product } from '../types'
+import { normalize } from './productIcon'
 
 /** Statut de péremption d'un produit. */
 export type ExpiryStatus = 'urgent' | 'soon' | 'ok' | 'expired' | 'still-good' | 'none'
 
 const MS_PER_DAY = 1000 * 60 * 60 * 24
 
-/** Tolérance après la date pour un produit congelé (la congélation arrête la dégradation : seule la qualité baisse). */
+/** Tolérance par défaut (jours) après la date pour un produit congelé. */
 export const FROZEN_GRACE_DAYS = 30
+
+const GRACE_VEGETAL = ['vegan', 'veggie', 'tofu', 'seitan', 'tempeh', 'falafel', 'falafels', 'soja']
+const GRACE_PREPARED = ['hache', 'hachee', 'marine', 'marines', 'nugget', 'nuggets', 'pane', 'panes', 'cordon', 'saucisse', 'saucisses', 'merguez', 'chipolata', 'burger', 'boulette', 'boulettes', 'tex', 'plat', 'pizza', 'lasagne', 'lasagnes', 'quiche', 'gratin', 'cuisine', 'cuisinee']
+
+/**
+ * Tolérance après la date d'un produit congelé (valeurs prudentes, la qualité baisse mais la sécurité reste) :
+ * végétal 3 mois, viande/volaille en morceaux 3 mois, viande hachée / préparée / marinée 1 mois,
+ * poisson 2 mois, légumes et fruits 6 mois.
+ */
+export function frozenGraceDays(product: Product): number {
+  const words = normalize(product.name).split(/[^a-z0-9]+/).filter(Boolean)
+  const has = (list: string[]) => words.some((w) => list.includes(w))
+  if (has(GRACE_VEGETAL) || words.some((w) => w.startsWith('veget'))) return 90
+  if (has(GRACE_PREPARED)) return 30
+  switch (product.category) {
+    case 'viandes':
+      return 90
+    case 'poissons':
+      return 60
+    case 'legumes':
+    case 'fruits':
+      return 180
+    default:
+      return FROZEN_GRACE_DAYS
+  }
+}
 
 /** Produit rangé au congélateur (ou catégorie surgelés). */
 export function isFrozen(product: Product): boolean {
@@ -28,14 +55,14 @@ export function daysUntilExpiry(product: Product, now: Date = new Date()): numbe
  * - soon    : périme dans 4 à 14 jours
  * - ok      : périme dans plus de 14 jours
  * - none    : aucune date de péremption
- * Congelé : jamais « urgent », et 30 jours de tolérance après la date (« encore bon »).
+ * Congelé : jamais « urgent », et tolérance après la date selon le type (« encore bon »).
  */
 export function expiryStatus(product: Product, now: Date = new Date()): ExpiryStatus {
   const days = daysUntilExpiry(product, now)
   if (days === null) return 'none'
   // Congelé : pas d'urgence à l'approche de la date, et une tolérance après la date.
   if (isFrozen(product)) {
-    if (days < -FROZEN_GRACE_DAYS) return 'expired'
+    if (days < -frozenGraceDays(product)) return 'expired'
     if (days < 0) return 'still-good'
     if (days <= 14) return 'soon'
     return 'ok'
@@ -58,7 +85,7 @@ export function expiryLabel(product: Product, now: Date = new Date()): string {
   const days = daysUntilExpiry(product, now)
   if (days === null) return '—'
   if (isFrozen(product) && days < 0) {
-    return days >= -FROZEN_GRACE_DAYS ? `Encore bon (${Math.abs(days)}j)` : `Périmé (${Math.abs(days)}j)`
+    return days >= -frozenGraceDays(product) ? `Encore bon (${Math.abs(days)}j)` : `Périmé (${Math.abs(days)}j)`
   }
   if (days < 0) return product.dateType === 'ddm' ? 'Encore bon' : `Périmé (${Math.abs(days)}j)`
   if (days === 0) return "Aujourd'hui"
