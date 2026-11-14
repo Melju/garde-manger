@@ -5,6 +5,14 @@ export type ExpiryStatus = 'urgent' | 'soon' | 'ok' | 'expired' | 'still-good' |
 
 const MS_PER_DAY = 1000 * 60 * 60 * 24
 
+/** Tolérance après la date pour un produit congelé (la congélation arrête la dégradation : seule la qualité baisse). */
+export const FROZEN_GRACE_DAYS = 30
+
+/** Produit rangé au congélateur (ou catégorie surgelés). */
+export function isFrozen(product: Product): boolean {
+  return product.location === 'Congélateur' || product.category === 'surgeles'
+}
+
 /** Nombre de jours (entier) avant péremption. Négatif si déjà périmé. null si pas de date. */
 export function daysUntilExpiry(product: Product, now: Date = new Date()): number | null {
   if (!product.expiryDate) return null
@@ -20,10 +28,18 @@ export function daysUntilExpiry(product: Product, now: Date = new Date()): numbe
  * - soon    : périme dans 4 à 14 jours
  * - ok      : périme dans plus de 14 jours
  * - none    : aucune date de péremption
+ * Congelé : jamais « urgent », et 30 jours de tolérance après la date (« encore bon »).
  */
 export function expiryStatus(product: Product, now: Date = new Date()): ExpiryStatus {
   const days = daysUntilExpiry(product, now)
   if (days === null) return 'none'
+  // Congelé : pas d'urgence à l'approche de la date, et une tolérance après la date.
+  if (isFrozen(product)) {
+    if (days < -FROZEN_GRACE_DAYS) return 'expired'
+    if (days < 0) return 'still-good'
+    if (days <= 14) return 'soon'
+    return 'ok'
+  }
   // DDM (« à consommer de préférence ») : pas de danger une fois la date passée.
   if (product.dateType === 'ddm') {
     if (days < 0) return 'still-good'
@@ -41,6 +57,9 @@ export function expiryStatus(product: Product, now: Date = new Date()): ExpirySt
 export function expiryLabel(product: Product, now: Date = new Date()): string {
   const days = daysUntilExpiry(product, now)
   if (days === null) return '—'
+  if (isFrozen(product) && days < 0) {
+    return days >= -FROZEN_GRACE_DAYS ? `Encore bon (${Math.abs(days)}j)` : `Périmé (${Math.abs(days)}j)`
+  }
   if (days < 0) return product.dateType === 'ddm' ? 'Encore bon' : `Périmé (${Math.abs(days)}j)`
   if (days === 0) return "Aujourd'hui"
   if (days === 1) return 'Demain'
