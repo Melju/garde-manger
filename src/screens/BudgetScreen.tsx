@@ -1,6 +1,7 @@
 import { useMemo } from 'react'
 import { useStore } from '../data/store'
 import { useToast } from '../components/Toast'
+import { usePrompt } from '../components/Confirm'
 import { PageHeader } from '../components/PageHeader'
 import { Icon } from '../components/Icon'
 import { budgetSummary } from '../lib/analytics'
@@ -13,15 +14,16 @@ interface BudgetScreenProps {
 export function BudgetScreen({ onBack }: BudgetScreenProps) {
   const { expenses, budget, setBudgetLimit } = useStore()
   const toast = useToast()
+  const askPrompt = usePrompt()
   const summary = useMemo(() => budgetSummary(expenses, budget), [expenses, budget])
 
   const fillClass =
     summary.ratio >= 0.9 ? 'danger' : summary.ratio >= 0.7 ? 'warning' : ''
 
   async function editLimit() {
-    const value = window.prompt('Plafond mensuel (€)', String(budget.monthlyLimit))
+    const value = await askPrompt({ title: 'Plafond mensuel (€)', defaultValue: String(budget.monthlyLimit), inputMode: 'numeric' })
     if (value === null) return
-    const n = Math.max(0, Math.round(Number(value)))
+    const n = Math.max(0, Math.round(Number(value.replace(',', '.'))))
     if (!Number.isFinite(n) || n === 0) return
     await setBudgetLimit(n)
     toast('Plafond mis à jour')

@@ -2528,3 +2528,5 @@ body.is-selecting .add-bar { display: none; }
   100% { opacity: 0; transform: translateY(-100%); }
 }
 @media (prefers-reduced-motion: reduce) { .search-hint span { animation: none; } .search-hint span:first-child { opacity: 1; } }
+
+.confirm-input { margin-top: 14px; width: 100%; }
