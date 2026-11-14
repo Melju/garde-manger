@@ -24,6 +24,7 @@ export function frozenGraceDays(product: Product): number {
   if (has(GRACE_PREPARED)) return 30
   switch (product.category) {
     case 'viandes':
+    case 'viandes-vg':
       return 90
     case 'poissons':
       return 60

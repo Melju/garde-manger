@@ -5,6 +5,7 @@ export type Category =
   | 'fruits'
   | 'legumes'
   | 'viandes'
+  | 'viandes-vg'
   | 'poissons'
   | 'laitiers'
   | 'epicerie'
@@ -19,6 +20,7 @@ export const CATEGORIES: { id: Category; label: string }[] = [
   { id: 'fruits', label: 'Fruits' },
   { id: 'legumes', label: 'Légumes' },
   { id: 'viandes', label: 'Viandes' },
+  { id: 'viandes-vg', label: 'Viandes VG' },
   { id: 'poissons', label: 'Poissons' },
   { id: 'laitiers', label: 'Laitiers' },
   { id: 'epicerie', label: 'Épicerie' },
@@ -52,7 +54,7 @@ export const CONSERVATIONS: { id: Conservation; label: string }[] = [
 /** Conservation par défaut déduite de la catégorie. */
 export function defaultConservation(category: Category): Conservation {
   if (category === 'surgeles') return 'congele'
-  if (['viandes', 'poissons', 'laitiers', 'fruits', 'legumes'].includes(category)) return 'refrigere'
+  if (['viandes', 'viandes-vg', 'poissons', 'laitiers', 'fruits', 'legumes'].includes(category)) return 'refrigere'
   return 'frais'
 }
 

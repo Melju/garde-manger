@@ -5,6 +5,7 @@ export const CATEGORY_COLORS: Record<Category, { bg: string; fg: string }> = {
   fruits: { bg: 'oklch(0.94 0.06 20)', fg: 'oklch(0.55 0.19 25)' }, // fraise / rouge
   legumes: { bg: 'oklch(0.93 0.08 145)', fg: 'oklch(0.5 0.16 150)' }, // vert
   viandes: { bg: 'oklch(0.93 0.05 10)', fg: 'oklch(0.55 0.16 8)' }, // viande / rosé
+  'viandes-vg': { bg: 'oklch(0.93 0.06 130)', fg: 'oklch(0.5 0.13 135)' }, // vert olive
   poissons: { bg: 'oklch(0.93 0.06 235)', fg: 'oklch(0.55 0.15 240)' }, // bleu
   laitiers: { bg: 'oklch(0.95 0.07 90)', fg: 'oklch(0.55 0.13 85)' }, // crème / jaune
   epicerie: { bg: 'oklch(0.93 0.06 65)', fg: 'oklch(0.52 0.13 60)' }, // ambre

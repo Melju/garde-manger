@@ -5,6 +5,7 @@ const RULES: { cat: Category; words: string[] }[] = [
   { cat: 'laitiers', words: ['lait', 'yaourt', 'yogourt', 'fromage', 'beurre', 'creme', 'oeuf', 'mozzarella', 'comte', 'emmental', 'chevre'] },
   { cat: 'fruits', words: ['pomme', 'banane', 'orange', 'fraise', 'raisin', 'poire', 'peche', 'abricot', 'kiwi', 'citron', 'fruit', 'cerise', 'melon', 'ananas', 'mangue'] },
   { cat: 'legumes', words: ['tomate', 'carotte', 'salade', 'courgette', 'oignon', 'ail', 'poireau', 'pomme de terre', 'patate', 'legume', 'brocoli', 'epinard', 'haricot', 'poivron', 'champignon', 'concombre', 'avocat'] },
+  { cat: 'viandes-vg', words: ['vegetal', 'vegan', 'veggie', 'vegetarien', 'tofu', 'seitan', 'tempeh', 'falafel', 'viande vg', 'viandes vg', 'steak vg', 'boulettes vg', 'quorn'] },
   { cat: 'viandes', words: ['poulet', 'boeuf', 'porc', 'jambon', 'steak', 'viande', 'saucisse', 'lardon', 'dinde', 'agneau', 'veau', 'merguez', 'charcuterie'] },
   { cat: 'poissons', words: ['poisson', 'saumon', 'thon', 'cabillaud', 'crevette', 'moule', 'colin', 'sardine', 'truite'] },
   { cat: 'surgeles', words: ['surgele', 'glace', 'congele'] },

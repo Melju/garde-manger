@@ -9,7 +9,7 @@ function json(obj: unknown, status = 200): Response {
   return new Response(JSON.stringify(obj), { status, headers: { 'content-type': 'application/json' } })
 }
 
-const CATEGORIES = 'fruits, legumes, viandes, poissons, laitiers, epicerie, conserves, sucreries, apero, boissons, surgeles, autre'
+const CATEGORIES = 'fruits, legumes, viandes, viandes-vg, poissons, laitiers, epicerie, conserves, sucreries, apero, boissons, surgeles, autre'
 
 Deno.serve(async (req) => {
   if (req.method !== 'POST') return json({ error: 'Méthode non autorisée' }, 405)

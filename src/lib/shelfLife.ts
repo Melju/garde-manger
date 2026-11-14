@@ -97,13 +97,14 @@ const FREEZER_DAYS: Record<string, number> = {
 }
 
 const PRODUCE = new Set(['Fruits', 'Légumes'])
-const PERISHABLE = new Set(['Viandes', 'Poissons', 'Produits laitiers'])
+const PERISHABLE = new Set(['Viandes', 'Viandes VG', 'Poissons', 'Produits laitiers'])
 
 // Base par catégorie d'aliment (repli quand le nom n'est pas reconnu).
 const CAT_BASE: Partial<Record<Category, ShelfEstimate>> = {
   fruits: { days: 7, group: 'Fruits' },
   legumes: { days: 7, group: 'Légumes' },
   viandes: { days: 3, group: 'Viandes' },
+  'viandes-vg': { days: 7, group: 'Viandes VG' },
   poissons: { days: 2, group: 'Poissons' },
   laitiers: { days: 10, group: 'Produits laitiers' },
   epicerie: { days: 365, group: 'Épicerie' },
@@ -191,7 +192,7 @@ export function durationLabel(days: number): string {
 const DDM_KW = ['oeuf', 'beurre', 'parmesan', 'comte', 'emmental', 'gruyere', 'miel', 'pain', 'baguette', 'brioche']
 const DLC_KW = ['jambon', 'saucisse', 'poulet', 'dinde', 'lardon', 'bacon', 'hache', 'poisson', 'saumon', 'crevette', 'yaourt', 'creme', 'lait frais', 'mozzarella', 'plat cuisine', 'traiteur']
 const DDM_CATS = new Set<Category>(['epicerie', 'conserves', 'sucreries', 'apero', 'boissons', 'surgeles', 'fruits', 'legumes'])
-const DLC_CATS = new Set<Category>(['viandes', 'poissons', 'laitiers'])
+const DLC_CATS = new Set<Category>(['viandes', 'viandes-vg', 'poissons', 'laitiers'])
 
 /**
  * DLC (dangereux après la date) ou DDM (juste moins bon) : ce que l'utilisateur

@@ -329,6 +329,7 @@ const CATEGORY_ICON: Record<Category, IconName> = {
   fruits: 'apple',
   legumes: 'veggie',
   viandes: 'meat',
+  'viandes-vg': 'leaf',
   poissons: 'fish',
   laitiers: 'milk',
   epicerie: 'wheat',

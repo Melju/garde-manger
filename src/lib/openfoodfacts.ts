@@ -25,6 +25,7 @@ function guessCategory(tags: string[]): Category {
   if (/(beverage|boisson|drink|juice|jus|soda|water|eau|wine|\bvin\b|biere|bi[eè]re|beer|coffee|caf[eé]|\bthe\b|th[eé]|tea)/.test(t)) return 'boissons'
   if (/(fruit)/.test(t)) return 'fruits'
   if (/(vegetable|legume|l[eé]gume|salad)/.test(t)) return 'legumes'
+  if (/(meat-alternative|meat-analogue|meat-substitute|plant-based-meat|vegetarian-burger|vegan-burger|vegetable-burger|substituts-de-viande|analogues-de-viande|simili-carne)/.test(t)) return 'viandes-vg'
   if (/(meat|viande|charcuterie|poultry|volaille|beef|boeuf|porc|chicken|poulet|jambon)/.test(t)) return 'viandes'
   if (/(fish|poisson|seafood|fruits-de-mer|saumon|thon)/.test(t)) return 'poissons'
   if (/(dairy|cheese|yogurt|yaourt|fromage|lait|crème|creme|milk|butter|beurre|egg|œuf|oeuf)/.test(t)) return 'laitiers'
