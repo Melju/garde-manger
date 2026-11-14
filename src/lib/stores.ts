@@ -130,3 +130,15 @@ export function setProductStores(
   }
   write(LS_HABITS, all)
 }
+
+/** Associe plusieurs produits à un ou plusieurs magasins d'un coup (garde les magasins déjà connus). */
+export function addProductsToStores(
+  items: { name: string; category: Category; unit?: string; quantity?: number }[],
+  stores: string[],
+) {
+  if (!stores.length) return
+  for (const it of items) {
+    const merged = [...new Set([...storesFor(it.name), ...stores])]
+    setProductStores(it.name, it.category, it.unit, it.quantity, merged)
+  }
+}

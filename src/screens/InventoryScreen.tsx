@@ -7,6 +7,11 @@ import { CATEGORIES, type Category, type Product } from '../types'
 import { remainingLabel, isBareWeightUnit, sachetsPerBox } from '../lib/contenance'
 import { expiryLabel, priorityProducts, urgentCount } from '../lib/expiry'
 import { budgetSummary } from '../lib/analytics'
+import { addProductsToStores, getStores, storesFor } from '../lib/stores'
+import { learnPlace } from '../lib/learnedPlace'
+
+const LOCATIONS = ['Placard', 'Réfrigérateur', 'Congélateur', 'Cellier', 'Cave', 'Corbeille']
+type PickMode = 'store' | 'category' | 'location'
 
 interface InventoryScreenProps {
   onEdit: (product: Product) => void
@@ -30,6 +35,14 @@ export function InventoryScreen({
   const toast = useToast()
   const [search, setSearch] = useState('')
   const [filter, setFilter] = useState<Filter>('tout')
+  // Mode sélection : associer plusieurs produits à un magasin d'un coup.
+  const [selecting, setSelecting] = useState(false)
+  const [picked, setPicked] = useState<Set<string>>(new Set())
+  const [pickedStores, setPickedStores] = useState<string[]>([])
+  const [pickMode, setPickMode] = useState<PickMode>('store')
+  const [pickedCat, setPickedCat] = useState<Category | null>(null)
+  const [pickedLoc, setPickedLoc] = useState<string | null>(null)
+  const storeChoices = useMemo(() => getStores(), [selecting])
 
   const priority = useMemo(() => priorityProducts(products), [products])
   const urgent = useMemo(() => urgentCount(products), [products])
@@ -42,6 +55,52 @@ export function InventoryScreen({
       return true
     })
   }, [products, search, filter])
+
+  function togglePick(id: string) {
+    setPicked((prev) => {
+      const next = new Set(prev)
+      if (next.has(id)) next.delete(id)
+      else next.add(id)
+      return next
+    })
+  }
+  function stopSelecting() {
+    setSelecting(false)
+    setPicked(new Set())
+    setPickedStores([])
+    setPickedCat(null)
+    setPickedLoc(null)
+    setPickMode('store')
+  }
+  const canApply =
+    picked.size > 0 &&
+    (pickMode === 'store' ? pickedStores.length > 0 : pickMode === 'category' ? !!pickedCat : !!pickedLoc)
+
+  async function applyBatch() {
+    const items = products.filter((p) => picked.has(p.id))
+    if (!items.length || !canApply) return
+    const n = items.length
+    const plural = n > 1 ? 's' : ''
+    if (pickMode === 'store') {
+      addProductsToStores(
+        items.map((p) => ({ name: p.name, category: p.category, unit: p.unit, quantity: p.quantity })),
+        pickedStores,
+      )
+      toast(`${n} produit${plural} associé${plural} à ${pickedStores.join(', ')}`)
+    } else if (pickMode === 'category' && pickedCat) {
+      for (const p of items) await updateProduct(p.id, { category: pickedCat })
+      toast(`${n} produit${plural} classé${plural} en ${CATEGORIES.find((c) => c.id === pickedCat)?.label}`)
+    } else if (pickMode === 'location' && pickedLoc) {
+      const low = pickedLoc.toLowerCase()
+      const conservation = low.includes('congel') ? 'congele' : low.includes('refrig') || low.includes('réfrig') ? 'refrigere' : 'frais'
+      for (const p of items) {
+        await updateProduct(p.id, { location: pickedLoc, conservation })
+        learnPlace(p.name, p.category, pickedLoc)
+      }
+      toast(`${n} produit${plural} rangé${plural} : ${pickedLoc}`)
+    }
+    stopSelecting()
+  }
 
   async function handleRemoveQty(product: Product, qty: number | 'all') {
     const delta = qty === 'all' ? -product.quantity : -qty
@@ -103,6 +162,13 @@ export function InventoryScreen({
           </p>
         </div>
         <div className="header-actions">
+          <button
+            className={`icon-btn${selecting ? ' on' : ''}`}
+            onClick={() => (selecting ? stopSelecting() : setSelecting(true))}
+            aria-label="Modifier plusieurs produits (magasin, catégorie, emplacement)"
+          >
+            <Icon name="cart" />
+          </button>
           <button className="icon-btn" onClick={onScanConsume} aria-label="Scanner un retrait">
             <Icon name="scan" />
           </button>
@@ -189,21 +255,49 @@ export function InventoryScreen({
 
         {filtered.length > 0 ? (
           <>
-            <div className="swipe-hint">
-              <Icon name="back" />
-              Glissez à gauche pour retirer · à droite si périmé
-            </div>
-            {filtered.map((p) => (
-              <ProductItem
-                key={p.id}
-                product={p}
-                onSelect={onEdit}
-                onRemoveQty={handleRemoveQty}
-                onWaste={handleWaste}
-                onConsumePortion={handleConsumePortion}
-                onConsumeSachets={handleConsumeSachets}
-              />
-            ))}
+            {selecting ? (
+              <div className="swipe-hint select-hint">
+                <button type="button" onClick={() => setPicked(new Set(filtered.map((p) => p.id)))}>Tout sélectionner</button>
+                <button type="button" onClick={() => setPicked(new Set())}>Aucun</button>
+              </div>
+            ) : (
+              <div className="swipe-hint">
+                <Icon name="back" />
+                Glissez à gauche pour retirer · à droite si périmé
+              </div>
+            )}
+            {filtered.map((p) =>
+              selecting ? (
+                <button
+                  key={p.id}
+                  type="button"
+                  className={`select-row${picked.has(p.id) ? ' on' : ''}`}
+                  onClick={() => togglePick(p.id)}
+                >
+                  <span className={`check-box${picked.has(p.id) ? ' on' : ''}`}>
+                    {picked.has(p.id) && <Icon name="check" width={3} />}
+                  </span>
+                  <span className="select-name">{p.name}</span>
+                  <span className="select-stores">
+                    {pickMode === 'store'
+                      ? storesFor(p.name).join(', ')
+                      : pickMode === 'category'
+                        ? CATEGORIES.find((c) => c.id === p.category)?.label
+                        : p.location}
+                  </span>
+                </button>
+              ) : (
+                <ProductItem
+                  key={p.id}
+                  product={p}
+                  onSelect={onEdit}
+                  onRemoveQty={handleRemoveQty}
+                  onWaste={handleWaste}
+                  onConsumePortion={handleConsumePortion}
+                  onConsumeSachets={handleConsumeSachets}
+                />
+              ),
+            )}
           </>
         ) : (
           <div className="empty-state">
@@ -216,6 +310,52 @@ export function InventoryScreen({
           </div>
         )}
       </div>
+
+      {selecting && (
+        <div className="select-bar">
+          <div className="select-bar-title">
+            {picked.size} produit{picked.size > 1 ? 's' : ''} sélectionné{picked.size > 1 ? 's' : ''}
+          </div>
+          <div className="select-tabs">
+            {([['store', 'Magasin'], ['category', 'Catégorie'], ['location', 'Emplacement']] as [PickMode, string][]).map(([id, label]) => (
+              <button key={id} type="button" className={pickMode === id ? 'on' : ''} onClick={() => setPickMode(id)}>
+                {label}
+              </button>
+            ))}
+          </div>
+          <div className="store-grid">
+            {pickMode === 'store' &&
+              storeChoices.map((n) => (
+                <button
+                  key={n}
+                  type="button"
+                  className={`store-opt${pickedStores.includes(n) ? ' active' : ''}`}
+                  onClick={() => setPickedStores((st) => (st.includes(n) ? st.filter((x) => x !== n) : [...st, n]))}
+                >
+                  {n}
+                </button>
+              ))}
+            {pickMode === 'category' &&
+              CATEGORIES.map((c) => (
+                <button key={c.id} type="button" className={`store-opt${pickedCat === c.id ? ' active' : ''}`} onClick={() => setPickedCat(c.id)}>
+                  {c.label}
+                </button>
+              ))}
+            {pickMode === 'location' &&
+              LOCATIONS.map((l) => (
+                <button key={l} type="button" className={`store-opt${pickedLoc === l ? ' active' : ''}`} onClick={() => setPickedLoc(l)}>
+                  {l}
+                </button>
+              ))}
+          </div>
+          <div className="select-bar-actions">
+            <button type="button" className="btn-secondary" onClick={stopSelecting}>Annuler</button>
+            <button type="button" className="btn-primary" disabled={!canApply} onClick={applyBatch}>
+              <Icon name="check" width={2.4} /> Appliquer
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
