@@ -684,23 +684,26 @@ export function ProductFormScreen({ product, initial, onClose, onSaved }: Produc
         )}
       </div>
 
-      <div className="btn-row" style={{ marginBottom: isEdit ? 12 : 0 }}>
-        <button className="btn-secondary" onClick={onClose}>Annuler</button>
-        <button className="btn-primary" disabled={!canSave} onClick={handleSave}>
-          {isEdit ? 'Enregistrer' : 'Ajouter'}
-        </button>
-      </div>
+      <button className="btn-primary form-save" disabled={!canSave} onClick={handleSave}>
+        <Icon name="check" width={2.4} />
+        {isEdit ? 'Enregistrer' : 'Ajouter'}
+      </button>
 
       {isEdit && (
-        <>
-          <div className="btn-row" style={{ marginBottom: 12 }}>
-            <button className="btn-secondary" onClick={handleConsume}>Consommer 1</button>
-            <button className="btn-secondary btn-danger" onClick={handleWaste}>Jeter (périmé)</button>
-          </div>
-          <div className="btn-row">
-            <button className="btn-secondary btn-danger" onClick={handleDelete}>Supprimer le produit</button>
-          </div>
-        </>
+        <div className="form-actions">
+          <button type="button" className="action-chip" onClick={handleConsume}>
+            <Icon name="minus" width={2.2} />
+            <span>Consommer 1</span>
+          </button>
+          <button type="button" className="action-chip danger" onClick={handleWaste}>
+            <Icon name="recycle" width={2} />
+            <span>Jeter</span>
+          </button>
+          <button type="button" className="action-chip danger" onClick={handleDelete}>
+            <Icon name="trash" width={2} />
+            <span>Supprimer</span>
+          </button>
+        </div>
       )}
     </div>
   )
