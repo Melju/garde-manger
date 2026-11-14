@@ -2445,3 +2445,7 @@ h1.logo img { display: block; height: 50px; width: auto; }
 .install-text strong { font-size: 14px; color: var(--fg); }
 .install-go { flex: none; border: 0; border-radius: 999px; padding: 8px 14px; font-weight: 700; color: #fff; background: var(--brand-grad); cursor: pointer; }
 .install-x { flex: none; border: 0; background: none; font-size: 22px; line-height: 1; color: var(--fg); opacity: .5; cursor: pointer; padding: 4px 6px; }
+
+/* Écran Profil : les cartes sont dans un .form-section, elles ont besoin de leur marge intérieure. */
+.form-section > .form-group { margin: 0 0 16px; padding: 18px 18px 6px; }
+.form-section > .form-group > .form-label { display: block; margin-bottom: 10px; }
