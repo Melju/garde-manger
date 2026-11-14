@@ -1,3 +1,4 @@
+import { guessDateType } from '../lib/shelfLife'
 import { isWeightUnit, formatContenance } from '../lib/contenance'
 import { useState } from 'react'
 import { useStore } from '../data/store'
@@ -42,7 +43,7 @@ export function ReviewItems({ items, onDone, onRetry }: ReviewItemsProps) {
           // Au poids / volume : 1 paquet de « 500 g » ; sinon la quantité reste un nombre d'unités.
           quantity: isWeightUnit(it.unit) ? 1 : it.quantity,
           size: isWeightUnit(it.unit) ? formatContenance(it.quantity, it.unit!) : it.unit ? `${it.unit}` : undefined,
-          dateType: 'dlc',
+          dateType: guessDateType(it.name, defaultConservation(it.category), it.category).type,
           price: it.price ?? undefined,
         })
       }

@@ -10,6 +10,10 @@ import { normalize } from './productIcon'
 const RULES: [string[], string][] = [
   [['pates pesto', 'pates au pesto'], 'pates-pesto'],
   // Boissons précises
+  [['bombonne', 'bonbonne', 'fontaine a eau', 'eau 8l', 'eau 8 l', 'eau 10l', 'eau 19l'], 'bombonne-eau'],
+  [['cafe froid', 'cafe glace', 'iced coffee', 'cafe frappe', 'latte glace'], 'cafe-froid'],
+  [['eau petillante', 'eau gazeuse', 'eau pétillante', 'badoit', 'perrier', 'san pellegrino'], 'eau-petillante'],
+  [['lait brique', 'brique de lait', 'lait uht', 'lait demi ecreme', 'lait ecreme', 'lait entier'], 'lait-brique'],
   [['coca zero', 'cola zero', 'pepsi max', 'soda zero', 'coca cola zero', 'coca sans sucre'], 'soda-zero'],
   [['cola canette', 'coca canette', 'canette de cola', 'canette de coca'], 'cola'],
   [['coca', 'coca cola', 'cola', 'pepsi'], 'cola-bouteille'],
@@ -354,4 +358,20 @@ export function productImageSlug(name: string): string | null {
 
 export function productImageUrl(slug: string): string {
   return `${import.meta.env.BASE_URL}icons/${slug}.webp`
+}
+
+/** Icône choisie à la main : stockée dans imageUrl sous la forme « icon:slug » (pas de migration de base). */
+const CHOSEN = 'icon:'
+
+export function chosenIconSlug(imageUrl?: string): string | null {
+  return imageUrl && imageUrl.startsWith(CHOSEN) ? imageUrl.slice(CHOSEN.length) : null
+}
+
+export function chosenIconValue(slug: string): string {
+  return CHOSEN + slug
+}
+
+/** URL de photo réelle (Open Food Facts), sans les icônes choisies. */
+export function realPhotoUrl(imageUrl?: string): string | undefined {
+  return imageUrl && !imageUrl.startsWith(CHOSEN) ? imageUrl : undefined
 }

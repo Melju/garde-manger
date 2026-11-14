@@ -1,5 +1,7 @@
 import type { Category, Conservation } from '../types'
 import { addDays, toISODate } from './dates'
+import { learnedFor } from './learnedShelf'
+import type { DateType } from '../types'
 
 /**
  * Estimation de la durée de conservation (en jours) selon le type d'aliment.
@@ -55,6 +57,9 @@ const PANTRY: ShelfEntry[] = [
   ['conserve', 720], ['cafe', 365], ['the', 365], ['biscuit', 180], ['cereale', 240],
   ['huile', 365], ['lentille', 540], ['pois chiche', 540], ['haricot sec', 540],
   ['chocolat', 365], ['miel', 999], ['confiture', 365], ['semoule', 365],
+  ['farfalle', 540], ['fusilli', 540], ['penne', 540], ['tagliatelle', 540], ['macaroni', 540],
+  ['coquillette', 540], ['rigatoni', 540], ['linguine', 540], ['nouille', 540], ['vermicelle', 540],
+  ['quinoa', 540], ['boulgour', 540], ['polenta', 540],
 ].map(([kw, days]) => ({ kw: kw as string, days: days as number, group: 'Épicerie' }))
 
 const ALL: ShelfEntry[] = [...MEAT, ...FISH, ...DAIRY, ...BAKERY, ...VEG, ...PANTRY, ...TABLE]
@@ -66,6 +71,8 @@ function norm(s: string): string {
 export interface ShelfEstimate {
   days: number
   group: string
+  /** Estimation issue de ce que l'utilisateur a déjà renseigné (nombre de produits similaires). */
+  learned?: { count: number; exact: boolean }
 }
 
 // Durée au congélateur (jours) selon le groupe d'aliments.
@@ -108,6 +115,16 @@ export function estimateShelfLife(
   category?: Category,
 ): ShelfEstimate | null {
   const n = norm(name)
+
+  // 0) Ce que l'utilisateur a déjà renseigné pour ce produit ou des produits similaires.
+  const l = learnedFor(name, conservation, category)
+  if (l?.days) {
+    return {
+      days: l.days,
+      group: CAT_BASE[category ?? 'autre']?.group ?? 'Produits similaires',
+      learned: { count: l.count, exact: l.exact },
+    }
+  }
 
   // 1) Match par mot-clé (le plus spécifique).
   let base: ShelfEstimate | null = null
@@ -153,4 +170,33 @@ export function durationLabel(days: number): string {
   if (days < 14) return `~${days} jours`
   if (days < 60) return `~${Math.round(days / 7)} semaines`
   return `~${Math.round(days / 30)} mois`
+}
+
+// Mots-clés dont la date est une DDM (« à consommer de préférence avant ») même dans un rayon frais.
+const DDM_KW = ['oeuf', 'beurre', 'parmesan', 'comte', 'emmental', 'gruyere', 'miel', 'pain', 'baguette', 'brioche']
+const DLC_KW = ['jambon', 'saucisse', 'poulet', 'dinde', 'lardon', 'bacon', 'hache', 'poisson', 'saumon', 'crevette', 'yaourt', 'creme', 'lait frais', 'mozzarella', 'plat cuisine', 'traiteur']
+const DDM_CATS = new Set<Category>(['epicerie', 'conserves', 'sucreries', 'apero', 'boissons', 'surgeles', 'fruits', 'legumes'])
+const DLC_CATS = new Set<Category>(['viandes', 'poissons', 'laitiers'])
+
+/**
+ * DLC (dangereux après la date) ou DDM (juste moins bon) : ce que l'utilisateur
+ * a choisi pour des produits similaires, sinon une règle par type d'aliment.
+ */
+export function guessDateType(
+  name: string,
+  conservation: Conservation = 'frais',
+  category?: Category,
+): { type: DateType; learned: boolean } {
+  const l = learnedFor(name, conservation, category)
+  if (l?.dateType) return { type: l.dateType, learned: true }
+  const n = norm(name)
+  if (DLC_KW.some((k) => n.includes(k))) return { type: 'dlc', learned: false }
+  if (DDM_KW.some((k) => n.includes(k))) return { type: 'ddm', learned: false }
+  if (conservation === 'congele') return { type: 'ddm', learned: false }
+  if (category && DLC_CATS.has(category)) return { type: 'dlc', learned: false }
+  if (category && DDM_CATS.has(category)) return { type: 'ddm', learned: false }
+  // Mot-clé épicerie reconnu (pâtes, riz, farine...) : DDM.
+  const est = estimateShelfLife(name, conservation, category)
+  if (est && est.group === 'Épicerie') return { type: 'ddm', learned: false }
+  return { type: 'dlc', learned: false }
 }

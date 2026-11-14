@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { useStore } from '../data/store'
 import { useToast } from '../components/Toast'
 import { Icon } from '../components/Icon'
@@ -13,7 +13,11 @@ import {
   type ProductInput,
 } from '../types'
 import { splitSize } from '../lib/contenance'
-import { estimateShelfLife, estimatedExpiryISO, durationLabel } from '../lib/shelfLife'
+import { estimateShelfLife, estimatedExpiryISO, durationLabel, guessDateType } from '../lib/shelfLife'
+import { learn } from '../lib/learnedShelf'
+import { productImageSlug, productImageUrl, chosenIconSlug, chosenIconValue, realPhotoUrl } from '../lib/productImage'
+import { ICON_SLUGS } from '../lib/iconList'
+import { normalize } from '../lib/productIcon'
 import { familyAllergenWarnings, allergenLabel } from '../lib/allergens'
 
 /** Unités de contenance proposées. */
@@ -56,7 +60,7 @@ export function ProductFormScreen({ product, initial, onClose, onSaved }: Produc
 
   // Données enrichies Open Food Facts (lecture seule, conservées telles quelles).
   const enrich = {
-    imageUrl: product?.imageUrl ?? initial?.imageUrl,
+    imageUrl: realPhotoUrl(product?.imageUrl ?? initial?.imageUrl),
     nutriscore: product?.nutriscore ?? initial?.nutriscore,
     nova: product?.nova ?? initial?.nova,
     kcal: product?.kcal ?? initial?.kcal,
@@ -76,7 +80,17 @@ export function ProductFormScreen({ product, initial, onClose, onSaved }: Produc
   const initSize = parseSize(product?.size ?? initial?.size)
   const [sizeValue, setSizeValue] = useState(initSize.value)
   const [sizeUnit, setSizeUnit] = useState(initSize.unit)
+  const [chosenIcon, setChosenIcon] = useState<string | null>(chosenIconSlug(product?.imageUrl))
+  const [pickingIcon, setPickingIcon] = useState(false)
+  const [iconQuery, setIconQuery] = useState('')
+  const autoIcon = productImageSlug(name)
+  const shownIcon = chosenIcon ?? autoIcon
+  const iconChoices = useMemo(() => {
+    const q = normalize(iconQuery).trim()
+    return q ? ICON_SLUGS.filter((s) => s.replace(/-/g, ' ').includes(q)) : ICON_SLUGS
+  }, [iconQuery])
   const [dateType, setDateType] = useState<DateType>(product?.dateType ?? initial?.dateType ?? 'dlc')
+  const dateTouched = useRef(isEdit || !!initial?.dateType)
   const [expiryDate, setExpiryDate] = useState(product?.expiryDate ?? initial?.expiryDate ?? '')
   const initLocation =
     product?.location ??
@@ -96,6 +110,14 @@ export function ProductFormScreen({ product, initial, onClose, onSaved }: Produc
     () => estimateShelfLife(name, conservation, category),
     [name, conservation, category],
   )
+  // Type de date proposé d'après le produit (DDM pour les pâtes, DLC pour la viande...), tant que tu n'as pas choisi toi-même.
+  const dateGuess = useMemo(
+    () => guessDateType(name, conservation, category),
+    [name, conservation, category],
+  )
+  useEffect(() => {
+    if (!dateTouched.current && name.trim().length >= 2) setDateType(dateGuess.type)
+  }, [dateGuess, name])
   function applyEstimate() {
     const iso = estimatedExpiryISO(name, conservation, category)
     if (iso) setExpiryDate(iso)
@@ -163,7 +185,7 @@ export function ProductFormScreen({ product, initial, onClose, onSaved }: Produc
       location: location.trim() || undefined,
       price: price ? Number(price.replace(',', '.')) || undefined : undefined,
       barcode,
-      imageUrl: enrich.imageUrl,
+      imageUrl: chosenIcon ? chosenIconValue(chosenIcon) : enrich.imageUrl,
       nutriscore: enrich.nutriscore,
       nova: enrich.nova,
       kcal: enrich.kcal,
@@ -173,8 +195,18 @@ export function ProductFormScreen({ product, initial, onClose, onSaved }: Produc
 
   async function handleSave() {
     if (!canSave) return
+    const inp = buildInput()
+    learn({
+      name: inp.name,
+      category: inp.category,
+      conservation: inp.conservation,
+      expiryDate: inp.expiryDate,
+      dateType: inp.dateType,
+      from: isEdit && product ? product.createdAt : undefined,
+      explicitDateType: dateTouched.current,
+    })
     if (isEdit && product) {
-      await updateProduct(product.id, buildInput())
+      await updateProduct(product.id, inp)
       toast('Produit mis à jour')
     } else {
       await addProduct(buildInput())
@@ -231,6 +263,60 @@ export function ProductFormScreen({ product, initial, onClose, onSaved }: Produc
         )}
         {barcode && (
           <p style={{ fontSize: 12, color: 'var(--muted)', marginTop: 6 }}>Code-barres : {barcode}</p>
+        )}
+      </div>
+
+      <div className="form-section">
+        <label className="form-label">Icône</label>
+        <div className="icon-pick-row">
+          <div className="icon-pick-current">
+            {shownIcon ? <img src={productImageUrl(shownIcon)} alt="" width={48} height={48} /> : <span>?</span>}
+          </div>
+          <div style={{ flex: 1, fontSize: 13, color: 'var(--muted)' }}>
+            {chosenIcon ? 'Choisie par toi' : shownIcon ? 'Choisie automatiquement' : 'Aucune icône trouvée'}
+          </div>
+          <button type="button" className="ai-complete-btn" style={{ margin: 0 }} onClick={() => setPickingIcon((v) => !v)}>
+            {pickingIcon ? 'Fermer' : 'Changer'}
+          </button>
+        </div>
+        {pickingIcon && (
+          <div className="icon-picker">
+            <input
+              className="form-input"
+              placeholder="Chercher une icône (pâtes, lait, tomate…)"
+              value={iconQuery}
+              onChange={(e) => setIconQuery(e.target.value)}
+            />
+            {chosenIcon && (
+              <button
+                type="button"
+                className="icon-pick-auto"
+                onClick={() => {
+                  setChosenIcon(null)
+                  setPickingIcon(false)
+                }}
+              >
+                Revenir à l'icône automatique
+              </button>
+            )}
+            <div className="icon-grid">
+              {iconChoices.map((s) => (
+                <button
+                  key={s}
+                  type="button"
+                  title={s.replace(/-/g, ' ')}
+                  className={`icon-cell${s === shownIcon ? ' active' : ''}`}
+                  onClick={() => {
+                    setChosenIcon(s)
+                    setPickingIcon(false)
+                  }}
+                >
+                  <img src={productImageUrl(s)} alt={s} width={44} height={44} loading="lazy" />
+                </button>
+              ))}
+              {iconChoices.length === 0 && <p style={{ gridColumn: '1 / -1', color: 'var(--muted)' }}>Rien trouvé.</p>}
+            </div>
+          </div>
         )}
       </div>
 
@@ -342,14 +428,14 @@ export function ProductFormScreen({ product, initial, onClose, onSaved }: Produc
           <button
             type="button"
             className={`opt-btn date${dateType === 'dlc' ? ' active' : ''}`}
-            onClick={() => setDateType('dlc')}
+            onClick={() => { dateTouched.current = true; setDateType('dlc') }}
           >
             DLC<span className="sub">À consommer jusqu'au</span>
           </button>
           <button
             type="button"
             className={`opt-btn date${dateType === 'ddm' ? ' active' : ''}`}
-            onClick={() => setDateType('ddm')}
+            onClick={() => { dateTouched.current = true; setDateType('ddm') }}
           >
             DDM<span className="sub">À consommer de préférence avant</span>
           </button>
@@ -368,7 +454,12 @@ export function ProductFormScreen({ product, initial, onClose, onSaved }: Produc
         {estimate && !expiryDate && (
           <button type="button" className="estimate-hint" onClick={applyEstimate}>
             <span>
-              Péremption estimée : <strong>{durationLabel(estimate.days)}</strong> ({estimate.group})
+              Péremption estimée : <strong>{durationLabel(estimate.days)}</strong>{' '}
+              {estimate.learned
+                ? estimate.learned.exact
+                  ? '(déjà renseigné pour ce produit)'
+                  : `(d'après ${estimate.learned.count} produit${estimate.learned.count > 1 ? 's' : ''} similaire${estimate.learned.count > 1 ? 's' : ''})`
+                : `(${estimate.group})`}
             </span>
             <span className="estimate-apply">Appliquer</span>
           </button>

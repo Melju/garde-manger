@@ -1,3 +1,4 @@
+import { seedFromProducts } from '../lib/learnedShelf'
 import {
   createContext,
   useCallback,
@@ -198,6 +199,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
         repo.getSettings(),
         repo.getShopCatalog(),
       ])
+      seedFromProducts(p)
       setProducts(p)
       setShopping(s)
       setRecipes(r)

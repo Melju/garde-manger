@@ -14,7 +14,7 @@ import {
 import { Icon, categoryIcon } from './Icon'
 import { FoodIcon, hasFoodIcon } from './FoodIcon'
 import { productIconKey } from '../lib/productIcon'
-import { productImageSlug, productImageUrl } from '../lib/productImage'
+import { productImageSlug, chosenIconSlug, productImageUrl } from '../lib/productImage'
 import { SwipeWheel } from './SwipeWheel'
 
 interface ProductItemProps {
@@ -49,7 +49,7 @@ export function ProductItem({
   const status = expiryStatus(product)
   const col = categoryColor(product.category)
   const iconKey = productIconKey(product.name)
-  const imageSlug = productImageSlug(product.name)
+  const imageSlug = chosenIconSlug(product.imageUrl) ?? productImageSlug(product.name)
   // Produit au poids/volume si une seule unité en stock avec une contenance continue.
   const byWeight = product.quantity <= 1 && isWeightProduct(product.size)
   const scale = byWeight ? portionScale(product.size) : null

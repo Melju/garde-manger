@@ -2216,3 +2216,12 @@ input[type='date'].form-input::-webkit-calendar-picker-indicator {
 }
 .product-icon.has-img { width: 60px; height: 60px; }
 .product-img { width: 54px; height: 54px; object-fit: contain; pointer-events: none; user-select: none; }
+
+/* Choix de l'icône d'un produit */
+.icon-pick-row { display: flex; align-items: center; gap: 12px; }
+.icon-pick-current { width: 60px; height: 60px; border-radius: 16px; background: var(--card, #fff); border: 1px solid var(--border, #e6e0d6); display: grid; place-items: center; }
+.icon-picker { margin-top: 10px; }
+.icon-pick-auto { margin: 8px 0 0; background: none; border: none; color: var(--primary, #2f7d4f); font-weight: 600; padding: 4px 0; }
+.icon-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(56px, 1fr)); gap: 6px; margin-top: 10px; max-height: 280px; overflow-y: auto; }
+.icon-cell { aspect-ratio: 1; border-radius: 12px; border: 1px solid var(--border, #e6e0d6); background: var(--card, #fff); display: grid; place-items: center; padding: 2px; }
+.icon-cell.active { border-color: var(--primary, #2f7d4f); box-shadow: 0 0 0 2px var(--primary, #2f7d4f) inset; }
