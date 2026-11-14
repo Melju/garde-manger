@@ -12,7 +12,7 @@ import {
   type ProductInput,
 } from '../types'
 import { splitSize, countUnit } from '../lib/contenance'
-import { estimateShelfLife, estimatedExpiryISO, durationLabel, guessDateType } from '../lib/shelfLife'
+import { estimateShelfLife, estimatedExpiryISO, durationLabel, guessDateType, isFrozenName } from '../lib/shelfLife'
 import { DatePicker } from '../components/DatePicker'
 import { DateScanner, type ScannedDate } from '../components/DateScanner'
 import { getCurrentStore, getStores, setProductStores, storesFor } from '../lib/stores'
@@ -204,7 +204,7 @@ export function ProductFormScreen({ product, initial, onClose, onSaved }: Produc
     }
     if (!locTouched.current) {
       const learned = placeFor(n, cat)
-      const l = learned?.loc ?? defaultPlace(cat)
+      const l = isFrozenName(n) ? 'Congélateur' : (learned?.loc ?? defaultPlace(cat))
       setPlaceSource(learned?.source ?? null)
       if (l && l !== location) pickLocation(l)
     }

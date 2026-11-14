@@ -120,12 +120,21 @@ const CAT_BASE: Partial<Record<Category, ShelfEstimate>> = {
  * conservation (frais / réfrigéré / congelé). Repli sur la catégorie si le nom
  * n'est pas reconnu. Renvoie null si rien d'exploitable.
  */
+const FROZEN_NAME = /surgel|congel|frozen/
+
+/** Vrai si le nom indique un produit surgelé / congelé. */
+export function isFrozenName(name: string): boolean {
+  return FROZEN_NAME.test(norm(name))
+}
+
 export function estimateShelfLife(
   name: string,
   conservation: Conservation = 'frais',
   category?: Category,
 ): ShelfEstimate | null {
   const n = norm(name)
+  // « poisson surgelé », « filet congelé » : le nom dit déjà que c'est au congélateur.
+  if (FROZEN_NAME.test(n)) conservation = 'congele'
 
   // 0) Ce que l'utilisateur a déjà renseigné pour ce produit ou des produits similaires.
   const l = learnedFor(name, conservation, category)
@@ -183,7 +192,7 @@ export function estimatedExpiryISO(
 
 /** Libellé court d'une durée (« ~5 jours », « ~3 semaines », « ~18 mois »). */
 export function durationLabel(days: number): string {
-  if (days < 14) return `~${days} jours`
+  if (days < 14) return `~${days} jour${days > 1 ? 's' : ''}`
   if (days < 60) return `~${Math.round(days / 7)} semaines`
   return `~${Math.round(days / 30)} mois`
 }
