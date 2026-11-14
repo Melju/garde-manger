@@ -1,3 +1,4 @@
+import { FormFooter } from '../components/FormFooter'
 import { useConfirm } from '../components/Confirm'
 import { useState } from 'react'
 import { useStore, AVATAR_COLORS } from '../data/store'
@@ -122,22 +123,15 @@ export function MemberEditScreen({ member, onBack }: MemberEditScreenProps) {
         </div>
       </div>
 
-      <div className="btn-row" style={{ marginBottom: 16 }}>
-        <button className="btn-secondary" onClick={onBack}>
-          Annuler
-        </button>
-        <button className="btn-primary" disabled={!canSave} onClick={save}>
-          Enregistrer
-        </button>
-      </div>
-
       {isEdit && (
-        <div className="btn-row">
+        <div className="btn-row" style={{ marginBottom: 16 }}>
           <button className="btn-secondary btn-danger" onClick={del}>
             Supprimer le membre
           </button>
         </div>
       )}
+
+      <FormFooter onCancel={onBack} onSave={save} disabled={!canSave} saveLabel="Enregistrer" />
     </div>
   )
 }

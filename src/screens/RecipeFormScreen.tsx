@@ -5,6 +5,7 @@ import { PageHeader } from '../components/PageHeader'
 import { Icon } from '../components/Icon'
 import { downscaleImage } from '../lib/imageResize'
 import type { Recipe, RecipeIngredient } from '../types'
+import { FormFooter } from '../components/FormFooter'
 import { linkedProduct } from '../lib/recipesLib'
 
 interface RecipeFormScreenProps {
@@ -313,12 +314,12 @@ export function RecipeFormScreen({ recipe, onClose, onSaved }: RecipeFormScreenP
       </div>
       </div>
 
-      <div className="btn-row recipe-actions">
-        <button className="btn-secondary" onClick={onClose} disabled={busy}>Annuler</button>
-        <button className="btn-primary" onClick={save} disabled={busy || !title.trim()}>
-          {busy ? 'Enregistrement…' : isEdit ? 'Enregistrer' : 'Créer la recette'}
-        </button>
-      </div>
+      <FormFooter
+        onCancel={onClose}
+        onSave={save}
+        disabled={busy || !title.trim()}
+        saveLabel={busy ? 'Enregistrement…' : isEdit ? 'Enregistrer' : 'Créer la recette'}
+      />
     </div>
   )
 }

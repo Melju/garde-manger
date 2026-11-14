@@ -275,7 +275,7 @@ export function ShoppingScreen({ addOpen, onCloseAdd }: ShoppingScreenProps) {
       </header>
 
       {shopping.some((it) => it.checked) && (
-        <div className="btn-row" style={{ margin: '0 20px 14px' }}>
+        <div className="btn-row" style={{ margin: '0 0 14px' }}>
           <button
             className="btn-secondary"
             onClick={async () => {

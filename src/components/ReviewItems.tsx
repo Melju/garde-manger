@@ -114,7 +114,7 @@ export function ReviewItems({ items, onDone, onRetry }: ReviewItemsProps) {
           </div>
         ))}
       </div>
-      <div className="btn-row" style={{ margin: '16px 20px' }}>
+      <div className="btn-row" style={{ margin: '16px 0' }}>
         <button className="btn-secondary" onClick={onRetry} disabled={busy}>Reprendre</button>
         <button className="btn-primary" onClick={addAll} disabled={busy || selected.length === 0}>
           {busy ? 'Ajout…' : `Ajouter (${selected.length})`}
