@@ -48,46 +48,42 @@ export function ShoppingScreen({ addOpen, onCloseAdd }: ShoppingScreenProps) {
   const [storeTick, setStoreTick] = useState(0)
   const [nearby, setNearby] = useState<NearbyStore[] | null>(null)
   const [locating, setLocating] = useState(false)
+  const [locMsg, setLocMsg] = useState('')
   async function locate(auto = false) {
     if (locating) return
     setLocating(true)
+    setLocMsg('')
+    setNearby(null)
     try {
       const found = await detectNearbyStores()
       if (found.length === 0) {
-        if (!auto) toast('Aucun magasin trouvé à proximité')
-        setNearby(null)
+        setLocMsg('Aucun magasin trouvé à moins de 200 m. Choisis-le dans la liste.')
       } else if (auto && found[0].name === store) {
-        setNearby(null)
+        /* déjà le bon magasin */
       } else {
         setNearby(found.slice(0, 4))
       }
     } catch (e) {
-      if (!auto) {
-        const code = (e as { code?: number })?.code
-        toast(
-          code === 1
-            ? 'Position refusée : autorise-la dans les réglages du navigateur'
-            : e instanceof Error && e.message
-              ? e.message
-              : 'Position indisponible',
-        )
-      }
+      setLocMsg(e instanceof Error && e.message ? e.message : 'Position indisponible')
     } finally {
       setLocating(false)
     }
   }
-  // Si la position est déjà autorisée, on propose le magasin à l'ouverture (sans redemander l'autorisation).
+  // À l'ouverture de l'écran, on cherche le magasin tout seul (au plus une fois toutes les 10 minutes).
   useEffect(() => {
-    let off = false
-    navigator.permissions
-      ?.query({ name: 'geolocation' as PermissionName })
-      .then((r) => {
-        if (!off && r.state === 'granted') void locate(true)
-      })
-      .catch(() => {})
-    return () => {
-      off = true
+    let last = 0
+    try {
+      last = Number(sessionStorage.getItem('miamm.geo.last') ?? 0)
+    } catch {
+      /* ignore */
     }
+    if (Date.now() - last < 10 * 60 * 1000) return
+    try {
+      sessionStorage.setItem('miamm.geo.last', String(Date.now()))
+    } catch {
+      /* ignore */
+    }
+    void locate(true)
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
   function chooseStore(n: string) {
@@ -290,6 +286,8 @@ export function ShoppingScreen({ addOpen, onCloseAdd }: ShoppingScreenProps) {
           {locating ? 'Recherche…' : 'Où suis-je ?'}
         </button>
       </div>
+      {locating && <p className="store-msg">Recherche du magasin autour de toi…</p>}
+      {locMsg && <p className="store-msg">{locMsg}</p>}
       {nearby && nearby.length > 0 && (
         <div className="store-picker">
           <div className="usual-title">Tu es chez…</div>

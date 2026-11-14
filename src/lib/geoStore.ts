@@ -8,15 +8,69 @@ export interface NearbyStore {
   distance: number
 }
 
-function position(): Promise<GeolocationPosition> {
+/** Erreur lisible pour l'utilisateur. */
+export class GeoError extends Error {}
+
+function withTimeout<T>(p: Promise<T>, ms: number, msg: string): Promise<T> {
   return new Promise((resolve, reject) => {
-    if (!navigator.geolocation) return reject(new Error('Géolocalisation indisponible'))
-    navigator.geolocation.getCurrentPosition(resolve, reject, {
-      enableHighAccuracy: true,
-      timeout: 12000,
-      maximumAge: 60000,
+    const t = setTimeout(() => reject(new GeoError(msg)), ms)
+    p.then(
+      (v) => {
+        clearTimeout(t)
+        resolve(v)
+      },
+      (e) => {
+        clearTimeout(t)
+        reject(e)
+      },
+    )
+  })
+}
+
+function position(): Promise<GeolocationPosition> {
+  const p = new Promise<GeolocationPosition>((resolve, reject) => {
+    if (!navigator.geolocation) return reject(new GeoError('Géolocalisation indisponible sur cet appareil'))
+    navigator.geolocation.getCurrentPosition(resolve, (e) => {
+      if (e.code === 1) reject(new GeoError('Position refusée : autorise-la dans les réglages du navigateur'))
+      else if (e.code === 3) reject(new GeoError('Position trop longue à obtenir, réessaie'))
+      else reject(new GeoError('Position introuvable (GPS ou réseau indisponible)'))
+    }, {
+      enableHighAccuracy: false,
+      timeout: 10000,
+      maximumAge: 120000,
     })
   })
+  // Garde-fou : si l'autorisation reste sans réponse, on ne reste pas bloqué.
+  return withTimeout(p, 25000, "Pas de réponse de la position : accepte l'autorisation ou réessaie")
+}
+
+const ENDPOINTS = [
+  'https://overpass-api.de/api/interpreter',
+  'https://overpass.kumi.systems/api/interpreter',
+]
+
+async function overpass(query: string): Promise<{ elements?: any[] }> {
+  let lastErr: unknown = null
+  for (const url of ENDPOINTS) {
+    const ctl = new AbortController()
+    const t = setTimeout(() => ctl.abort(), 9000)
+    try {
+      const res = await fetch(url, {
+        method: 'POST',
+        body: 'data=' + encodeURIComponent(query),
+        headers: { 'content-type': 'application/x-www-form-urlencoded' },
+        signal: ctl.signal,
+      })
+      if (!res.ok) throw new Error('HTTP ' + res.status)
+      return (await res.json()) as { elements?: any[] }
+    } catch (e) {
+      lastErr = e
+    } finally {
+      clearTimeout(t)
+    }
+  }
+  void lastErr
+  throw new GeoError('Service de recherche des magasins injoignable, réessaie plus tard')
 }
 
 function meters(lat1: number, lon1: number, lat2: number, lon2: number): number {
@@ -33,13 +87,7 @@ export async function detectNearbyStores(radius = 200): Promise<NearbyStore[]> {
   const pos = await position()
   const { latitude: lat, longitude: lon } = pos.coords
   const query = `[out:json][timeout:10];nwr(around:${radius},${lat},${lon})[shop~"^(supermarket|convenience|hypermarket|department_store|wholesale)$"];out tags center 20;`
-  const res = await fetch('https://overpass-api.de/api/interpreter', {
-    method: 'POST',
-    body: 'data=' + encodeURIComponent(query),
-    headers: { 'content-type': 'application/x-www-form-urlencoded' },
-  })
-  if (!res.ok) throw new Error('Service de localisation indisponible')
-  const json = (await res.json()) as { elements?: any[] }
+  const json = await overpass(query)
   const known = getStores()
   const out: NearbyStore[] = []
   for (const el of json.elements ?? []) {
