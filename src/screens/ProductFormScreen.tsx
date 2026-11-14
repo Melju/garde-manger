@@ -246,7 +246,21 @@ export function ProductFormScreen({ product, initial, onClose, onSaved }: Produc
       from: isEdit && product ? product.createdAt : undefined,
       explicitDateType: dateTouched.current,
     })
-    if (isEdit && product) {
+    if (isEdit && product && perDate && quantity > 1) {
+      // Répartit les exemplaires par date : le lot de l'article 1 met à jour ce produit, les autres deviennent de nouveaux lots.
+      const groups = new Map<string, number>()
+      for (let i = 0; i < quantity; i++) {
+        const d = (i === 0 ? expiryDate : extraDates[i - 1]) || ''
+        groups.set(d, (groups.get(d) ?? 0) + 1)
+      }
+      const firstKey = expiryDate || ''
+      await updateProduct(product.id, { ...inp, quantity: groups.get(firstKey) ?? 1, expiryDate: firstKey || undefined })
+      for (const [d, count] of groups) {
+        if (d === firstKey) continue
+        await addProduct({ ...inp, quantity: count, expiryDate: d || undefined })
+      }
+      toast(`Produit réparti sur ${groups.size} date${groups.size > 1 ? 's' : ''}`)
+    } else if (isEdit && product) {
       await updateProduct(product.id, inp)
       toast('Produit mis à jour')
     } else {
@@ -488,7 +502,7 @@ export function ProductFormScreen({ product, initial, onClose, onSaved }: Produc
           Scanner la date
         </button>
         {scanningDate && <DateScanner onResult={onDateScanned} onClose={() => setScanningDate(false)} />}
-        {!isEdit && quantity > 1 && (
+        {quantity > 1 && (
           <div className="scan-known-exp-actions" style={{ marginTop: 10 }}>
             <button type="button" className={`usual-chip${!perDate ? ' on' : ''}`} onClick={() => setPerDate(false)}>
               Même date pour tous
@@ -498,7 +512,7 @@ export function ProductFormScreen({ product, initial, onClose, onSaved }: Produc
             </button>
           </div>
         )}
-        {!isEdit && perDate && quantity > 1 && (
+        {perDate && quantity > 1 && (
           <div className="scan-known-multi" style={{ marginTop: 10 }}>
             {Array.from({ length: quantity - 1 }, (_, k) => (
               <div key={k} className="scan-known-multi-row">
