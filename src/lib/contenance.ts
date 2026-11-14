@@ -5,7 +5,7 @@
  */
 
 /** Unités « continues » (au poids ou au volume) qui autorisent une conso partielle. */
-export const WEIGHT_UNITS = ['g', 'kg', 'mL', 'ml', 'cl', 'L', 'l']
+export const WEIGHT_UNITS = ['g', 'kg', 'mL', 'ml', 'cl', 'L', 'l', 'sachet', 'sachets']
 
 interface Parsed {
   value: number
@@ -45,16 +45,17 @@ export function isWeightProduct(size?: string): boolean {
 }
 
 /** Infos en unité de base (g ou mL) pour la molette de portions. */
-export function weightInfo(size?: string): { baseUnit: 'g' | 'mL'; total: number } | null {
+export function weightInfo(size?: string): { baseUnit: 'g' | 'mL' | 'sachet'; total: number } | null {
   const p = parseContenance(size)
   if (!p) return null
   const fam = family(p.unit)
   if (!fam) return null
-  return { baseUnit: fam === 'mass' ? 'g' : 'mL', total: toBase(p.value, p.unit) }
+  return { baseUnit: fam === 'mass' ? 'g' : fam === 'count' ? 'sachet' : 'mL', total: toBase(p.value, p.unit) }
 }
 
 /** Graduation fine (précision) + intervalle d'étiquetage (valeurs rondes). */
-function scaleSteps(total: number): { fine: number; major: number } {
+function scaleSteps(total: number, count = false): { fine: number; major: number } {
+  if (count) return { fine: 1, major: total > 12 ? 2 : 1 } // sachets : un par un
   if (total <= 200) return { fine: 5, major: 25 }
   if (total <= 600) return { fine: 5, major: 50 }
   if (total <= 2000) return { fine: 10, major: 100 }
@@ -68,10 +69,10 @@ function scaleSteps(total: number): { fine: number; major: number } {
  */
 export function portionScale(
   size?: string,
-): { values: number[]; baseUnit: 'g' | 'mL'; major: number } | null {
+): { values: number[]; baseUnit: 'g' | 'mL' | 'sachet'; major: number } | null {
   const wi = weightInfo(size)
   if (!wi) return null
-  const { fine, major } = scaleSteps(wi.total)
+  const { fine, major } = scaleSteps(wi.total, wi.baseUnit === 'sachet')
   const values: number[] = []
   for (let v = 0; v < wi.total - 0.001; v += fine) values.push(Math.round(v))
   values.push(Math.round(wi.total)) // toujours finir pile au total
@@ -112,8 +113,9 @@ export function buyScale(rawUnit?: string): {
 }
 
 /** Famille d'unité pour la conversion (mass / volume / null). */
-function family(unit: string): 'mass' | 'volume' | null {
+function family(unit: string): 'mass' | 'volume' | 'count' | null {
   const u = unit.toLowerCase()
+  if (u === 'sachet' || u === 'sachets') return 'count'
   if (u === 'g' || u === 'kg') return 'mass'
   if (u === 'ml' || u === 'cl' || u === 'l') return 'volume'
   return null
@@ -131,6 +133,7 @@ function toBase(value: number, unit: string): number {
 export function formatContenance(value: number, unit: string): string {
   const u = unit.toLowerCase()
   const round = (n: number) => Math.round(n * 100) / 100
+  if (u === 'sachet' || u === 'sachets') return `${round(value)} sachet${value > 1 ? 's' : ''}`
   if (u === 'g' && value >= 1000) return `${round(value / 1000)} kg`
   if (u === 'ml' && value >= 1000) return `${round(value / 1000)} L`
   if (u === 'kg' && value < 1) return `${Math.round(value * 1000)} g`

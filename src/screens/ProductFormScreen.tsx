@@ -426,7 +426,7 @@ export function ProductFormScreen({ product, initial, onClose, onSaved }: Produc
             className="form-input"
             type="text"
             inputMode="decimal"
-            placeholder="Ex : 400"
+            placeholder={sizeUnit === 'sachet' ? 'Nombre de sachets' : 'Ex : 400'}
             value={sizeValue}
             onChange={(e) => setSizeValue(e.target.value)}
           />
