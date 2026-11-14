@@ -2243,3 +2243,14 @@ input[type='date'].form-input::-webkit-calendar-picker-indicator {
 .dp-quick { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; }
 .dp-quick button { border: 1px solid var(--border); background: var(--accent-soft); color: var(--fg); border-radius: 999px; padding: 6px 12px; font: inherit; font-size: 13px; font-weight: 700; }
 .dp-quick .clear { color: var(--danger); background: none; }
+
+/* Scan d'ajout : produit déjà en stock */
+.scan-known { position: absolute; inset: 0; z-index: 30; display: flex; align-items: flex-end; justify-content: center; background: oklch(0.24 0.02 220 / 0.55); padding: 16px; }
+.scan-known-card { width: 100%; max-width: 420px; background: var(--surface); border-radius: 22px; padding: 18px; display: flex; flex-direction: column; gap: 12px; box-shadow: 0 20px 50px oklch(0.24 0.02 220 / 0.3); }
+.scan-known-head { display: flex; align-items: center; gap: 12px; }
+.scan-known-sub { color: var(--fg-2); font-size: 14px; margin-top: 2px; }
+.scan-known-ask { font-weight: 700; text-align: center; margin-top: 4px; }
+.scan-known-stepper { display: flex; align-items: center; justify-content: center; gap: 18px; }
+.scan-known-stepper button { width: 54px; height: 54px; border-radius: 16px; border: 1px solid var(--border); background: var(--accent-soft); color: var(--fg); display: grid; place-items: center; }
+.scan-known-stepper span { font-size: 34px; font-weight: 800; min-width: 56px; text-align: center; }
+.scan-known-cancel { background: none; border: none; color: var(--fg-2); font: inherit; font-weight: 700; padding: 8px; }
