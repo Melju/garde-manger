@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { useStore } from '../data/store'
 import { useToast } from '../components/Toast'
 import { Icon } from '../components/Icon'
@@ -44,6 +44,11 @@ export function InventoryScreen({
   const [pickedCat, setPickedCat] = useState<Category | null>(null)
   const [pickedLoc, setPickedLoc] = useState<string | null>(null)
   const storeChoices = useMemo(() => getStores(), [selecting])
+  // En sélection, la barre d'actions prend la place du bouton « Ajouter » (évite la superposition).
+  useEffect(() => {
+    document.body.classList.toggle('is-selecting', selecting)
+    return () => document.body.classList.remove('is-selecting')
+  }, [selecting])
 
   const urgent = useMemo(() => urgentCount(products), [products])
 
