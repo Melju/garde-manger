@@ -3,7 +3,7 @@ import { useStore } from '../data/store'
 import { useToast } from '../components/Toast'
 import { PageHeader } from '../components/PageHeader'
 import { Icon } from '../components/Icon'
-import { isIngredientInStock, recipeStock, adaptationFor } from '../lib/recipesLib'
+import { linkedProduct, recipeStock, adaptationFor } from '../lib/recipesLib'
 import type { Recipe } from '../types'
 
 interface RecipeDetailScreenProps {
@@ -69,11 +69,19 @@ export function RecipeDetailScreen({ recipe, onBack, onGoShopping, onEdit }: Rec
         <label className="form-label">Ingrédients</label>
         <div className="ingredient-list">
           {recipe.ingredients.map((ing, i) => {
-            const inStock = isIngredientInStock(ing, products)
+            const prod = linkedProduct(ing, products)
+            const inStock = !!prod && prod.quantity > 0
             return (
               <div className="ingredient-item" key={i}>
                 <span className={`ingredient-status ${inStock ? 'in-stock' : 'missing'}`} />
-                <span>{ing.name}</span>
+                <span className="ingredient-main">
+                  <span>{ing.name}</span>
+                  <span className="ingredient-sub">
+                    {prod
+                      ? `${prod.brand ? prod.brand + ' · ' : ''}${inStock ? prod.quantity + ' en stock' : 'épuisé'}`
+                      : 'Pas encore acheté'}
+                  </span>
+                </span>
                 {ing.qty && <span className="ingredient-qty">{ing.qty}</span>}
               </div>
             )

@@ -10,14 +10,41 @@ function norm(s: string): string {
     .trim()
 }
 
-/** Un ingrédient est-il disponible dans le stock ? (correspondance souple par mots) */
-export function isIngredientInStock(ingredient: RecipeIngredient, products: Product[]): boolean {
+function score(ing: string, name: string): number {
+  if (!ing || !name) return 0
+  if (ing === name) return 4
+  if (name.startsWith(ing) || ing.startsWith(name)) return 3
+  if (name.includes(ing) || ing.includes(name)) return 2
+  return 0
+}
+
+/**
+ * Produit du stock lié à un ingrédient : d'abord le lien explicite (productId),
+ * sinon le meilleur rapprochement par nom (les produits en stock passent avant les vides).
+ * Sans correspondance, l'ingrédient reste générique (undefined).
+ */
+export function linkedProduct(ingredient: RecipeIngredient, products: Product[]): Product | undefined {
+  if (ingredient.productId) {
+    const direct = products.find((p) => p.id === ingredient.productId)
+    if (direct) return direct
+  }
   const ing = norm(ingredient.name)
-  if (!ing) return false
-  return products.some((p) => {
-    const name = norm(p.name)
-    return name.includes(ing) || ing.includes(name)
-  })
+  let best: Product | undefined
+  let bestScore = 0
+  for (const p of products) {
+    const s = score(ing, norm(p.name)) * 10 + (p.quantity > 0 ? 5 : 0)
+    if (score(ing, norm(p.name)) > 0 && s > bestScore) {
+      best = p
+      bestScore = s
+    }
+  }
+  return best
+}
+
+/** Un ingrédient est-il disponible dans le stock ? */
+export function isIngredientInStock(ingredient: RecipeIngredient, products: Product[]): boolean {
+  const p = linkedProduct(ingredient, products)
+  return !!p && p.quantity > 0
 }
 
 export interface RecipeStock {

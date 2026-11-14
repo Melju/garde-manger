@@ -160,6 +160,8 @@ export interface RecipeIngredient {
   name: string
   /** Quantité affichée (texte libre : « 400g », « 3 gousses »). */
   qty?: string
+  /** Produit choisi dans le stock. Absent = ingrédient générique, rapproché par nom dès qu'un produit correspond. */
+  productId?: string
 }
 
 export interface Recipe {

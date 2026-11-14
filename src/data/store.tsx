@@ -37,7 +37,7 @@ import { supabase } from './supabaseClient'
 import { useAuth } from './auth'
 import { newId, type Repository } from './repository'
 import { toISODate } from '../lib/dates'
-import { isIngredientInStock } from '../lib/recipesLib'
+import { linkedProduct } from '../lib/recipesLib'
 import { priorityProducts } from '../lib/expiry'
 import { buildNotifications, type Notification } from '../lib/analytics'
 import { DIET_LABELS } from '../types'
@@ -727,12 +727,8 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       async prepareRecipe(recipe) {
         // Décrémente d'1 chaque ingrédient présent en stock (sans log unitaire).
         for (const ing of recipe.ingredients) {
-          if (isIngredientInStock(ing, products)) {
-            const match = products.find((p) =>
-              p.name.toLowerCase().includes(ing.name.toLowerCase().split(' ')[0]),
-            )
-            if (match) await repo.adjustQuantity(match.id, -1)
-          }
+          const match = linkedProduct(ing, products)
+          if (match && match.quantity > 0) await repo.adjustQuantity(match.id, -1)
         }
         setProducts(await repo.listProducts())
         await logHistory('prepare', `${recipe.title} préparée`)

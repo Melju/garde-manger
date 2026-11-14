@@ -2542,3 +2542,11 @@ body.is-selecting .add-bar { display: none; }
 .btn-row.recipe-actions { padding: 0 16px; margin: 0 0 28px; }
 .btn-row.recipe-actions > * { height: 52px; border-radius: 16px; display: flex; align-items: center; justify-content: center; }
 .form-group .ing-row { margin-bottom: 10px; }
+
+/* Ingrédients liés aux produits */
+.ing-link { font-size: 12px; color: var(--muted); margin: -2px 2px 8px; }
+.ing-link.linked { color: var(--success); }
+.ing-sugg-brand { color: var(--muted); font-weight: 400; }
+.ing-sugg-tag { margin-left: auto; font-size: 11px; color: var(--success); font-weight: 600; white-space: nowrap; }
+.ingredient-main { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.ingredient-sub { font-size: 12px; color: var(--muted); }

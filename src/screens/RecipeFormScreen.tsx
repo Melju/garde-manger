@@ -5,6 +5,7 @@ import { PageHeader } from '../components/PageHeader'
 import { Icon } from '../components/Icon'
 import { downscaleImage } from '../lib/imageResize'
 import type { Recipe, RecipeIngredient } from '../types'
+import { linkedProduct } from '../lib/recipesLib'
 
 interface RecipeFormScreenProps {
   /** Recette à modifier, ou null pour une création. */
@@ -37,6 +38,16 @@ export function RecipeFormScreen({ recipe, onClose, onSaved }: RecipeFormScreenP
     for (const e of shopCatalog) if (e.name?.trim()) map.set(e.name.trim().toLowerCase(), e.name.trim())
     return [...map.values()].sort((a, b) => a.localeCompare(b))
   }, [products, recipes, shopCatalog])
+
+  // Produits du stock proposés en premier (liés), puis les noms déjà connus (génériques).
+  function productMatches(q: string) {
+    if (!q) return []
+    const seen = new Set<string>()
+    return products
+      .filter((p) => p.name.toLowerCase().includes(q) && p.name.toLowerCase() !== q)
+      .filter((p) => (seen.has(p.name.toLowerCase()) ? false : (seen.add(p.name.toLowerCase()), true)))
+      .slice(0, 4)
+  }
 
   const [activeIdx, setActiveIdx] = useState<number | null>(null)
   const [qtyIdx, setQtyIdx] = useState<number | null>(null)
@@ -100,7 +111,7 @@ export function RecipeFormScreen({ recipe, onClose, onSaved }: RecipeFormScreenP
         tags,
         favorite: recipe?.favorite ?? false,
         ingredients: ingredients
-          .map((i) => ({ name: i.name.trim(), qty: i.qty?.trim() || undefined }))
+          .map((i) => ({ name: i.name.trim(), qty: i.qty?.trim() || undefined, productId: i.productId }))
           .filter((i) => i.name),
         steps: steps.split('\n').map((s) => s.trim()).filter(Boolean),
       }
@@ -184,10 +195,15 @@ export function RecipeFormScreen({ recipe, onClose, onSaved }: RecipeFormScreenP
         <div className="form-section">
         {ingredients.map((ing, i) => {
           const q = ing.name.trim().toLowerCase()
+          const prodSugg = activeIdx === i ? productMatches(q) : []
+          const taken = new Set(prodSugg.map((p) => p.name.toLowerCase()))
           const sugg =
             activeIdx === i && q
-              ? knownIngredients.filter((n) => n.toLowerCase().includes(q) && n.toLowerCase() !== q).slice(0, 6)
+              ? knownIngredients
+                  .filter((n) => n.toLowerCase().includes(q) && n.toLowerCase() !== q && !taken.has(n.toLowerCase()))
+                  .slice(0, 6 - prodSugg.length)
               : []
+          const link = ing.name.trim() ? linkedProduct(ing, products) : undefined
           return (
             <div key={i}>
               <div className="ing-row">
@@ -200,7 +216,7 @@ export function RecipeFormScreen({ recipe, onClose, onSaved }: RecipeFormScreenP
                     setQtyIdx(null)
                   }}
                   onChange={(e) => {
-                    setIng(i, { name: e.target.value })
+                    setIng(i, { name: e.target.value, productId: undefined })
                     setActiveIdx(i)
                   }}
                 />
@@ -222,8 +238,32 @@ export function RecipeFormScreen({ recipe, onClose, onSaved }: RecipeFormScreenP
                   <Icon name="trash" width={2} />
                 </button>
               </div>
-              {sugg.length > 0 && (
+              {ing.name.trim() && (
+                <div className={`ing-link ${link ? 'linked' : ''}`}>
+                  {link
+                    ? `Produit : ${link.brand ? link.brand + ' · ' : ''}${link.name}${link.quantity > 0 ? ` (${link.quantity} en stock)` : ' (épuisé)'}`
+                    : 'Générique, sera lié au premier achat'}
+                </div>
+              )}
+              {(prodSugg.length > 0 || sugg.length > 0) && (
                 <div className="suggest-list" style={{ padding: 0, margin: '4px 0 8px' }}>
+                  {prodSugg.map((p) => (
+                    <button
+                      key={p.id}
+                      className="suggest-row"
+                      onClick={() => {
+                        setIng(i, { name: p.name, productId: p.id })
+                        setActiveIdx(null)
+                      }}
+                    >
+                      <Icon name="check" width={2} />
+                      <span className="suggest-name">
+                        {p.name}
+                        {p.brand ? <span className="ing-sugg-brand"> · {p.brand}</span> : null}
+                      </span>
+                      <span className="ing-sugg-tag">dans mes produits</span>
+                    </button>
+                  ))}
                   {sugg.map((n) => (
                     <button
                       key={n}
