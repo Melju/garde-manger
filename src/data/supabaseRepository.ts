@@ -133,22 +133,24 @@ export class SupabaseRepository implements Repository {
 
   async updateProduct(id: string, patch: Partial<ProductInput>): Promise<Product> {
     const row: Record<string, unknown> = { updated_at: new Date().toISOString() }
-    if (patch.name !== undefined) row.name = patch.name
-    if (patch.category !== undefined) row.category = patch.category
-    if (patch.quantity !== undefined) row.quantity = patch.quantity
-    if (patch.unit !== undefined) row.unit = patch.unit ?? null
-    if (patch.size !== undefined) row.size = patch.size ?? null
-    if (patch.expiryDate !== undefined) row.expiry_date = patch.expiryDate ?? null
-    if (patch.price !== undefined) row.price = patch.price ?? null
-    if (patch.barcode !== undefined) row.barcode = patch.barcode ?? null
-    if (patch.conservation !== undefined) row.conservation = patch.conservation ?? null
-    if (patch.dateType !== undefined) row.date_type = patch.dateType ?? null
-    if (patch.location !== undefined) row.location = patch.location ?? null
-    if (patch.imageUrl !== undefined) row.image_url = patch.imageUrl ?? null
-    if (patch.nutriscore !== undefined) row.nutriscore = patch.nutriscore ?? null
-    if (patch.nova !== undefined) row.nova = patch.nova ?? null
-    if (patch.kcal !== undefined) row.kcal = patch.kcal ?? null
-    if (patch.allergens !== undefined) row.allergens = patch.allergens ?? null
+    // Clé présente = on écrit la valeur, même vide (effacer une date doit la supprimer en base).
+    const has = (k: keyof ProductInput) => Object.prototype.hasOwnProperty.call(patch, k)
+    if (has('name') && patch.name !== undefined) row.name = patch.name
+    if (has('category') && patch.category !== undefined) row.category = patch.category
+    if (has('quantity') && patch.quantity !== undefined) row.quantity = patch.quantity
+    if (has('unit')) row.unit = patch.unit ?? null
+    if (has('size')) row.size = patch.size ?? null
+    if (has('expiryDate')) row.expiry_date = patch.expiryDate ?? null
+    if (has('price')) row.price = patch.price ?? null
+    if (has('barcode')) row.barcode = patch.barcode ?? null
+    if (has('conservation')) row.conservation = patch.conservation ?? null
+    if (has('dateType')) row.date_type = patch.dateType ?? null
+    if (has('location')) row.location = patch.location ?? null
+    if (has('imageUrl')) row.image_url = patch.imageUrl ?? null
+    if (has('nutriscore')) row.nutriscore = patch.nutriscore ?? null
+    if (has('nova')) row.nova = patch.nova ?? null
+    if (has('kcal')) row.kcal = patch.kcal ?? null
+    if (has('allergens')) row.allergens = patch.allergens ?? null
     const { data, error } = await this.sb.from('products').update(row).eq('id', id).select().single()
     if (error) throw error
     return toProduct(data)
