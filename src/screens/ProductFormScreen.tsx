@@ -352,15 +352,47 @@ export function ProductFormScreen({ product, initial, onClose, onSaved }: Produc
       </div>
 
       <div className="form-group product-hero">
-        <div className="hero-icon-wrap">
-          <button type="button" className="hero-icon" onClick={() => setPickingIcon((v) => !v)} aria-label="Changer l'icône">
-            {shownIcon ? <img src={productImageUrl(shownIcon)} alt="" /> : <span>?</span>}
-          </button>
-          <button type="button" className="hero-icon-change" onClick={() => setPickingIcon((v) => !v)}>
-            {pickingIcon ? 'Fermer' : 'Changer l’icône'}
-          </button>
-          <div className="hero-icon-source">
-            {chosenIcon ? 'Choisie par toi' : shownIcon ? 'Choisie automatiquement' : 'Aucune icône trouvée'}
+        <div className="hero-row">
+          <div className="hero-icon-col">
+            <button type="button" className="hero-icon" onClick={() => setPickingIcon((v) => !v)} aria-label="Changer l'icône">
+              {shownIcon ? <img src={productImageUrl(shownIcon)} alt="" /> : <span>?</span>}
+            </button>
+            <button type="button" className="hero-icon-change" onClick={() => setPickingIcon((v) => !v)}>
+              <Icon name="pencil" width={2.2} />
+              {pickingIcon ? 'Fermer' : 'Icône'}
+            </button>
+          </div>
+          <div className="hero-info">
+            <label className="form-label" htmlFor="name">Nom du produit</label>
+            <input
+              id="name"
+              className="form-input"
+              placeholder="Ex : Tomates, Poulet, Lait…"
+              value={name}
+              autoFocus={!isEdit}
+              onChange={(e) => setName(e.target.value)}
+            />
+            {hasEnrich && (
+              <div className="enrich-badges hero-badges">
+                {enrich.nutriscore && (
+                  <span className={`nutri-badge ns-${enrich.nutriscore}`}>{enrich.nutriscore.toUpperCase()}</span>
+                )}
+                {enrich.nova ? <span className="meta-badge">NOVA {enrich.nova}</span> : null}
+                {enrich.kcal != null && <span className="meta-badge">{enrich.kcal} kcal/100g</span>}
+                {!enrich.nutriscore && enrich.nova == null && enrich.kcal == null && (
+                  <span className="meta-badge">Infos nutritionnelles indisponibles</span>
+                )}
+              </div>
+            )}
+            <div className="hero-meta">
+              {barcode && <span className="hero-barcode">{barcode}</span>}
+              {name.trim() && (
+                <button type="button" className="ai-complete-btn hero-ai" onClick={aiComplete} disabled={enriching}>
+                  <Icon name="sparkles" width={2.2} />
+                  {enriching ? 'Analyse…' : 'Générer'}
+                </button>
+              )}
+            </div>
           </div>
         </div>
         {pickingIcon && (
@@ -402,54 +434,15 @@ export function ProductFormScreen({ product, initial, onClose, onSaved }: Produc
             </div>
           </div>
         )}
-
-        <div className="form-section">
-          <label className="form-label" htmlFor="name">Nom du produit</label>
-          <input
-            id="name"
-            className="form-input"
-            placeholder="Ex : Tomates, Poulet, Lait…"
-            value={name}
-            autoFocus={!isEdit}
-            onChange={(e) => setName(e.target.value)}
-          />
-          {name.trim() && (
-            <button type="button" className="ai-complete-btn" onClick={aiComplete} disabled={enriching}>
-              <Icon name="sparkles" width={2.2} />
-              {enriching ? 'Analyse…' : 'Compléter avec l’IA'}
-            </button>
-          )}
-          {barcode && (
-            <p style={{ fontSize: 12, color: 'var(--muted)', marginTop: 6 }}>Code-barres : {barcode}</p>
-          )}
-        </div>
-
-        {hasEnrich && (
-          <div className="form-section hero-nutri">
-            {enrich.imageUrl && <img className="enrich-photo" src={enrich.imageUrl} alt="" />}
-            <div className="enrich-info">
-              <div className="enrich-badges">
-                {enrich.nutriscore && (
-                  <span className={`nutri-badge ns-${enrich.nutriscore}`}>
-                    {enrich.nutriscore.toUpperCase()}
-                  </span>
-                )}
-                {enrich.nova ? <span className="meta-badge">NOVA {enrich.nova}</span> : null}
-                {enrich.kcal != null && <span className="meta-badge">{enrich.kcal} kcal/100g</span>}
-                {!enrich.nutriscore && enrich.nova == null && enrich.kcal == null && (
-                  <span className="meta-badge">Infos nutritionnelles indisponibles</span>
-                )}
-              </div>
-              {warnings.length > 0 && (
-                <div className="allergen-warn">
-                  <Icon name="alert" />
-                  <span>
-                    {warnings
-                      .map((w) => `${w.member.name} : ${w.allergens.map(allergenLabel).join(', ')}`)
-                      .join(' · ')}
-                  </span>
-                </div>
-              )}
+        {warnings.length > 0 && (
+          <div className="form-section">
+            <div className="allergen-warn">
+              <Icon name="alert" />
+              <span>
+                {warnings
+                  .map((w) => `${w.member.name} : ${w.allergens.map(allergenLabel).join(', ')}`)
+                  .join(' · ')}
+              </span>
             </div>
           </div>
         )}
