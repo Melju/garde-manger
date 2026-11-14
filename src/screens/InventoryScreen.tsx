@@ -4,7 +4,7 @@ import { useToast } from '../components/Toast'
 import { Icon } from '../components/Icon'
 import { ProductItem } from '../components/ProductItem'
 import { CATEGORIES, type Category, type Product } from '../types'
-import { remainingLabel, isBareWeightUnit } from '../lib/contenance'
+import { remainingLabel, isBareWeightUnit, sachetsPerBox } from '../lib/contenance'
 import { expiryLabel, priorityProducts, urgentCount } from '../lib/expiry'
 import { budgetSummary } from '../lib/analytics'
 
@@ -25,7 +25,7 @@ export function InventoryScreen({
   onOpenBudget,
   onScanConsume,
 }: InventoryScreenProps) {
-  const { products, adjustQuantity, wasteProduct, updateProduct, expenses, budget, cloudMode, offline, unreadNotifCount } = useStore()
+  const { products, adjustQuantity, wasteProduct, updateProduct, addProduct, expenses, budget, cloudMode, offline, unreadNotifCount } = useStore()
   const spent = useMemo(() => budgetSummary(expenses, budget).spent, [expenses, budget])
   const toast = useToast()
   const [search, setSearch] = useState('')
@@ -53,6 +53,31 @@ export function InventoryScreen({
   async function handleWaste(product: Product) {
     await wasteProduct(product.id)
     toast(`${product.name} marqué périmé`)
+  }
+
+  // Retire n sachets sur plusieurs boîtes : boîtes entières d'abord, la dernière entamée devient un lot à part.
+  async function handleConsumeSachets(product: Product, n: number) {
+    const per = sachetsPerBox(product.size)
+    if (!per) return
+    const remaining = product.quantity * per - n
+    if (remaining <= 0) {
+      await adjustQuantity(product.id, -Math.max(1, product.quantity))
+      toast(`${product.name} terminé`)
+      return
+    }
+    const full = Math.floor(remaining / per)
+    const rem = remaining % per
+    const partial = `${rem} sachet/${per} sachet`
+    if (rem === 0) {
+      await updateProduct(product.id, { quantity: full })
+    } else if (full === 0) {
+      await updateProduct(product.id, { quantity: 1, size: partial })
+    } else {
+      const { id: _i, createdAt: _c, updatedAt: _u, ...rest } = product
+      await updateProduct(product.id, { quantity: full })
+      await addProduct({ ...rest, quantity: 1, size: partial })
+    }
+    toast(`${product.name} : ${remaining} sachet${remaining > 1 ? 's' : ''} restant${remaining > 1 ? 's' : ''}`)
   }
 
   async function handleConsumePortion(product: Product, newSize: string | null) {
@@ -176,6 +201,7 @@ export function InventoryScreen({
                 onRemoveQty={handleRemoveQty}
                 onWaste={handleWaste}
                 onConsumePortion={handleConsumePortion}
+                onConsumeSachets={handleConsumeSachets}
               />
             ))}
           </>

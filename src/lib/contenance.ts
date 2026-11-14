@@ -210,3 +210,10 @@ export function normalizeBareUnit<T extends { quantity: number; size?: string }>
   if (!isBareWeightUnit(p.size)) return p
   return { ...p, size: formatContenance(p.quantity, p.size!.trim()), quantity: 1 }
 }
+
+/** Nombre de sachets par boîte (« 10 sachet »), ou null si le produit n'est pas compté en sachets. */
+export function sachetsPerBox(size?: string): number | null {
+  const p = parseContenance(size)
+  if (!p || family(p.unit) !== 'count') return null
+  return Math.round(p.value)
+}

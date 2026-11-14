@@ -9,6 +9,7 @@ import {
   portionScale,
   formatContenance,
   stockLabel,
+  sachetsPerBox,
   normalizeBareUnit,
 } from '../lib/contenance'
 import { Icon, categoryIcon } from './Icon'
@@ -24,6 +25,8 @@ interface ProductItemProps {
   onWaste: (product: Product) => void
   /** Mise à jour de la contenance restante (null = paquet terminé). */
   onConsumePortion: (product: Product, newSize: string | null) => void
+  /** Retrait de n sachets sur plusieurs boîtes. */
+  onConsumeSachets?: (product: Product, n: number) => void
 }
 
 type Swipe = 'none' | 'left' | 'right'
@@ -39,6 +42,7 @@ export function ProductItem({
   onRemoveQty,
   onWaste,
   onConsumePortion,
+  onConsumeSachets,
 }: ProductItemProps) {
   // « kg » seul (ancienne saisie) est lu comme « 1 kg ».
   const product = normalizeBareUnit(rawProduct)
@@ -53,6 +57,9 @@ export function ProductItem({
   // Produit au poids/volume si une seule unité en stock avec une contenance continue.
   const byWeight = product.quantity <= 1 && isWeightProduct(product.size)
   const scale = byWeight ? portionScale(product.size) : null
+  // Plusieurs boîtes de sachets : on retire des sachets, pas des boîtes.
+  const perBox = product.quantity > 1 ? sachetsPerBox(product.size) : null
+  const sachetValues = perBox ? Array.from({ length: product.quantity * perBox }, (_, i) => i + 1) : null
 
   // Glissement progressif : la ligne suit le doigt, puis s'ouvre ou se referme selon la position relâchée.
   const OPEN_LEFT = 216
@@ -184,6 +191,18 @@ export function ProductItem({
               setSwipe('none')
               if (v <= 0) return
               onConsumePortion(rawProduct, consumeAmount(product.size!, v, scale.baseUnit))
+            }}
+          />
+        ) : sachetValues && onConsumeSachets ? (
+          <SwipeWheel
+            values={sachetValues}
+            itemW={48}
+            initialIndex={0}
+            isMajor={() => true}
+            format={(v) => `−${v}`}
+            onConfirm={(v) => {
+              setSwipe('none')
+              onConsumeSachets(rawProduct, v)
             }}
           />
         ) : (
