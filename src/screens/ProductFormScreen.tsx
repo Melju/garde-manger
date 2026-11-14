@@ -477,10 +477,6 @@ export function ProductFormScreen({ product, initial, onClose, onSaved }: Produc
             <button type="button" className="hero-icon" onClick={() => setPickingIcon((v) => !v)} aria-label="Changer l'icône">
               {shownIcon ? <img src={productImageUrl(shownIcon)} alt="" /> : <span>?</span>}
             </button>
-            <button type="button" className="hero-icon-change" onClick={() => setPickingIcon((v) => !v)}>
-              <Icon name="pencil" width={2.2} />
-              {pickingIcon ? 'Fermer' : 'Icône'}
-            </button>
           </div>
           <div className="hero-info">
             {hasEnrich && (
