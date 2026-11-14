@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { useStore } from '../data/store'
 import { useToast } from '../components/Toast'
 import { PageHeader } from '../components/PageHeader'
+import { addStore, getStores, removeStore, renameStore } from '../lib/stores'
 import { pushState, enablePush, disablePush, testPush, type PushState } from '../lib/push'
 
 interface SettingsScreenProps {
@@ -23,6 +24,16 @@ export function SettingsScreen({ onBack }: SettingsScreenProps) {
   const [busy, setBusy] = useState(false)
   const [push, setPush] = useState<PushState | null>(null)
   const [pushBusy, setPushBusy] = useState(false)
+  const [stores, setStores] = useState<string[]>(() => getStores())
+  const [editing, setEditing] = useState<string | null>(null)
+  const [draft, setDraft] = useState('')
+  const [newStore, setNewStore] = useState('')
+  const reloadStores = () => setStores(getStores())
+  function saveEdit() {
+    if (editing && draft.trim()) renameStore(editing, draft)
+    setEditing(null)
+    reloadStores()
+  }
   useEffect(() => {
     pushState().then(setPush).catch(() => setPush('unsupported'))
   }, [])
@@ -126,6 +137,68 @@ export function SettingsScreen({ onBack }: SettingsScreenProps) {
             type="button"
             onClick={() => updateSettings({ lowStockThreshold: settings.lowStockThreshold + 1 })}
             aria-label="Augmenter"
+          >
+            +
+          </button>
+        </div>
+      </div>
+
+      <div className="form-section">
+        <label className="form-label">Mes magasins</label>
+        {stores.map((st) => (
+          <div className="setting-row store-edit-row" key={st}>
+            {editing === st ? (
+              <>
+                <input
+                  className="store-edit-input"
+                  value={draft}
+                  autoFocus
+                  onChange={(e) => setDraft(e.target.value)}
+                  onKeyDown={(e) => e.key === 'Enter' && saveEdit()}
+                />
+                <button className="btn-secondary store-edit-btn" onClick={saveEdit}>OK</button>
+              </>
+            ) : (
+              <>
+                <div className="setting-text"><div className="setting-title">{st}</div></div>
+                <button className="btn-secondary store-edit-btn" onClick={() => { setEditing(st); setDraft(st) }}>Renommer</button>
+                <button
+                  className="btn-secondary btn-danger store-edit-btn"
+                  onClick={() => {
+                    if (window.confirm(`Supprimer ${st} de la liste ?`)) {
+                      removeStore(st)
+                      reloadStores()
+                    }
+                  }}
+                >
+                  Supprimer
+                </button>
+              </>
+            )}
+          </div>
+        ))}
+        <div className="store-new" style={{ marginTop: 10 }}>
+          <input
+            className="form-input"
+            placeholder="Nouveau magasin"
+            value={newStore}
+            onChange={(e) => setNewStore(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter' && newStore.trim()) {
+                addStore(newStore)
+                setNewStore('')
+                reloadStores()
+              }
+            }}
+          />
+          <button
+            className="btn-secondary"
+            disabled={!newStore.trim()}
+            onClick={() => {
+              addStore(newStore)
+              setNewStore('')
+              reloadStores()
+            }}
           >
             +
           </button>

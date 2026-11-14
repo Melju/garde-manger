@@ -8,6 +8,7 @@ import { normalize } from './productIcon'
 const LS_CUR = 'miamm.store.current'
 const LS_LIST = 'miamm.store.list'
 const LS_HABITS = 'miamm.store.habits.v1'
+const LS_HIDDEN = 'miamm.store.hidden'
 
 export const PRESET_STORES = [
   'Colruyt', 'Delhaize', 'Carrefour', 'Lidl', 'Aldi', 'Intermarché', 'Leclerc', 'Auchan', 'Cora', 'Match',
@@ -47,7 +48,40 @@ export function setCurrentStore(name: string) {
 }
 export function getStores(): string[] {
   const custom = read<string[]>(LS_LIST, [])
-  return [...new Set([...custom, ...PRESET_STORES])]
+  const hidden = new Set(read<string[]>(LS_HIDDEN, []).map((h) => normalize(h)))
+  return [...new Set([...custom, ...PRESET_STORES])].filter((x) => !hidden.has(normalize(x)))
+}
+
+/** Supprime un magasin de la liste (et ses habitudes d'achat). Les magasins proposés d'office sont simplement masqués. */
+export function removeStore(name: string) {
+  write(LS_LIST, read<string[]>(LS_LIST, []).filter((x) => normalize(x) !== normalize(name)))
+  if (PRESET_STORES.some((x) => normalize(x) === normalize(name))) {
+    write(LS_HIDDEN, [...read<string[]>(LS_HIDDEN, []), name])
+  }
+  const all = read<HabitMap>(LS_HABITS, {})
+  delete all[name]
+  write(LS_HABITS, all)
+  if (getCurrentStore() === name) setCurrentStore('')
+}
+
+/** Renomme un magasin en gardant ses habitudes d'achat. */
+export function renameStore(oldName: string, newName: string) {
+  const n = newName.trim()
+  if (!n || n === oldName) return
+  const all = read<HabitMap>(LS_HABITS, {})
+  if (all[oldName]) {
+    all[n] = { ...(all[n] ?? {}), ...all[oldName] }
+    delete all[oldName]
+    write(LS_HABITS, all)
+  }
+  const custom = read<string[]>(LS_LIST, []).filter((x) => normalize(x) !== normalize(oldName))
+  write(LS_LIST, [n, ...custom.filter((x) => normalize(x) !== normalize(n))])
+  if (PRESET_STORES.some((x) => normalize(x) === normalize(oldName))) {
+    write(LS_HIDDEN, [...read<string[]>(LS_HIDDEN, []), oldName])
+  }
+  // Si le nouveau nom était masqué, on le réaffiche.
+  write(LS_HIDDEN, read<string[]>(LS_HIDDEN, []).filter((x) => normalize(x) !== normalize(n)))
+  if (getCurrentStore() === oldName) setCurrentStore(n)
 }
 export function addStore(name: string) {
   const n = name.trim()
