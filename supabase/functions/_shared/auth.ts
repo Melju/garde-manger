@@ -25,8 +25,8 @@ function trim<V>(m: Map<string, V>) {
   }
 }
 
-/** Renvoie une Response d'erreur si l'appelant n'est pas autorisé, sinon null. */
-export async function requireUser(req: Request): Promise<Response | null> {
+/** Authentifie l'appelant (jeton + limite de débit) : renvoie son id, ou une Response d'erreur. */
+export async function authenticate(req: Request): Promise<{ uid: string } | Response> {
   const h = req.headers.get('authorization') ?? ''
   const token = h.toLowerCase().startsWith('bearer ') ? h.slice(7).trim() : ''
   if (!token) return deny(401, 'Connexion requise')
@@ -60,5 +60,11 @@ export async function requireUser(req: Request): Promise<Response | null> {
   }
   u.count++
   if (u.count > MAX_CALLS) return deny(429, 'Trop de demandes IA, réessaie dans quelques minutes')
-  return null
+  return { uid }
+}
+
+/** Renvoie une Response d'erreur si l'appelant n'est pas autorisé, sinon null. */
+export async function requireUser(req: Request): Promise<Response | null> {
+  const r = await authenticate(req)
+  return r instanceof Response ? r : null
 }

@@ -34,6 +34,7 @@ import type {
 import { LocalStorageRepository } from './localStorageRepository'
 import { SupabaseRepository } from './supabaseRepository'
 import { supabase } from './supabaseClient'
+import { invokeFn } from '../lib/aiKey'
 import { useAuth } from './auth'
 import { newId, type Repository } from './repository'
 import { toISODate } from '../lib/dates'
@@ -602,9 +603,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
             (m.restrictions?.length ? ` (${m.restrictions.join(', ')})` : '') +
             (m.aversions?.trim() ? ` — n'aime pas : ${m.aversions.trim()}` : ''),
         )
-        const { data, error } = await supabase.functions.invoke('recipe', {
-          body: { ingredients, expiring, constraints, preferences, diets },
-        })
+        const { data, error } = await invokeFn('recipe', { ingredients, expiring, constraints, preferences, diets })
         if (error) throw new Error(error.message || 'Génération impossible')
         const r = (data as any)?.recipe
         if (!r?.title) throw new Error((data as any)?.error || 'Réponse invalide')
@@ -625,9 +624,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       },
       async scanReceipt(image, mediaType) {
         if (!supabase) throw new Error('Connecte-toi pour scanner un ticket')
-        const { data, error } = await supabase.functions.invoke('receipt', {
-          body: { image, mediaType },
-        })
+        const { data, error } = await invokeFn('receipt', { image, mediaType })
         if (error) throw new Error(error.message || 'Analyse impossible')
         const items = (data as any)?.items
         if (!Array.isArray(items)) throw new Error((data as any)?.error || 'Réponse invalide')
@@ -635,7 +632,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       },
       async scanRecipe(images) {
         if (!supabase) throw new Error('Connecte-toi pour scanner une recette')
-        const { data, error } = await supabase.functions.invoke('recipescan', { body: { images } })
+        const { data, error } = await invokeFn('recipescan', { images })
         if (error) throw new Error(error.message || 'Analyse impossible')
         const d = data as any
         if (!d || !Array.isArray(d.ingredients)) throw new Error(d?.error || 'Réponse invalide')
@@ -643,7 +640,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       },
       async scanPrice(image, mediaType) {
         if (!supabase) throw new Error('Connecte-toi pour scanner un prix')
-        const { data, error } = await supabase.functions.invoke('pricescan', { body: { image, mediaType } })
+        const { data, error } = await invokeFn('pricescan', { image, mediaType })
         if (error) throw new Error(error.message || 'Analyse impossible')
         const d = data as any
         if (!d || (d.error && !('price' in d))) throw new Error(d?.error || 'Réponse invalide')
@@ -657,7 +654,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       },
       async scanExpiry(image, mediaType) {
         if (!supabase) throw new Error('Connecte-toi pour scanner une date')
-        const { data, error } = await supabase.functions.invoke('expiry', { body: { image, mediaType } })
+        const { data, error } = await invokeFn('expiry', { image, mediaType })
         if (error) throw new Error(error.message || 'Analyse impossible')
         const d = data as any
         if (!d || (d.error && !('date' in d))) throw new Error(d?.error || 'Réponse invalide')
@@ -670,7 +667,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       },
       async enrichProduct(name) {
         if (!supabase) throw new Error('Connecte-toi pour l’assistance IA')
-        const { data, error } = await supabase.functions.invoke('enrich', { body: { name } })
+        const { data, error } = await invokeFn('enrich', { name })
         if (error) throw new Error(error.message || 'Analyse impossible')
         const d = data as any
         if (!d?.category) throw new Error(d?.error || 'Réponse invalide')
@@ -688,7 +685,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       },
       async parseBulk(text) {
         if (!supabase) throw new Error('Connecte-toi pour la saisie en lot')
-        const { data, error } = await supabase.functions.invoke('bulk', { body: { text } })
+        const { data, error } = await invokeFn('bulk', { text })
         if (error) throw new Error(error.message || 'Analyse impossible')
         const items = (data as any)?.items
         if (!Array.isArray(items)) throw new Error((data as any)?.error || 'Réponse invalide')
@@ -717,9 +714,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
             (m.restrictions?.length ? ' (' + m.restrictions.join(', ') + ')' : '') +
             (m.aversions?.trim() ? " — n'aime pas : " + m.aversions.trim() : ''),
         )
-        const { data, error } = await supabase.functions.invoke('weekplan', {
-          body: { stock, expiring, preferences, diets },
-        })
+        const { data, error } = await invokeFn('weekplan', { stock, expiring, preferences, diets })
         if (error) throw new Error(error.message || 'Génération impossible')
         const meals = (data as any)?.meals
         if (!Array.isArray(meals)) throw new Error((data as any)?.error || 'Réponse invalide')

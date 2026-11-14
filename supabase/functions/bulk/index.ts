@@ -3,7 +3,7 @@
 
 import { callClaude, extractJson } from '../_shared/claude.ts'
 import { cacheGet, cacheSet, cacheKey } from '../_shared/cache.ts'
-import { requireUser } from '../_shared/auth.ts'
+import { aiGate } from '../_shared/gate.ts'
 
 function json(obj: unknown, status = 200): Response {
   return new Response(JSON.stringify(obj), { status, headers: { 'content-type': 'application/json' } })
@@ -14,8 +14,8 @@ const TTL = 60 * 60 * 1000 // 1 h
 
 Deno.serve(async (req) => {
   if (req.method !== 'POST') return json({ error: 'Méthode non autorisée' }, 405)
-  const denied = await requireUser(req)
-  if (denied) return denied
+  const gate = await aiGate(req)
+  if (gate instanceof Response) return gate
 
   let body: any = {}
   try {
@@ -48,7 +48,7 @@ Transforme-la en articles structurés. Pour chaque article :
 Réponds STRICTEMENT en JSON valide, sans texte autour :
 {"items":[{"name":string,"quantity":number,"unit":string,"price":number|null,"category":string}]}`
 
-  const res = await callClaude({ prompt, tier: 'fast', maxTokens: 1500 })
+  const res = await callClaude({ apiKey: gate.apiKey, prompt, tier: 'fast', maxTokens: 1500 })
   if (!res.ok) return json({ error: res.detail }, res.status)
 
   const parsed = extractJson(res.text)

@@ -3,7 +3,7 @@
 // Clé API côté serveur uniquement.
 
 import { callClaude, extractJson } from '../_shared/claude.ts'
-import { requireUser } from '../_shared/auth.ts'
+import { aiGate } from '../_shared/gate.ts'
 
 function json(obj: unknown, status = 200): Response {
   return new Response(JSON.stringify(obj), { status, headers: { 'content-type': 'application/json' } })
@@ -13,8 +13,8 @@ const COURSES = ['plat principal', 'entrée', 'apéritif', 'soupe', 'dessert']
 
 Deno.serve(async (req) => {
   if (req.method !== 'POST') return json({ error: 'Méthode non autorisée' }, 405)
-  const denied = await requireUser(req)
-  if (denied) return denied
+  const gate = await aiGate(req)
+  if (gate instanceof Response) return gate
 
   let body: any = {}
   try {
@@ -45,7 +45,7 @@ Réponds STRICTEMENT en JSON valide, sans texte autour :
 {"title":string,"course":string,"timeMin":number,"servings":number|null,"ingredients":[{"name":string,"qty":string}],"steps":[string]}
 Si l'image ne contient aucune recette lisible, renvoie {"title":"","course":"plat principal","timeMin":0,"servings":null,"ingredients":[],"steps":[]}.`
 
-  const res = await callClaude({ prompt, tier: 'smart', maxTokens: 3000, images })
+  const res = await callClaude({ apiKey: gate.apiKey, prompt, tier: 'smart', maxTokens: 3000, images })
   if (!res.ok) return json({ error: res.detail }, res.status)
 
   const p = extractJson(res.text) ?? {}

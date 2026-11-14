@@ -3,7 +3,7 @@
 // par ticket). Clé API côté serveur uniquement.
 
 import { callClaude, extractJson } from '../_shared/claude.ts'
-import { requireUser } from '../_shared/auth.ts'
+import { aiGate } from '../_shared/gate.ts'
 
 function json(obj: unknown, status = 200): Response {
   return new Response(JSON.stringify(obj), { status, headers: { 'content-type': 'application/json' } })
@@ -13,8 +13,8 @@ const CATEGORIES = 'fruits, legumes, viandes, viandes-vg, poissons, laitiers, ep
 
 Deno.serve(async (req) => {
   if (req.method !== 'POST') return json({ error: 'Méthode non autorisée' }, 405)
-  const denied = await requireUser(req)
-  if (denied) return denied
+  const gate = await aiGate(req)
+  if (gate instanceof Response) return gate
 
   let body: any = {}
   try {
@@ -45,7 +45,7 @@ Réponds STRICTEMENT en JSON valide, sans texte autour :
 {"items":[{"name":string,"quantity":number,"size":string|null,"unit":string,"price":number|null,"category":string}]}
 Si l'image n'est pas un ticket lisible, renvoie {"items":[]}.`
 
-  const res = await callClaude({
+  const res = await callClaude({ apiKey: gate.apiKey,
     prompt,
     tier: 'smart',
     maxTokens: 2000,

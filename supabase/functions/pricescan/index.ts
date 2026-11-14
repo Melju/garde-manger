@@ -2,7 +2,7 @@
 // emballage) via Claude Vision. 1 appel par photo.
 
 import { callClaude, extractJson } from '../_shared/claude.ts'
-import { requireUser } from '../_shared/auth.ts'
+import { aiGate } from '../_shared/gate.ts'
 
 function json(obj: unknown, status = 200): Response {
   return new Response(JSON.stringify(obj), { status, headers: { 'content-type': 'application/json' } })
@@ -10,8 +10,8 @@ function json(obj: unknown, status = 200): Response {
 
 Deno.serve(async (req) => {
   if (req.method !== 'POST') return json({ error: 'Méthode non autorisée' }, 405)
-  const denied = await requireUser(req)
-  if (denied) return denied
+  const gate = await aiGate(req)
+  if (gate instanceof Response) return gate
 
   let body: any = {}
   try {
@@ -37,7 +37,7 @@ Réponds STRICTEMENT en JSON valide, sans texte autour :
 {"price":number|null,"unitPrice":number|null,"unitLabel":string|null,"name":string|null,"confident":boolean}
 Si aucun prix n'est lisible, renvoie {"price":null,"unitPrice":null,"unitLabel":null,"name":null,"confident":false}.`
 
-  const res = await callClaude({
+  const res = await callClaude({ apiKey: gate.apiKey,
     prompt,
     tier: 'smart',
     maxTokens: 300,

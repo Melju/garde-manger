@@ -3,7 +3,7 @@
 // Tier « smart » (créatif). Pas de cache (chaque semaine est unique).
 
 import { callClaude, extractJson } from '../_shared/claude.ts'
-import { requireUser } from '../_shared/auth.ts'
+import { aiGate } from '../_shared/gate.ts'
 
 function json(obj: unknown, status = 200): Response {
   return new Response(JSON.stringify(obj), { status, headers: { 'content-type': 'application/json' } })
@@ -13,8 +13,8 @@ const DAYS = ['Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi', 'Samedi', 'Dima
 
 Deno.serve(async (req) => {
   if (req.method !== 'POST') return json({ error: 'Méthode non autorisée' }, 405)
-  const denied = await requireUser(req)
-  if (denied) return denied
+  const gate = await aiGate(req)
+  if (gate instanceof Response) return gate
 
   let body: any = {}
   try {
@@ -44,7 +44,7 @@ Réponds STRICTEMENT en JSON valide, sans texte autour. "day" = 0 (Lundi) à 6 (
 "slot" = "midi" ou "soir", "title" = nom court du repas :
 {"meals":[{"day":0,"slot":"midi","title":"…"},{"day":0,"slot":"soir","title":"…"}, … 14 entrées]}`
 
-  const res = await callClaude({ prompt, tier: 'smart', maxTokens: 2000 })
+  const res = await callClaude({ apiKey: gate.apiKey, prompt, tier: 'smart', maxTokens: 2000 })
   if (!res.ok) return json({ error: res.detail }, res.status)
 
   const parsed = extractJson(res.text)

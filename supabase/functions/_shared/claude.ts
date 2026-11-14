@@ -28,6 +28,8 @@ export type ClaudeResult =
 
 /** Appelle Claude et renvoie le texte de la réponse, ou une erreur structurée. */
 export async function callClaude(opts: {
+  /** Clé Anthropic du foyer (sinon la clé du serveur). */
+  apiKey?: string
   prompt: string
   tier?: Tier
   maxTokens?: number
@@ -35,7 +37,8 @@ export async function callClaude(opts: {
   /** Images jointes (vision) : data base64 (sans préfixe) + type MIME. */
   images?: { data: string; mediaType: string }[]
 }): Promise<ClaudeResult> {
-  if (!KEY) return { ok: false, status: 500, detail: 'Clé API non configurée côté serveur' }
+  const key = opts.apiKey ?? KEY
+  if (!key) return { ok: false, status: 500, detail: 'Clé API non configurée côté serveur' }
   const model = modelFor(opts.tier ?? 'smart')
   const content: unknown[] = []
   for (const img of opts.images ?? []) {
@@ -48,7 +51,7 @@ export async function callClaude(opts: {
       method: 'POST',
       headers: {
         'content-type': 'application/json',
-        'x-api-key': KEY,
+        'x-api-key': key,
         'anthropic-version': '2023-06-01',
       },
       body: JSON.stringify({
@@ -62,6 +65,9 @@ export async function callClaude(opts: {
     return { ok: false, status: 502, detail: `Appel Anthropic impossible : ${String(e)}` }
   }
   if (!resp.ok) {
+    if (opts.apiKey && (resp.status === 401 || resp.status === 403)) {
+      return { ok: false, status: 502, detail: 'Ta clé Anthropic est refusée : vérifie-la dans Compte' }
+    }
     return { ok: false, status: 502, detail: `Anthropic ${resp.status} : ${await resp.text()}` }
   }
   const data = await resp.json()

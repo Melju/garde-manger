@@ -4,7 +4,7 @@
 
 import { callClaude, extractJson } from '../_shared/claude.ts'
 import { cacheGet, cacheSet, cacheKey } from '../_shared/cache.ts'
-import { requireUser } from '../_shared/auth.ts'
+import { aiGate } from '../_shared/gate.ts'
 
 function json(obj: unknown, status = 200): Response {
   return new Response(JSON.stringify(obj), { status, headers: { 'content-type': 'application/json' } })
@@ -15,8 +15,8 @@ const TTL = 24 * 60 * 60 * 1000 // 24 h
 
 Deno.serve(async (req) => {
   if (req.method !== 'POST') return json({ error: 'Méthode non autorisée' }, 405)
-  const denied = await requireUser(req)
-  if (denied) return denied
+  const gate = await aiGate(req)
+  if (gate instanceof Response) return gate
 
   let body: any = {}
   try {
@@ -43,7 +43,7 @@ Réponds STRICTEMENT en JSON valide, sans texte autour :
 Règles : "conservation" = le mode RECOMMANDÉ (refrigere pour viande/poisson/laitier/légume frais, congele pour surgelé, frais pour épicerie/ambiant).
 Les durées doivent être RÉALISTES et cohérentes avec le mode : le congélateur prolonge fortement (souvent plusieurs mois), le frigo prolonge le frais, l'ambiant peut être très court pour un produit périssable (ou 0 si non conservable ainsi). unit = "" si le produit se compte à l'unité.`
 
-  const res = await callClaude({ prompt, tier: 'fast', maxTokens: 350 })
+  const res = await callClaude({ apiKey: gate.apiKey, prompt, tier: 'fast', maxTokens: 350 })
   if (!res.ok) return json({ error: res.detail }, res.status)
 
   const r = extractJson(res.text)

@@ -3,6 +3,8 @@ import { useAuth } from '../data/auth'
 import { useStore } from '../data/store'
 import { useToast } from '../components/Toast'
 import { PageHeader } from '../components/PageHeader'
+import { aiStatus, setAiKey, clearAiKey, isAdmin, allowedEmails, allowEmail, removeAllowedEmail, type AiStatus } from '../lib/aiKey'
+import { useConfirm } from '../components/Confirm'
 
 interface AccountScreenProps {
   onBack: () => void
@@ -19,6 +21,80 @@ export function AccountScreen({ onBack }: AccountScreenProps) {
   const [loginCode, setLoginCode] = useState('')
   const [busy, setBusy] = useState(false)
   const [myName, setMyName] = useState(auth.displayName)
+  const [ai, setAi] = useState<AiStatus | null>(null)
+  const [aiKey, setAiKeyField] = useState('')
+  const askConfirm = useConfirm()
+  const [admin, setAdmin] = useState(false)
+  const [allowed, setAllowed] = useState<string[]>([])
+  const [newEmail, setNewEmail] = useState('')
+
+  useEffect(() => {
+    isAdmin().then((a) => {
+      setAdmin(a)
+      if (a) allowedEmails().then(setAllowed).catch(() => {})
+    })
+  }, [auth.householdId])
+
+  async function addAllowed() {
+    setBusy(true)
+    try {
+      await allowEmail(newEmail)
+      setNewEmail('')
+      setAllowed(await allowedEmails())
+      toast('Adresse autorisée')
+    } catch (e) {
+      toast(e instanceof Error ? e.message : 'Ajout impossible')
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  async function dropAllowed(email: string) {
+    const ok = await askConfirm({
+      title: "Retirer l'accès ?",
+      message: `${email} ne pourra plus créer de compte. Un compte déjà créé reste actif.`,
+      confirmLabel: 'Retirer',
+      danger: true,
+    })
+    if (!ok) return
+    try {
+      await removeAllowedEmail(email)
+      setAllowed(await allowedEmails())
+    } catch (e) {
+      toast(e instanceof Error ? e.message : 'Suppression impossible')
+    }
+  }
+
+  useEffect(() => {
+    if (auth.householdId) aiStatus().then(setAi)
+  }, [auth.householdId])
+
+  async function saveAiKey() {
+    setBusy(true)
+    try {
+      await setAiKey(aiKey)
+      setAiKeyField('')
+      setAi(await aiStatus())
+      toast('Clé enregistrée : plus de limite mensuelle')
+    } catch (e) {
+      toast(e instanceof Error ? e.message : 'Enregistrement impossible')
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  async function removeAiKey() {
+    setBusy(true)
+    try {
+      await clearAiKey()
+      setAi(await aiStatus())
+      toast('Clé retirée')
+    } catch (e) {
+      toast(e instanceof Error ? e.message : 'Suppression impossible')
+    } finally {
+      setBusy(false)
+    }
+  }
 
   // Synchronise le champ nom quand le profil est (re)chargé.
   useEffect(() => {
@@ -264,6 +340,66 @@ export function AccountScreen({ onBack }: AccountScreenProps) {
           <button className="btn-primary" onClick={shareInvite}>Partager</button>
         </div>
       </div>
+
+      {admin && (
+        <div className="form-section">
+          <label className="form-label">Accès à l'appli (sur invitation)</label>
+          <p className="setting-desc" style={{ marginBottom: 10 }}>
+            Seules ces adresses peuvent créer un compte. Ajoute une personne avant de lui donner le lien.
+          </p>
+          {allowed.map((e) => (
+            <div className="setting-row" key={e}>
+              <div className="setting-text"><div className="setting-title" style={{ fontSize: 14 }}>{e}</div></div>
+              <button className="btn-secondary btn-danger store-edit-btn" onClick={() => dropAllowed(e)}>Retirer</button>
+            </div>
+          ))}
+          <input
+            className="form-input"
+            type="email"
+            inputMode="email"
+            autoCapitalize="none"
+            placeholder="adresse@exemple.com"
+            value={newEmail}
+            onChange={(e) => setNewEmail(e.target.value)}
+            style={{ marginTop: 8 }}
+          />
+          <button className="btn-secondary" style={{ marginTop: 8 }} disabled={busy || !newEmail.includes('@')} onClick={addAllowed}>
+            Autoriser cette adresse
+          </button>
+        </div>
+      )}
+
+      {ai && (
+        <div className="form-section">
+          <label className="form-label">Intelligence artificielle</label>
+          <p className="setting-desc" style={{ marginBottom: 10 }}>
+            {ai.hasKey
+              ? 'Ta propre clé Anthropic est utilisée : aucune limite mensuelle, les appels sont facturés sur ton compte Anthropic.'
+              : ai.limit === null
+                ? 'Utilisation illimitée.'
+                : `${ai.used} / ${ai.limit} lectures IA utilisées ce mois-ci (scans de ticket, de recette, de prix et de date, recettes générées).`}
+          </p>
+          {ai.hasKey ? (
+            <button className="btn-secondary btn-danger" disabled={busy} onClick={removeAiKey}>
+              Retirer ma clé
+            </button>
+          ) : (
+            <>
+              <input
+                className="form-input"
+                type="password"
+                autoComplete="off"
+                placeholder="Ma clé Anthropic (sk-ant-…)"
+                value={aiKey}
+                onChange={(e) => setAiKeyField(e.target.value)}
+              />
+              <button className="btn-secondary" style={{ marginTop: 8 }} disabled={busy || !aiKey.trim()} onClick={saveAiKey}>
+                Utiliser ma clé
+              </button>
+            </>
+          )}
+        </div>
+      )}
 
       <div className="form-section">
         <label className="form-label">Membres du foyer ({auth.members.length})</label>

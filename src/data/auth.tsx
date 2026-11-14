@@ -133,6 +133,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         email: email.trim(),
         options: { emailRedirectTo: REDIRECT_URL, shouldCreateUser: true },
       })
+      if (error && /saving new user|non autoris|signups? not allowed/i.test(error.message)) {
+        return { error: "Cette adresse n'est pas autorisée : l'inscription se fait sur invitation." }
+      }
       return error ? { error: error.message } : {}
     },
     async verifyCode(email, token) {
