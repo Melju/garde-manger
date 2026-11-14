@@ -2591,3 +2591,4 @@ body.is-selecting .add-bar { display: none; }
 }
 .swipe-wrapper .product-item.swipe-demo { transition: none; animation: swipe-demo 2.8s cubic-bezier(.4, 0, .2, 1) 0.9s 1 both; }
 @media (prefers-reduced-motion: reduce) { .swipe-wrapper .product-item.swipe-demo { animation: none; } }
+.ingredient-item > svg { width: 18px; height: 18px; flex: 0 0 18px; color: var(--muted); }
