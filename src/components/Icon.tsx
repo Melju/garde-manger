@@ -338,6 +338,7 @@ const CATEGORY_ICON: Record<Category, IconName> = {
   apero: 'wineglass',
   boissons: 'bottle',
   surgeles: 'snowflake',
+  maison: 'box',
   autre: 'box',
 }
 

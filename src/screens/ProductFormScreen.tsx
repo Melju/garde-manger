@@ -5,6 +5,7 @@ import { Icon } from '../components/Icon'
 import {
   CATEGORIES,
   defaultConservation,
+  isNonFood,
   type Category,
   type Conservation,
   type DateType,
@@ -151,8 +152,9 @@ export function ProductFormScreen({ product, initial, onClose, onSaved }: Produc
 
   const canSave = name.trim().length > 0 && quantity > 0
 
+  const nonFood = isNonFood(category)
   const estimate = useMemo(
-    () => estimateShelfLife(name, conservation, category),
+    () => (isNonFood(category) ? null : estimateShelfLife(name, conservation, category)),
     [name, conservation, category],
   )
   // Type de date proposé d'après le produit (DDM pour les pâtes, DLC pour la viande...), tant que tu n'as pas choisi toi-même.
@@ -238,6 +240,11 @@ export function ProductFormScreen({ product, initial, onClose, onSaved }: Produc
   function pickCategory(c: Category) {
     catTouched.current = true
     setCategory(c)
+    if (isNonFood(c)) {
+      setExpiryDate('')
+      setExtraDates([])
+      autoDate.current = null
+    }
     pickConservation(defaultConservation(c))
   }
 
@@ -279,7 +286,7 @@ export function ProductFormScreen({ product, initial, onClose, onSaved }: Produc
           ? product.size
           : sizeStr || undefined,
       dateType,
-      expiryDate: expiryDate || undefined,
+      expiryDate: nonFood ? undefined : expiryDate || undefined,
       location: location.trim() || undefined,
       price: price ? Number(price.replace(',', '.')) || undefined : undefined,
       barcode,
@@ -512,6 +519,7 @@ export function ProductFormScreen({ product, initial, onClose, onSaved }: Produc
         </div>
       </div>
 
+      {!nonFood && (
       <div className="form-section">
         <label className="form-label" htmlFor="expiry">Date de péremption</label>
         <DatePicker id="expiry" value={expiryDate} onChange={setExpiryDate} />
@@ -568,6 +576,7 @@ export function ProductFormScreen({ product, initial, onClose, onSaved }: Produc
           </button>
         )}
       </div>
+      )}
 
       </div>
 
@@ -582,7 +591,7 @@ export function ProductFormScreen({ product, initial, onClose, onSaved }: Produc
         </div>
         {!showDeduced && (
           <div className="deduced-summary">
-            {CATEGORIES.find((c) => c.id === category)?.label ?? category} · {location || 'Emplacement ?'} · {dateType === 'dlc' ? 'DLC' : 'DDM'}
+            {CATEGORIES.find((c) => c.id === category)?.label ?? category} · {location || 'Emplacement ?'}{!nonFood && ` · ${dateType === 'dlc' ? 'DLC' : 'DDM'}`}
             {placeSource && <span className="deduced-learned"> (rangement appris)</span>}
           </div>
         )}
@@ -628,6 +637,7 @@ export function ProductFormScreen({ product, initial, onClose, onSaved }: Produc
         />
       </div>
 
+      {!nonFood && (
       <div className="form-section">
         <label className="form-label">Type de date</label>
         <div className="opt-grid two">
@@ -647,6 +657,7 @@ export function ProductFormScreen({ product, initial, onClose, onSaved }: Produc
           </button>
         </div>
       </div>
+      )}
 
           </>
         )}
