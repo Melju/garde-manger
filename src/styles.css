@@ -2311,3 +2311,7 @@ input[type='date'].form-input::-webkit-calendar-picker-indicator {
 .scan-known-multi-row { border-top: 1px solid rgba(0,0,0,0.08); padding-top: 10px; }
 .scan-known-multi-row:first-child { border-top: none; padding-top: 0; }
 .scan-known-multi-n { font-size: 12px; font-weight: 700; color: var(--muted); margin-bottom: 4px; }
+.form-multi { display: flex; flex-direction: column; gap: 14px; margin-top: 12px; }
+.form-multi .scan-known-multi-row { border-top: 1px solid rgba(0,0,0,0.08); padding-top: 12px; position: relative; }
+.form-multi .scan-known-multi-row:first-child { border-top: none; padding-top: 0; }
+.form-multi .scan-known-multi-n { font-size: 12px; font-weight: 700; color: var(--muted); margin-bottom: 4px; }

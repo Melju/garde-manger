@@ -513,7 +513,7 @@ export function ProductFormScreen({ product, initial, onClose, onSaved }: Produc
           </div>
         )}
         {perDate && quantity > 1 && (
-          <div className="scan-known-multi" style={{ marginTop: 10 }}>
+          <div className="form-multi">
             {Array.from({ length: quantity - 1 }, (_, k) => (
               <div key={k} className="scan-known-multi-row">
                 <div className="scan-known-multi-n">Article {k + 2}</div>
