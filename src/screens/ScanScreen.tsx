@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
-import { BrowserMultiFormatReader, type IScannerControls } from '@zxing/browser'
+import { BrowserMultiFormatReader } from '@zxing/browser'
+import { acquireCamera, releaseCamera } from '../lib/camera'
 import { Icon } from '../components/Icon'
 import { useToast } from '../components/Toast'
 import { lookupBarcode } from '../lib/openfoodfacts'
@@ -27,7 +28,7 @@ type Phase = 'scanning' | 'looking-up' | 'error'
 
 export function ScanScreen({ mode = 'add', onResult, onConsume, findKnown, onAddKnown, removed, onUndo, onClose }: ScanScreenProps) {
   const videoRef = useRef<HTMLVideoElement>(null)
-  const controlsRef = useRef<IScannerControls | null>(null)
+  const controlsRef = useRef<{ stop: () => void } | null>(null)
   const handledRef = useRef(false)
   const lastRef = useRef<{ code: string; t: number }>({ code: '', t: 0 })
   // Callbacks dans une ref pour ne pas relancer la caméra à chaque rendu.
@@ -73,23 +74,29 @@ export function ScanScreen({ mode = 'add', onResult, onConsume, findKnown, onAdd
       onResult?.(result.prefill, result.found)
     }
 
-    reader
-      .decodeFromConstraints(
-        { video: { facingMode: { ideal: 'environment' } } },
-        videoRef.current!,
-        (result, _err, controls) => {
-          controlsRef.current = controls
-          if (result) onDetected(result.getText())
-        },
-      )
-      .then((controls) => {
-        controlsRef.current = controls
+    acquireCamera()
+      .then((stream) => {
+        const v = videoRef.current
+        if (cancelled || !v) return
+        v.srcObject = stream
+        void v.play().catch(() => {})
+        // Boucle de lecture : une tentative de décodage toutes les ~150 ms.
+        const timer = window.setInterval(() => {
+          if (!v.videoWidth || v.paused) return
+          try {
+            const r = reader.decode(v)
+            if (r) void onDetected(r.getText())
+          } catch {
+            /* pas de code dans l'image */
+          }
+        }, 150)
+        controlsRef.current = { stop: () => window.clearInterval(timer) }
       })
       .catch((err: unknown) => {
         if (cancelled) return
-        const msg = err instanceof Error ? err.message : String(err)
+        const msg = err instanceof Error ? `${err.name} ${err.message}` : String(err)
         setErrorMsg(
-          /denied|permission/i.test(msg)
+          /denied|permission|NotAllowed/i.test(msg)
             ? "Accès à la caméra refusé. Autorisez-le dans les réglages du navigateur."
             : "Caméra indisponible. Le scan nécessite une connexion sécurisée (HTTPS).",
         )
@@ -99,11 +106,10 @@ export function ScanScreen({ mode = 'add', onResult, onConsume, findKnown, onAdd
     return () => {
       cancelled = true
       controlsRef.current?.stop()
-      // Libère complètement la caméra (sinon iOS finit par redemander l'autorisation).
       const v = videoRef.current
-      const stream = v?.srcObject as MediaStream | null
-      stream?.getTracks().forEach((t) => t.stop())
       if (v) v.srcObject = null
+      // La caméra est désactivée mais le flux reste réutilisable (pas de nouvelle autorisation).
+      releaseCamera()
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])

@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { Icon } from './Icon'
 import { useStore } from '../data/store'
+import { acquireCamera, releaseCamera } from '../lib/camera'
 import type { DateType } from '../types'
 
 export interface ScannedDate {
@@ -26,21 +27,13 @@ export function DateScanner({
   const [ready, setReady] = useState(false)
 
   useEffect(() => {
-    let stream: MediaStream | null = null
     let cancelled = false
-    navigator.mediaDevices
-      ?.getUserMedia({ video: { facingMode: { ideal: 'environment' }, width: { ideal: 1920 } } })
+    acquireCamera()
       .then((s) => {
-        if (cancelled) {
-          s.getTracks().forEach((t) => t.stop())
-          return
-        }
-        stream = s
         const v = videoRef.current
-        if (v) {
-          v.srcObject = s
-          v.play().then(() => setReady(true)).catch(() => setReady(true))
-        }
+        if (cancelled || !v) return
+        v.srcObject = s
+        v.play().then(() => setReady(true)).catch(() => setReady(true))
       })
       .catch((e) => {
         setError(
@@ -51,9 +44,9 @@ export function DateScanner({
       })
     return () => {
       cancelled = true
-      stream?.getTracks().forEach((t) => t.stop())
       const v = videoRef.current
       if (v) v.srcObject = null
+      releaseCamera()
     }
   }, [])
 
