@@ -4,6 +4,7 @@ import { useToast } from '../components/Toast'
 import { Icon } from '../components/Icon'
 import { ProductItem } from '../components/ProductItem'
 import { CATEGORIES, type Category, type Product } from '../types'
+import { conservationOfLocation } from '../lib/location'
 import { remainingLabel, isBareWeightUnit, countPerPack, countLabel } from '../lib/contenance'
 import { urgentCount } from '../lib/expiry'
 import { budgetSummary } from '../lib/analytics'
@@ -90,8 +91,7 @@ export function InventoryScreen({
       for (const p of items) await updateProduct(p.id, { category: pickedCat })
       toast(`${n} produit${plural} classé${plural} en ${CATEGORIES.find((c) => c.id === pickedCat)?.label}`)
     } else if (pickMode === 'location' && pickedLoc) {
-      const low = pickedLoc.toLowerCase()
-      const conservation = low.includes('congel') ? 'congele' : low.includes('refrig') || low.includes('réfrig') ? 'refrigere' : 'frais'
+      const conservation = conservationOfLocation(pickedLoc)
       for (const p of items) {
         await updateProduct(p.id, { location: pickedLoc, conservation })
         learnPlace(p.name, p.category, pickedLoc)

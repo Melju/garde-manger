@@ -12,6 +12,7 @@ import {
   type ProductInput,
 } from '../types'
 import { splitSize, countUnit } from '../lib/contenance'
+import { conservationOfLocation } from '../lib/location'
 import { estimateShelfLife, estimatedExpiryISO, durationLabel, guessDateType, isFrozenName } from '../lib/shelfLife'
 import { DatePicker } from '../components/DatePicker'
 import { DateScanner, type ScannedDate } from '../components/DateScanner'
@@ -174,10 +175,7 @@ export function ProductFormScreen({ product, initial, onClose, onSaved }: Produc
 
   // La conservation (frais / réfrigéré / congelé) se déduit de l'emplacement : plus de double saisie.
   function consOfLocation(l: string): Conservation {
-    const n = l.toLowerCase()
-    if (n.includes('congel') || n.includes('freez')) return 'congele'
-    if (n.includes('frigo') || n.includes('refrig') || n.includes('réfrig')) return 'refrigere'
-    return 'frais'
+    return conservationOfLocation(l)
   }
   function pickLocation(l: string, cat: Category = category) {
     setLocation(l)
