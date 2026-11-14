@@ -7,6 +7,31 @@
 /** Unités « continues » (au poids ou au volume) qui autorisent une conso partielle. */
 export const WEIGHT_UNITS = ['g', 'kg', 'mL', 'ml', 'cl', 'L', 'l', 'sachet', 'sachets']
 
+/** Unités « au poids / volume » seules : sert à relire d'anciennes données (« kg » × 2). */
+const MEASURE_UNITS = ['g', 'kg', 'mL', 'ml', 'cl', 'L', 'l']
+
+/** Unités dénombrables : elles se consomment une à une, comme des sachets. */
+const COUNT_ALIASES: Record<string, string> = {
+  sachet: 'sachet', sachets: 'sachet', sach: 'sachet', sct: 'sachet',
+  piece: 'pièce', pieces: 'pièce', 'pièce': 'pièce', 'pièces': 'pièce', pc: 'pièce', pcs: 'pièce',
+  pack: 'pack', packs: 'pack',
+  boite: 'boîte', boites: 'boîte', 'boîte': 'boîte', 'boîtes': 'boîte',
+  pot: 'pot', pots: 'pot',
+  tranche: 'tranche', tranches: 'tranche',
+}
+
+/** Forme canonique (singulier) d'une unité dénombrable, ou null si ce n'est pas un comptage. */
+export function countUnit(unit?: string): string | null {
+  if (!unit) return null
+  return COUNT_ALIASES[unit.trim().toLowerCase().replace(/\.$/, '')] ?? null
+}
+
+/** « 3 pots », « 1 pièce » : pluriel simple. */
+export function countLabel(value: number, unit: string): string {
+  const u = countUnit(unit) ?? unit
+  return `${value} ${u}${value > 1 ? 's' : ''}`
+}
+
 interface Parsed {
   value: number
   unit: string
@@ -35,22 +60,25 @@ export function parseContenance(size?: string): Parsed | null {
 
 /** Vrai si l'unité est au poids ou au volume (g, kg, mL, cl, L). */
 export function isWeightUnit(unit?: string): boolean {
-  return !!unit && WEIGHT_UNITS.includes(unit)
+  return !!unit && (WEIGHT_UNITS.includes(unit) || !!countUnit(unit))
 }
 
 /** Vrai si la contenance est exprimée dans une unité au poids/volume. */
 export function isWeightProduct(size?: string): boolean {
   const p = parseContenance(size)
-  return !!p && WEIGHT_UNITS.includes(p.unit)
+  if (!p) return false
+  if (countUnit(p.unit)) return p.value > 1 // « 1 pot » reste un simple article compté
+  return WEIGHT_UNITS.includes(p.unit)
 }
 
 /** Infos en unité de base (g ou mL) pour la molette de portions. */
-export function weightInfo(size?: string): { baseUnit: 'g' | 'mL' | 'sachet'; total: number } | null {
+export function weightInfo(size?: string): { baseUnit: string; count: boolean; total: number } | null {
   const p = parseContenance(size)
   if (!p) return null
   const fam = family(p.unit)
   if (!fam) return null
-  return { baseUnit: fam === 'mass' ? 'g' : fam === 'count' ? 'sachet' : 'mL', total: toBase(p.value, p.unit) }
+  const baseUnit = fam === 'mass' ? 'g' : fam === 'count' ? countUnit(p.unit)! : 'mL'
+  return { baseUnit, count: fam === 'count', total: toBase(p.value, p.unit) }
 }
 
 /** Graduation fine (précision) + intervalle d'étiquetage (valeurs rondes). */
@@ -69,14 +97,14 @@ function scaleSteps(total: number, count = false): { fine: number; major: number
  */
 export function portionScale(
   size?: string,
-): { values: number[]; baseUnit: 'g' | 'mL' | 'sachet'; major: number } | null {
+): { values: number[]; baseUnit: string; count: boolean; major: number } | null {
   const wi = weightInfo(size)
   if (!wi) return null
-  const { fine, major } = scaleSteps(wi.total, wi.baseUnit === 'sachet')
+  const { fine, major } = scaleSteps(wi.total, wi.count)
   const values: number[] = []
   for (let v = 0; v < wi.total - 0.001; v += fine) values.push(Math.round(v))
   values.push(Math.round(wi.total)) // toujours finir pile au total
-  return { values, baseUnit: wi.baseUnit, major }
+  return { values, baseUnit: wi.baseUnit, count: wi.count, major }
 }
 
 /**
@@ -115,7 +143,7 @@ export function buyScale(rawUnit?: string): {
 /** Famille d'unité pour la conversion (mass / volume / null). */
 function family(unit: string): 'mass' | 'volume' | 'count' | null {
   const u = unit.toLowerCase()
-  if (u === 'sachet' || u === 'sachets') return 'count'
+  if (countUnit(u)) return 'count'
   if (u === 'g' || u === 'kg') return 'mass'
   if (u === 'ml' || u === 'cl' || u === 'l') return 'volume'
   return null
@@ -133,7 +161,7 @@ function toBase(value: number, unit: string): number {
 export function formatContenance(value: number, unit: string): string {
   const u = unit.toLowerCase()
   const round = (n: number) => Math.round(n * 100) / 100
-  if (u === 'sachet' || u === 'sachets') return `${round(value)} sachet${value > 1 ? 's' : ''}`
+  if (countUnit(u)) return countLabel(round(value), unit)
   if (u === 'g' && value >= 1000) return `${round(value / 1000)} kg`
   if (u === 'ml' && value >= 1000) return `${round(value / 1000)} L`
   if (u === 'kg' && value < 1) return `${Math.round(value * 1000)} g`
@@ -202,7 +230,7 @@ function withFull(remaining: string, oldSize: string, p: Parsed): string {
  * On lit ça comme « 1 kg ».
  */
 export function isBareWeightUnit(size?: string): boolean {
-  return !!size && WEIGHT_UNITS.includes(size.trim())
+  return !!size && MEASURE_UNITS.includes(size.trim())
 }
 
 /** Produit corrigé pour l'affichage : « kg » × 2 devient « 2 kg » × 1. */
@@ -211,9 +239,16 @@ export function normalizeBareUnit<T extends { quantity: number; size?: string }>
   return { ...p, size: formatContenance(p.quantity, p.size!.trim()), quantity: 1 }
 }
 
-/** Nombre de sachets par boîte (« 10 sachet »), ou null si le produit n'est pas compté en sachets. */
-export function sachetsPerBox(size?: string): number | null {
+/** Nombre d'éléments par paquet (« 10 sachet », « 6 pots ») et leur unité, ou null si ce n'est pas un comptage. */
+export function countPerPack(size?: string): { per: number; unit: string } | null {
   const p = parseContenance(size)
-  if (!p || family(p.unit) !== 'count') return null
-  return Math.round(p.value)
+  const unit = p ? countUnit(p.unit) : null
+  if (!p || !unit) return null
+  const per = Math.round(p.value)
+  return per > 1 ? { per, unit } : null
+}
+
+/** Compat : nombre d'éléments par paquet. */
+export function sachetsPerBox(size?: string): number | null {
+  return countPerPack(size)?.per ?? null
 }

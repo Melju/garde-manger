@@ -9,7 +9,8 @@ import {
   portionScale,
   formatContenance,
   stockLabel,
-  sachetsPerBox,
+  countPerPack,
+  countLabel,
   normalizeBareUnit,
 } from '../lib/contenance'
 import { Icon, categoryIcon } from './Icon'
@@ -58,8 +59,8 @@ export function ProductItem({
   const byWeight = product.quantity <= 1 && isWeightProduct(product.size)
   const scale = byWeight ? portionScale(product.size) : null
   // Plusieurs boîtes de sachets : on retire des sachets, pas des boîtes.
-  const perBox = product.quantity > 1 ? sachetsPerBox(product.size) : null
-  const sachetValues = perBox ? Array.from({ length: product.quantity * perBox }, (_, i) => i + 1) : null
+  const packInfo = product.quantity > 1 ? countPerPack(product.size) : null
+  const sachetValues = packInfo ? Array.from({ length: product.quantity * packInfo.per }, (_, i) => i + 1) : null
 
   // Glissement progressif : la ligne suit le doigt, puis s'ouvre ou se referme selon la position relâchée.
   const OPEN_LEFT = 216
@@ -187,7 +188,7 @@ export function ProductItem({
             initialIndex={1}
             isMajor={(v) => v % scale.major === 0 || v === scale.values[scale.values.length - 1]}
             format={(v) => (v === 0 ? '0' : formatContenance(v, scale.baseUnit))}
-            tickFormat={scale.baseUnit === 'sachet' ? (v) => String(v) : undefined}
+            tickFormat={scale.count ? (v) => String(v) : undefined}
             onConfirm={(v) => {
               setSwipe('none')
               if (v <= 0) return
@@ -200,7 +201,7 @@ export function ProductItem({
             itemW={48}
             initialIndex={0}
             isMajor={() => true}
-            format={(v) => `−${v} sachet${v > 1 ? 's' : ''}`}
+            format={(v) => `−${countLabel(v, packInfo!.unit)}`}
             tickFormat={(v) => String(v)}
             onConfirm={(v) => {
               setSwipe('none')

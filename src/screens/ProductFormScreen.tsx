@@ -11,7 +11,7 @@ import {
   type Product,
   type ProductInput,
 } from '../types'
-import { splitSize } from '../lib/contenance'
+import { splitSize, countUnit } from '../lib/contenance'
 import { estimateShelfLife, estimatedExpiryISO, durationLabel, guessDateType } from '../lib/shelfLife'
 import { DatePicker } from '../components/DatePicker'
 import { DateScanner, type ScannedDate } from '../components/DateScanner'
@@ -26,7 +26,7 @@ import { normalize } from '../lib/productIcon'
 import { familyAllergenWarnings, allergenLabel } from '../lib/allergens'
 
 /** Unités de contenance proposées. */
-const SIZE_UNITS = ['g', 'kg', 'mL', 'cl', 'L', 'pièce', 'pack', 'boîte', 'sachet', 'pot', 'tranches']
+const SIZE_UNITS = ['g', 'kg', 'mL', 'cl', 'L', 'pièce', 'pack', 'boîte', 'sachet', 'pot', 'tranche']
 
 /** Emplacements proposés (boutons). */
 const LOCATIONS = ['Placard', 'Réfrigérateur', 'Congélateur', 'Cellier', 'Cave', 'Corbeille']
@@ -36,8 +36,9 @@ function parseSize(s?: string): { value: string; unit: string } {
   if (!s) return { value: '', unit: '' }
   s = splitSize(s).current
   const m = s.trim().match(/^([\d.,]+)\s*(.*)$/)
-  if (m) return { value: m[1], unit: m[2].trim() }
-  return { value: '', unit: s.trim() }
+  const norm = (u: string) => countUnit(u) ?? u
+  if (m) return { value: m[1], unit: norm(m[2].trim()) }
+  return { value: '', unit: norm(s.trim()) }
 }
 
 interface ProductFormScreenProps {
@@ -473,7 +474,7 @@ export function ProductFormScreen({ product, initial, onClose, onSaved }: Produc
             className="form-input"
             type="text"
             inputMode="decimal"
-            placeholder={sizeUnit === 'sachet' ? 'Nombre de sachets' : 'Ex : 400'}
+            placeholder={countUnit(sizeUnit) ? `Nombre (${sizeUnit}s par paquet)` : 'Ex : 400'}
             value={sizeValue}
             onChange={(e) => setSizeValue(e.target.value)}
           />

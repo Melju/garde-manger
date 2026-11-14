@@ -1,4 +1,4 @@
-import { formatContenance, parseContenance } from './contenance'
+import { countUnit, formatContenance, parseContenance } from './contenance'
 
 /**
  * Contenance d'UN paquet, déduite d'un libellé de ticket (« LAIT 1L », « BISC FOURRE 12 SACH 300G »…)
@@ -7,12 +7,13 @@ import { formatContenance, parseContenance } from './contenance'
  */
 export function normalizeSize(raw?: string | null): string | undefined {
   if (!raw) return undefined
-  const m = String(raw).trim().toLowerCase().match(/^([\d.,]+)\s*(kg|g|ml|cl|l|sachets?|sach\.?|sct)$/)
+  const m = String(raw).trim().toLowerCase().match(/^([\d.,]+)\s*(kg|g|ml|cl|l|sachets?|sach\.?|sct|pots?|tranches?|bo[iî]tes?|pi[eè]ces?|pcs?)$/)
   if (!m) return undefined
   const value = Number(m[1].replace(',', '.'))
   if (!isFinite(value) || value <= 0) return undefined
   let unit = m[2]
-  if (unit.startsWith('sach') || unit === 'sct') unit = 'sachet'
+  const cu = countUnit(unit.replace(/\.$/, ''))
+  if (cu) unit = cu
   if (unit === 'l') unit = 'L'
   if (unit === 'ml') unit = 'mL'
   if (parseContenance(`${value} ${unit}`) == null) return undefined
@@ -41,5 +42,7 @@ export function extractPackSize(label: string): string | undefined {
   }
   const sach = s.match(/(?:^|[^\d.])(\d+)\s*(?:sachets?|sach\.?|sct)\b/)
   if (sach) return normalizeSize(`${sach[1]} sachet`)
+  const other = s.match(/(?:^|[^\d.])(\d+)\s*(pots?|tranches?|bo[iî]tes?|pi[eè]ces?|pcs?)(?![a-zà-ÿ])/)
+  if (other && Number(other[1]) > 1) return normalizeSize(`${other[1]} ${other[2]}`)
   return undefined
 }

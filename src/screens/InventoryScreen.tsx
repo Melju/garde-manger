@@ -4,7 +4,7 @@ import { useToast } from '../components/Toast'
 import { Icon } from '../components/Icon'
 import { ProductItem } from '../components/ProductItem'
 import { CATEGORIES, type Category, type Product } from '../types'
-import { remainingLabel, isBareWeightUnit, sachetsPerBox } from '../lib/contenance'
+import { remainingLabel, isBareWeightUnit, countPerPack, countLabel } from '../lib/contenance'
 import { expiryLabel, priorityProducts, urgentCount } from '../lib/expiry'
 import { budgetSummary } from '../lib/analytics'
 import { addProductsToStores, getStores, storesFor } from '../lib/stores'
@@ -116,8 +116,9 @@ export function InventoryScreen({
 
   // Retire n sachets sur plusieurs boîtes : boîtes entières d'abord, la dernière entamée devient un lot à part.
   async function handleConsumeSachets(product: Product, n: number) {
-    const per = sachetsPerBox(product.size)
-    if (!per) return
+    const info = countPerPack(product.size)
+    if (!info) return
+    const { per, unit } = info
     const remaining = product.quantity * per - n
     if (remaining <= 0) {
       await adjustQuantity(product.id, -Math.max(1, product.quantity))
@@ -126,7 +127,7 @@ export function InventoryScreen({
     }
     const full = Math.floor(remaining / per)
     const rem = remaining % per
-    const partial = `${rem} sachet/${per} sachet`
+    const partial = `${rem} ${unit}/${per} ${unit}`
     if (rem === 0) {
       await updateProduct(product.id, { quantity: full })
     } else if (full === 0) {
@@ -136,7 +137,7 @@ export function InventoryScreen({
       await updateProduct(product.id, { quantity: full })
       await addProduct({ ...rest, quantity: 1, size: partial })
     }
-    toast(`${product.name} : ${remaining} sachet${remaining > 1 ? 's' : ''} restant${remaining > 1 ? 's' : ''}`)
+    toast(`${product.name} : ${countLabel(remaining, unit)} restant${remaining > 1 ? 's' : ''}`)
   }
 
   async function handleConsumePortion(product: Product, newSize: string | null) {
