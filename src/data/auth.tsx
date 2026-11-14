@@ -83,16 +83,34 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     if (!supabase) return
-    supabase.auth.getSession().then(async ({ data }) => {
-      setSession(data.session)
-      await loadHousehold(data.session?.user?.id)
-      setReady(true)
-    })
-    const { data: sub } = supabase.auth.onAuthStateChange(async (_evt, s) => {
+    // Filet de sécurité : l'écran de chargement ne doit jamais rester bloqué (réseau lent, session qui se rafraîchit).
+    const safety = window.setTimeout(() => setReady(true), 8000)
+    supabase.auth
+      .getSession()
+      .then(async ({ data }) => {
+        setSession(data.session)
+        try {
+          await loadHousehold(data.session?.user?.id)
+        } catch {
+          /* réseau : on garde la session, le foyer se rechargera */
+        }
+      })
+      .catch(() => {})
+      .finally(() => {
+        window.clearTimeout(safety)
+        setReady(true)
+      })
+    const { data: sub } = supabase.auth.onAuthStateChange((_evt, s) => {
       setSession(s)
-      await loadHousehold(s?.user?.id)
+      // Pas d'appel Supabase dans le callback (risque d'interblocage) : on le diffère.
+      window.setTimeout(() => {
+        void loadHousehold(s?.user?.id).catch(() => {})
+      }, 0)
     })
-    return () => sub.subscription.unsubscribe()
+    return () => {
+      window.clearTimeout(safety)
+      sub.subscription.unsubscribe()
+    }
   }, [loadHousehold])
 
   const value: AuthValue = {

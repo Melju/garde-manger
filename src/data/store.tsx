@@ -204,9 +204,13 @@ export function StoreProvider({ children }: { children: ReactNode }) {
         repo.getSettings(),
         repo.getShopCatalog(),
       ])
-      seedFromProducts(p)
-      seedProductMemory(p)
-      seedPlaces(p)
+      try {
+        seedFromProducts(p)
+        seedProductMemory(p)
+        seedPlaces(p)
+      } catch {
+        /* l'apprentissage local ne doit jamais bloquer le chargement */
+      }
       setProducts(p)
       setShopping(s)
       setRecipes(r)
@@ -254,7 +258,14 @@ export function StoreProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     setLoading(true)
-    loadAll().finally(() => setLoading(false))
+    const safety = window.setTimeout(() => setLoading(false), 10000)
+    loadAll()
+      .catch(() => {})
+      .finally(() => {
+        window.clearTimeout(safety)
+        setLoading(false)
+      })
+    return () => window.clearTimeout(safety)
   }, [loadAll])
 
   // Synchronisation entre appareils : Supabase Realtime prévient dès qu'une ligne du foyer change
