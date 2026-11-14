@@ -3,6 +3,7 @@ import { MONTHS_FR, addDays, formatLong, fromISODate, toISODate } from '../lib/d
 import { Icon } from './Icon'
 
 const WEEK = ['L', 'M', 'M', 'J', 'V', 'S', 'D']
+const MONTHS_SHORT = ['janv.', 'févr.', 'mars', 'avr.', 'mai', 'juin', 'juil.', 'août', 'sept.', 'oct.', 'nov.', 'déc.']
 
 /** Calendrier maison (remplace le sélecteur natif du navigateur). */
 export function DatePicker({
@@ -15,6 +16,8 @@ export function DatePicker({
   id?: string
 }) {
   const [open, setOpen] = useState(false)
+  const [mode, setMode] = useState<'days' | 'months' | 'years'>('days')
+  const [yearStart, setYearStart] = useState(0)
   const base = value ? fromISODate(value) : new Date()
   const [view, setView] = useState(new Date(base.getFullYear(), base.getMonth(), 1))
   const today = toISODate(new Date())
@@ -50,6 +53,7 @@ export function DatePicker({
         className={`form-input dp-field${value ? '' : ' empty'}`}
         onClick={() => {
           setView(new Date(base.getFullYear(), base.getMonth(), 1))
+          setMode('days')
           setOpen((o) => !o)
         }}
       >
@@ -59,16 +63,74 @@ export function DatePicker({
       {open && (
         <div className="dp-pop">
           <div className="dp-head">
-            <button type="button" className="dp-nav" onClick={() => shift(-1)} aria-label="Mois précédent">
+            <button
+              type="button"
+              className="dp-nav"
+              onClick={() => (mode === 'years' ? setYearStart((y) => y - 12) : mode === 'months' ? setView(new Date(first.getFullYear() - 1, first.getMonth(), 1)) : shift(-1))}
+              aria-label="Précédent"
+            >
               <span style={{ display: 'inline-flex', transform: 'rotate(180deg)' }}><Icon name="chevron" width={2.4} /></span>
             </button>
-            <strong>
-              {MONTHS_FR[first.getMonth()]} {first.getFullYear()}
-            </strong>
-            <button type="button" className="dp-nav" onClick={() => shift(1)} aria-label="Mois suivant">
+            <div className="dp-title">
+              <button type="button" className={`dp-pill${mode === 'months' ? ' on' : ''}`} onClick={() => setMode(mode === 'months' ? 'days' : 'months')}>
+                {MONTHS_FR[first.getMonth()]} <span aria-hidden>▾</span>
+              </button>
+              <button
+                type="button"
+                className={`dp-pill${mode === 'years' ? ' on' : ''}`}
+                onClick={() => {
+                  setYearStart(first.getFullYear() - 4)
+                  setMode(mode === 'years' ? 'days' : 'years')
+                }}
+              >
+                {first.getFullYear()} <span aria-hidden>▾</span>
+              </button>
+            </div>
+            <button
+              type="button"
+              className="dp-nav"
+              onClick={() => (mode === 'years' ? setYearStart((y) => y + 12) : mode === 'months' ? setView(new Date(first.getFullYear() + 1, first.getMonth(), 1)) : shift(1))}
+              aria-label="Suivant"
+            >
               <Icon name="chevron" width={2.4} />
             </button>
           </div>
+          {mode === 'months' && (
+            <div className="dp-choices">
+              {MONTHS_FR.map((m, i) => (
+                <button
+                  key={m}
+                  type="button"
+                  className={i === first.getMonth() ? 'sel' : ''}
+                  onClick={() => {
+                    setView(new Date(first.getFullYear(), i, 1))
+                    setMode('days')
+                  }}
+                >
+                  {MONTHS_SHORT[i]}
+                </button>
+              ))}
+            </div>
+          )}
+          {mode === 'years' && (
+            <div className="dp-choices">
+              {Array.from({ length: 12 }, (_, i) => yearStart + i).map((y) => (
+                <button
+                  key={y}
+                  type="button"
+                  className={y === first.getFullYear() ? 'sel' : y === new Date().getFullYear() ? 'today' : ''}
+                  onClick={() => {
+                    setView(new Date(y, first.getMonth(), 1))
+                    setMode('days')
+                  }}
+                >
+                  {y}
+                </button>
+              ))}
+            </div>
+          )}
+          {mode === 'days' && (
+          <>
           <div className="dp-grid dp-week">
             {WEEK.map((d, i) => (
               <span key={i}>{d}</span>
@@ -102,6 +164,8 @@ export function DatePicker({
               </button>
             )}
           </div>
+          </>
+          )}
         </div>
       )}
     </div>

@@ -2376,3 +2376,12 @@ input[type='date'].form-input::-webkit-calendar-picker-indicator {
 }
 .ticket-size { margin-top: 8px; font-size: 14px; padding: 8px 12px; }
 .status-tag.still-good { background: #e9f2fb; color: #3b6ea5; }
+/* Sélecteur de date : choix rapide du mois et de l'année */
+.dp-title { display: flex; gap: 6px; align-items: center; }
+.dp-pill { border: 1px solid var(--border); background: var(--surface); color: var(--fg); border-radius: 999px; padding: 6px 12px; font: inherit; font-weight: 800; text-transform: capitalize; cursor: pointer; }
+.dp-pill span { font-size: 10px; color: var(--muted); }
+.dp-pill.on { background: var(--accent-soft); border-color: var(--brand); }
+.dp-choices { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin: 6px 0 4px; }
+.dp-choices button { height: 46px; border-radius: 12px; border: 1px solid var(--border); background: var(--surface); color: var(--fg); font: inherit; font-weight: 700; text-transform: capitalize; cursor: pointer; }
+.dp-choices button.sel { background: var(--brand-grad); color: #fff; border-color: transparent; }
+.dp-choices button.today { box-shadow: 0 0 0 1.5px var(--brand) inset; }
