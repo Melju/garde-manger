@@ -187,6 +187,7 @@ export function ProductItem({
             initialIndex={1}
             isMajor={(v) => v % scale.major === 0 || v === scale.values[scale.values.length - 1]}
             format={(v) => (v === 0 ? '0' : formatContenance(v, scale.baseUnit))}
+            tickFormat={scale.baseUnit === 'sachet' ? (v) => String(v) : undefined}
             onConfirm={(v) => {
               setSwipe('none')
               if (v <= 0) return
@@ -199,7 +200,8 @@ export function ProductItem({
             itemW={48}
             initialIndex={0}
             isMajor={() => true}
-            format={(v) => `−${v}`}
+            format={(v) => `−${v} sachet${v > 1 ? 's' : ''}`}
+            tickFormat={(v) => String(v)}
             onConfirm={(v) => {
               setSwipe('none')
               onConsumeSachets(rawProduct, v)

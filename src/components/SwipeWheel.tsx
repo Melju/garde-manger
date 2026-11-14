@@ -5,6 +5,8 @@ interface SwipeWheelProps {
   values: number[]
   /** Libellé de la valeur (affiché au-dessus du centre). */
   format: (v: number) => string
+  /** Libellé court sous les graduations (par défaut : format). */
+  tickFormat?: (v: number) => string
   /** Vrai si la valeur mérite une étiquette sous la graduation. */
   isMajor: (v: number) => boolean
   onConfirm: (value: number) => void
@@ -21,6 +23,7 @@ interface SwipeWheelProps {
 export function SwipeWheel({
   values,
   format,
+  tickFormat,
   isMajor,
   onConfirm,
   initialIndex = 0,
@@ -61,7 +64,7 @@ export function SwipeWheel({
             return (
               <div key={i} className={`sw-tick${i === index ? ' active' : ''}${major ? ' major' : ''}`}>
                 <span className="sw-mark" />
-                {major && i !== index && <span className="sw-lab">{format(v)}</span>}
+                {major && i !== index && <span className="sw-lab">{(tickFormat ?? format)(v)}</span>}
               </div>
             )
           })}
