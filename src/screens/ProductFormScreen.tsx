@@ -24,8 +24,8 @@ import { learnPlace, placeFor, defaultPlace } from '../lib/learnedPlace'
 import { guessCategoryFromName } from '../lib/categoryGuess'
 import { learn } from '../lib/learnedShelf'
 import { productImageSlug, productImageUrl, chosenIconSlug, chosenIconValue, realPhotoUrl } from '../lib/productImage'
-import { ICON_SLUGS } from '../lib/iconList'
 import { normalize } from '../lib/productIcon'
+import { searchIcons } from '../lib/iconThemes'
 import { addBrand, getCustomBrands } from '../lib/brands'
 import { familyAllergenWarnings, allergenLabel } from '../lib/allergens'
 
@@ -157,8 +157,7 @@ export function ProductFormScreen({ product, initial, onClose, onSaved }: Produc
   const autoIcon = productImageSlug(name)
   const shownIcon = chosenIcon ?? autoIcon
   const iconChoices = useMemo(() => {
-    const q = normalize(iconQuery).trim()
-    return q ? ICON_SLUGS.filter((s) => s.replace(/-/g, ' ').includes(q)) : ICON_SLUGS
+    return searchIcons(iconQuery)
   }, [iconQuery])
   const [dateType, setDateType] = useState<DateType>(product?.dateType ?? initial?.dateType ?? 'dlc')
   const dateTouched = useRef(isEdit || !!initial?.dateType)
