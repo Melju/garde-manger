@@ -125,6 +125,20 @@ interface StoreValue {
 
 const StoreContext = createContext<StoreValue | null>(null)
 
+/** Tables suivies pour la synchronisation temps réel (doivent figurer dans la publication supabase_realtime). */
+const SYNC_TABLES = [
+  'products',
+  'shopping_items',
+  'recipes',
+  'family_members',
+  'meals',
+  'history',
+  'expenses',
+  'budget',
+  'settings',
+  'shop_catalog',
+]
+
 // Repository local (hors-ligne), utilisé tant qu'on n'est pas connecté à un foyer.
 const localRepo: Repository = new LocalStorageRepository()
 
@@ -233,6 +247,38 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     setLoading(true)
     loadAll().finally(() => setLoading(false))
   }, [loadAll])
+
+  // Synchronisation entre appareils : Supabase Realtime prévient dès qu'une ligne du foyer change
+  // (ajout, modification, suppression ailleurs) et on recharge discrètement, sans écran de chargement.
+  // Les changements sont regroupés (un ajout en lot déclenche des dizaines d'événements).
+  useEffect(() => {
+    if (!supabase || !cloud || !auth.householdId) return
+    const sb = supabase
+    let timer: ReturnType<typeof setTimeout> | undefined
+    const refresh = () => {
+      clearTimeout(timer)
+      timer = setTimeout(() => {
+        loadAll().catch(() => {})
+      }, 500)
+    }
+    const channel = sb.channel(`foyer-${auth.householdId}`)
+    for (const table of SYNC_TABLES) {
+      channel.on('postgres_changes', { event: '*', schema: 'public', table }, refresh)
+    }
+    channel.subscribe()
+    // Filet de sécurité : mobile en veille ou réseau coupé = WebSocket perdu, on rattrape au retour.
+    const onVisible = () => {
+      if (document.visibilityState === 'visible') refresh()
+    }
+    document.addEventListener('visibilitychange', onVisible)
+    window.addEventListener('online', refresh)
+    return () => {
+      clearTimeout(timer)
+      document.removeEventListener('visibilitychange', onVisible)
+      window.removeEventListener('online', refresh)
+      sb.removeChannel(channel)
+    }
+  }, [cloud, auth.householdId, loadAll])
 
   const notifications = useMemo(() => buildNotifications(products, settings), [products, settings])
 
