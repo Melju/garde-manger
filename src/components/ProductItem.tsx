@@ -10,6 +10,7 @@ import {
   formatContenance,
 } from '../lib/contenance'
 import { Icon, categoryIcon } from './Icon'
+import { productEmoji } from '../lib/productEmoji'
 import { SwipeWheel } from './SwipeWheel'
 
 interface ProductItemProps {
@@ -41,6 +42,7 @@ export function ProductItem({
 
   const status = expiryStatus(product)
   const col = categoryColor(product.category)
+  const emoji = productEmoji(product.name)
   // Produit au poids/volume si une seule unité en stock avec une contenance continue.
   const byWeight = product.quantity <= 1 && isWeightProduct(product.size)
   const scale = byWeight ? portionScale(product.size) : null
@@ -96,7 +98,11 @@ export function ProductItem({
         onClick={handleClick}
       >
         <div className="product-icon" style={{ background: col.bg, color: col.fg }}>
-          <Icon name={categoryIcon(product.category)} width={1.7} />
+          {emoji ? (
+            <span className="product-emoji" aria-hidden="true">{emoji}</span>
+          ) : (
+            <Icon name={categoryIcon(product.category)} width={1.7} />
+          )}
         </div>
         <div className="product-info">
           <div className="product-name">{product.name}</div>

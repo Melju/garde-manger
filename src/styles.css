@@ -336,6 +336,7 @@ button { font-family: inherit; }
   flex-shrink: 0;
 }
 .product-icon svg { width: 22px; height: 22px; color: inherit; }
+.product-emoji { font-size: 24px; line-height: 1; }
 .product-info { flex: 1; min-width: 0; }
 .product-name { font-weight: 600; font-size: 15px; margin-bottom: 2px; }
 .product-meta { font-size: 13px; color: var(--muted); }
