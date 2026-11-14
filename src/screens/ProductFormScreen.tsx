@@ -16,6 +16,7 @@ import { splitSize } from '../lib/contenance'
 import { estimateShelfLife, estimatedExpiryISO, durationLabel, guessDateType } from '../lib/shelfLife'
 import { DatePicker } from '../components/DatePicker'
 import { DateScanner, type ScannedDate } from '../components/DateScanner'
+import { getCurrentStore, getStores, setProductStores, storesFor } from '../lib/stores'
 import { learn } from '../lib/learnedShelf'
 import { productImageSlug, productImageUrl, chosenIconSlug, chosenIconValue, realPhotoUrl } from '../lib/productImage'
 import { ICON_SLUGS } from '../lib/iconList'
@@ -52,6 +53,17 @@ export function ProductFormScreen({ product, initial, onClose, onSaved }: Produc
   const isEdit = product !== null
   const [enriching, setEnriching] = useState(false)
   const [scanningDate, setScanningDate] = useState(false)
+  // Magasins où ce produit s'achète : ceux déjà connus, sinon le magasin courant pour un nouveau produit.
+  const [shops, setShops] = useState<string[]>(() => {
+    const known = storesFor(product?.name ?? '')
+    if (known.length) return known
+    const cur = getCurrentStore()
+    return !product && cur ? [cur] : []
+  })
+  const shopChoices = useMemo(() => [...new Set([...shops, ...getStores()])], [shops])
+  function toggleShop(n: string) {
+    setShops((cur) => (cur.includes(n) ? cur.filter((x) => x !== n) : [...cur, n]))
+  }
 
   function onDateScanned(r: ScannedDate) {
     setScanningDate(false)
@@ -213,6 +225,7 @@ export function ProductFormScreen({ product, initial, onClose, onSaved }: Produc
   async function handleSave() {
     if (!canSave) return
     const inp = buildInput()
+    setProductStores(inp.name, inp.category, undefined, undefined, shops)
     learn({
       name: inp.name,
       category: inp.category,
@@ -480,6 +493,22 @@ export function ProductFormScreen({ product, initial, onClose, onSaved }: Produc
             <span className="estimate-apply">Appliquer</span>
           </button>
         )}
+      </div>
+
+      <div className="form-section">
+        <label className="form-label">Acheté chez (optionnel)</label>
+        <div className="store-grid">
+          {shopChoices.map((n) => (
+            <button
+              key={n}
+              type="button"
+              className={`store-opt${shops.includes(n) ? ' active' : ''}`}
+              onClick={() => toggleShop(n)}
+            >
+              {n}
+            </button>
+          ))}
+        </div>
       </div>
 
       <div className="form-section">

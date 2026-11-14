@@ -92,3 +92,41 @@ export function isUsualAt(store: string, name: string): number {
   const mine = read<HabitMap>(LS_HABITS, {})[store] ?? {}
   return mine[normalize(name).trim()]?.count ?? 0
 }
+
+/** Magasins où ce produit est acheté d'habitude. */
+export function storesFor(name: string): string[] {
+  const k = normalize(name).trim()
+  if (!k) return []
+  const all = read<HabitMap>(LS_HABITS, {})
+  return Object.keys(all).filter((s) => all[s][k])
+}
+
+/** Définit les magasins d'un produit (ajoute ceux cochés, retire les autres). */
+export function setProductStores(
+  name: string,
+  category: Category,
+  unit: string | undefined,
+  quantity: number | undefined,
+  stores: string[],
+) {
+  const k = normalize(name).trim()
+  if (!k) return
+  const all = read<HabitMap>(LS_HABITS, {})
+  for (const s of Object.keys(all)) {
+    if (!stores.includes(s) && all[s][k]) delete all[s][k]
+  }
+  const now = new Date().toISOString()
+  for (const s of stores) {
+    const mine = (all[s] ??= {})
+    const prev = mine[k]
+    mine[k] = {
+      name: name.trim(),
+      category,
+      unit: unit ?? prev?.unit ?? '',
+      qty: quantity ?? prev?.qty ?? 1,
+      count: Math.max(prev?.count ?? 0, 1),
+      at: prev?.at ?? now,
+    }
+  }
+  write(LS_HABITS, all)
+}
