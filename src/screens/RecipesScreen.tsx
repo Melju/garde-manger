@@ -1,3 +1,4 @@
+import { Select } from '../components/Select'
 import { useMemo, useState } from 'react'
 import { useStore } from '../data/store'
 import { useToast } from '../components/Toast'
@@ -175,26 +176,20 @@ export function RecipesScreen({ onOpenRecipe, onOpenFamily }: RecipesScreenProps
               <div className="ai-desc">À partir de ton stock · Claude</div>
             </div>
             <div className="ai-selects" onClick={(e) => e.stopPropagation()}>
-              <select
+              <Select
                 className="ai-select"
+                ariaLabel="Type de plat"
                 value={course}
-                onChange={(e) => setCourse(e.target.value)}
-                aria-label="Type de plat"
-              >
-                {COURSES.map(([val, label]) => (
-                  <option key={label} value={val}>{label}</option>
-                ))}
-              </select>
-              <select
+                onChange={setCourse}
+                options={COURSES.map(([val, label]) => ({ value: val, label }))}
+              />
+              <Select
                 className="ai-select"
+                ariaLabel="Style de recette"
                 value={constraint}
-                onChange={(e) => setConstraint(e.target.value)}
-                aria-label="Style de recette"
-              >
-                {CONSTRAINTS.map(([val, label]) => (
-                  <option key={label} value={val}>{label}</option>
-                ))}
-              </select>
+                onChange={setConstraint}
+                options={CONSTRAINTS.map(([val, label]) => ({ value: val, label }))}
+              />
             </div>
           </div>
         </div>

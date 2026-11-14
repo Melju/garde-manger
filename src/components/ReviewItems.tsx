@@ -1,3 +1,4 @@
+import { Select } from './Select'
 import { getCurrentStore, recordPurchases } from '../lib/stores'
 import { guessDateType } from '../lib/shelfLife'
 import { extractPackSize, normalizeSize } from '../lib/packSize'
@@ -89,15 +90,13 @@ export function ReviewItems({ items, onDone, onRetry }: ReviewItemsProps) {
                 onChange={(e) => patch(i, { name: e.target.value })}
               />
               <div className="ticket-sub">
-                <select
+                <Select
                   className="form-select"
+                  ariaLabel="Catégorie"
                   value={row.category}
-                  onChange={(e) => patch(i, { category: e.target.value as Category })}
-                >
-                  {CATEGORIES.map((c) => (
-                    <option key={c.id} value={c.id}>{c.label}</option>
-                  ))}
-                </select>
+                  onChange={(v) => patch(i, { category: v as Category })}
+                  options={CATEGORIES.map((c) => ({ value: c.id, label: c.label }))}
+                />
                 <div className="qty-stepper small">
                   <button type="button" onClick={() => patch(i, { quantity: Math.max(1, row.quantity - 1) })}>−</button>
                   <span>{row.quantity}</span>

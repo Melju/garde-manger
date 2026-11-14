@@ -1,3 +1,4 @@
+import { Select } from '../components/Select'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { useStore } from '../data/store'
 import { useToast } from '../components/Toast'
@@ -302,31 +303,34 @@ export function InventoryScreen({
       <div className="search-row">
         <div className="search-input">
           <Icon name="search" />
-          <select
+          <Select
             className="search-by"
-            aria-label="Rechercher par"
+            ariaLabel="Rechercher par"
             value={searchBy}
-            onChange={(e) => changeSearchBy(e.target.value as typeof searchBy)}
-          >
-            <option value="nom">Nom</option>
-            <option value="categorie">Catégorie</option>
-            <option value="marque">Marque</option>
-            <option value="magasin">Magasin</option>
-          </select>
+            onChange={(v) => changeSearchBy(v as typeof searchBy)}
+            options={[
+              { value: 'nom', label: 'Nom' },
+              { value: 'categorie', label: 'Catégorie' },
+              { value: 'marque', label: 'Marque' },
+              { value: 'magasin', label: 'Magasin' },
+            ]}
+          />
           {searchBy === 'categorie' ? (
-            <select className="search-value" aria-label="Catégorie" value={filter} onChange={(e) => setFilter(e.target.value as Filter)}>
-              <option value="tout">Toutes les catégories</option>
-              {CATEGORIES.map((c) => (
-                <option key={c.id} value={c.id}>{c.label}</option>
-              ))}
-            </select>
+            <Select
+              className="search-value"
+              ariaLabel="Catégorie"
+              value={filter}
+              onChange={(v) => setFilter(v as Filter)}
+              options={[{ value: 'tout', label: 'Toutes les catégories' }, ...CATEGORIES.map((c) => ({ value: c.id, label: c.label }))]}
+            />
           ) : searchBy === 'magasin' ? (
-            <select className="search-value" aria-label="Magasin" value={storeFilter} onChange={(e) => setStoreFilter(e.target.value)}>
-              <option value="">Tous les magasins</option>
-              {getStores().map((n) => (
-                <option key={n} value={n}>{n}</option>
-              ))}
-            </select>
+            <Select
+              className="search-value"
+              ariaLabel="Magasin"
+              value={storeFilter}
+              onChange={setStoreFilter}
+              options={[{ value: '', label: 'Tous les magasins' }, ...getStores().map((n) => ({ value: n, label: n }))]}
+            />
           ) : (
             <input
               type="text"

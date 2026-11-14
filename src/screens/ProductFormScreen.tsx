@@ -1,3 +1,4 @@
+import { Select } from '../components/Select'
 import { useConfirm } from '../components/Confirm'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { useStore } from '../data/store'
@@ -581,17 +582,18 @@ export function ProductFormScreen({ product, initial, onClose, onSaved }: Produc
             value={sizeValue}
             onChange={(e) => setSizeValue(e.target.value)}
           />
-          <select
+          <Select
             className="form-select"
+            ariaLabel="Unité"
+            placeholder="Unité…"
             value={sizeUnit}
-            onChange={(e) => setSizeUnit(e.target.value)}
-          >
-            <option value="">Unité…</option>
-            {sizeUnit && !SIZE_UNITS.includes(sizeUnit) && <option value={sizeUnit}>{sizeUnit}</option>}
-            {SIZE_UNITS.map((u) => (
-              <option key={u} value={u}>{u}</option>
-            ))}
-          </select>
+            onChange={setSizeUnit}
+            options={[
+              { value: '', label: 'Unité…' },
+              ...(sizeUnit && !SIZE_UNITS.includes(sizeUnit) ? [{ value: sizeUnit, label: sizeUnit }] : []),
+              ...SIZE_UNITS.map((u) => ({ value: u, label: u })),
+            ]}
+          />
         </div>
       </div>
 

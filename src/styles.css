@@ -2498,3 +2498,16 @@ body.is-selecting .add-bar { display: none; }
 .search-by, .search-value { border: none; background: none; font: inherit; color: var(--fg); outline: none; -webkit-appearance: none; appearance: none; }
 .search-by { flex: 0 0 auto; font-weight: 800; font-size: 14px; color: var(--brand-strong); padding: 0 22px 0 4px; margin-right: 6px; border-right: 1px solid var(--border); background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' fill='none' stroke='%23888' stroke-width='1.6'%3E%3Cpath d='M1 1l4 4 4-4'/%3E%3C/svg%3E") no-repeat right 8px center; }
 .search-value { flex: 1; min-width: 0; font-size: 16px; }
+
+/* Liste déroulante maison (remplace <select>). */
+.cselect-btn { text-align: left; cursor: pointer; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font: inherit; }
+.cselect-overlay { position: fixed; inset: 0; z-index: 1000; background: rgba(15, 23, 28, 0.45); display: flex; align-items: flex-end; justify-content: center; animation: confirm-fade .15s ease; }
+.cselect-sheet { width: 100%; max-width: 520px; max-height: 70vh; display: flex; flex-direction: column; background: var(--surface); border-radius: 24px 24px 0 0; padding: 10px 14px calc(16px + env(safe-area-inset-bottom, 0px)); box-shadow: 0 -10px 40px rgba(0,0,0,0.25); animation: cselect-up .2s ease; }
+.cselect-handle { width: 40px; height: 4px; border-radius: 2px; background: var(--border); margin: 0 auto 10px; flex: 0 0 auto; }
+.cselect-title { font-weight: 800; font-size: 16px; padding: 4px 8px 10px; color: var(--fg); flex: 0 0 auto; }
+.cselect-list { overflow-y: auto; -webkit-overflow-scrolling: touch; display: flex; flex-direction: column; gap: 2px; }
+.cselect-opt { display: flex; align-items: center; justify-content: space-between; gap: 10px; width: 100%; text-align: left; padding: 14px 12px; border: none; border-radius: 14px; background: none; font: inherit; font-size: 16px; font-weight: 600; color: var(--fg); cursor: pointer; }
+.cselect-opt:active { background: var(--accent-soft); }
+.cselect-opt.on { background: var(--brand-soft); color: var(--brand-strong); font-weight: 800; }
+@keyframes cselect-up { from { transform: translateY(40px); opacity: 0 } to { transform: none; opacity: 1 } }
+@media (min-width: 760px) { .cselect-overlay { align-items: center; } .cselect-sheet { border-radius: 22px; } }
