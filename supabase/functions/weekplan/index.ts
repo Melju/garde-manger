@@ -3,6 +3,7 @@
 // Tier « smart » (créatif). Pas de cache (chaque semaine est unique).
 
 import { callClaude, extractJson } from '../_shared/claude.ts'
+import { requireUser } from '../_shared/auth.ts'
 
 function json(obj: unknown, status = 200): Response {
   return new Response(JSON.stringify(obj), { status, headers: { 'content-type': 'application/json' } })
@@ -12,6 +13,8 @@ const DAYS = ['Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi', 'Samedi', 'Dima
 
 Deno.serve(async (req) => {
   if (req.method !== 'POST') return json({ error: 'Méthode non autorisée' }, 405)
+  const denied = await requireUser(req)
+  if (denied) return denied
 
   let body: any = {}
   try {

@@ -4,6 +4,7 @@
 
 import { callClaude, extractJson } from '../_shared/claude.ts'
 import { cacheGet, cacheSet, cacheKey } from '../_shared/cache.ts'
+import { requireUser } from '../_shared/auth.ts'
 
 function json(obj: unknown, status = 200): Response {
   return new Response(JSON.stringify(obj), { status, headers: { 'content-type': 'application/json' } })
@@ -13,6 +14,8 @@ const TTL = 30 * 60 * 1000 // 30 min
 
 Deno.serve(async (req) => {
   if (req.method !== 'POST') return json({ error: 'Méthode non autorisée' }, 405)
+  const denied = await requireUser(req)
+  if (denied) return denied
 
   let body: any = {}
   try {

@@ -3,6 +3,7 @@
 // par ticket). Clé API côté serveur uniquement.
 
 import { callClaude, extractJson } from '../_shared/claude.ts'
+import { requireUser } from '../_shared/auth.ts'
 
 function json(obj: unknown, status = 200): Response {
   return new Response(JSON.stringify(obj), { status, headers: { 'content-type': 'application/json' } })
@@ -12,6 +13,8 @@ const CATEGORIES = 'fruits, legumes, viandes, poissons, laitiers, epicerie, cons
 
 Deno.serve(async (req) => {
   if (req.method !== 'POST') return json({ error: 'Méthode non autorisée' }, 405)
+  const denied = await requireUser(req)
+  if (denied) return denied
 
   let body: any = {}
   try {
