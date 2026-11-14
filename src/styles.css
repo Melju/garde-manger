@@ -2552,3 +2552,9 @@ body.is-selecting .add-bar { display: none; }
 .btn-row { padding: 0 16px; gap: 8px; }
 .btn-row > .btn-primary, .btn-row > .btn-secondary { height: 46px; border-radius: 14px; font-size: 15px; display: flex; align-items: center; justify-content: center; }
 .form-footer .action-chip.cancel { width: auto; height: 46px; flex-direction: row; padding: 0 18px; font-size: 15px; }
+
+/* Bandeau de stats compact : valeur et libellé sur une seule ligne. */
+.stats-strip { gap: 8px; margin-bottom: 14px; }
+.stat-box { padding: 9px 10px; border-radius: 14px; display: flex; align-items: baseline; justify-content: center; gap: 6px; min-width: 0; }
+.stat-box .value { font-size: 20px; line-height: 1.2; }
+.stat-box .label { margin-top: 0; font-size: 12px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
