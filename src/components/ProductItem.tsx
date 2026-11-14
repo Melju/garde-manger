@@ -100,9 +100,9 @@ export function ProductItem({
         onPointerUp={onPointerUp}
         onClick={handleClick}
       >
-        <div className="product-icon" style={{ background: col.bg, color: col.fg }}>
+        <div className={`product-icon${imageSlug ? ' has-img' : ''}`} style={{ background: col.bg, color: col.fg }}>
           {imageSlug ? (
-            <img className="product-img" src={productImageUrl(imageSlug)} alt="" width={38} height={38} loading="lazy" draggable={false} />
+            <img className="product-img" src={productImageUrl(imageSlug)} alt="" width={54} height={54} loading="lazy" draggable={false} />
           ) : iconKey && hasFoodIcon(iconKey) ? (
             <FoodIcon name={iconKey} />
           ) : (
