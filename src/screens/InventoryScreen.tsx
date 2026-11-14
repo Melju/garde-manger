@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { useStore } from '../data/store'
 import { useToast } from '../components/Toast'
 import { Icon } from '../components/Icon'
@@ -9,6 +9,7 @@ import { remainingLabel, isBareWeightUnit, countPerPack, countLabel } from '../l
 import { urgentCount } from '../lib/expiry'
 import { budgetSummary } from '../lib/analytics'
 import { splitBrand } from '../lib/brandSplit'
+import { splitWeight } from '../lib/weightSplit'
 import { setProductStores } from '../lib/stores'
 import { addProductsToStores, getStores, storeInName, storesFor } from '../lib/stores'
 import { learnPlace } from '../lib/learnedPlace'
@@ -46,6 +47,7 @@ export function InventoryScreen({
   const [pickedCat, setPickedCat] = useState<Category | null>(null)
   const [pickedLoc, setPickedLoc] = useState<string | null>(null)
   const storeChoices = useMemo(() => getStores(), [selecting])
+  const brandBusy = useRef(false)
   // Une seule fois : associe aux produits déjà enregistrés le magasin cité dans leur nom (ex : « … Auchan »).
   useEffect(() => {
     const FLAG = 'miamm.brandstores.v1'
@@ -68,6 +70,7 @@ export function InventoryScreen({
     try {
       if (!products.length || localStorage.getItem(FLAG)) return
       localStorage.setItem(FLAG, '1')
+      brandBusy.current = true
       void (async () => {
         for (const p of products) {
           if (p.brand) continue
@@ -82,6 +85,29 @@ export function InventoryScreen({
       /* ignore */
     }
   }, [products.length > 0])
+
+  // Une seule fois : sort le poids du nom (« … 180g ») et renseigne la contenance quand elle manque ou diffère.
+  useEffect(() => {
+    const FLAG = 'miamm.weightsplit.v1'
+    try {
+      if (!products.length || brandBusy.current || localStorage.getItem(FLAG)) return
+      localStorage.setItem(FLAG, '1')
+      void (async () => {
+        for (const p of products) {
+          const r = splitWeight(p.name)
+          if (!r) continue
+          const partial = !!p.size && p.size.includes('/') // quantité entamée : on ne touche pas
+          const patch: { name: string; size?: string } = { name: r.name }
+          if (!partial && p.size !== r.size) patch.size = r.size
+          const shops = storesFor(p.name)
+          await updateProduct(p.id, patch)
+          if (shops.length) setProductStores(r.name, p.category, undefined, p.quantity, shops)
+        }
+      })()
+    } catch {
+      /* ignore */
+    }
+  }, [products])
 
   // En sélection, la barre d'actions prend la place du bouton « Ajouter » (évite la superposition).
   useEffect(() => {

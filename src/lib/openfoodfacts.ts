@@ -1,3 +1,4 @@
+import { splitWeight } from './weightSplit'
 import type { Category, ProductInput } from '../types'
 
 /** Résultat d'une recherche de code-barres. */
@@ -90,6 +91,8 @@ export async function lookupBarcode(barcode: string): Promise<BarcodeLookup> {
       const stripped = name.replace(new RegExp(`(^|\\s)${esc}(?=\\s|$)`, 'i'), ' ').replace(/\s+/g, ' ').trim()
       if (stripped.length >= 3) displayName = stripped
     }
+    // Le poids a son propre champ (contenance) : on le retire du nom.
+    if (displayName) displayName = splitWeight(displayName)?.name ?? displayName
 
     const grade: string | undefined =
       typeof p.nutriscore_grade === 'string' && /^[a-e]$/i.test(p.nutriscore_grade)
