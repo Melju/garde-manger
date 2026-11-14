@@ -11,6 +11,8 @@ interface ScanScreenProps {
   onResult?: (prefill: Partial<ProductInput>, found: boolean) => void
   /** Mode retrait : appelé à chaque scan avec le code-barres (le scan continue). */
   onConsume?: (barcode: string) => void
+  /** Mode ajout : renvoie true si le code est déjà en stock et a été traité (+1), sans ouvrir de fiche. */
+  onKnownBarcode?: (barcode: string) => Promise<boolean>
   /** Mode retrait : produits retirés dans la session (pour correction). */
   removed?: { id: string; name: string; count: number }[]
   /** Mode retrait : annule un retrait (remet +1). */
@@ -20,14 +22,14 @@ interface ScanScreenProps {
 
 type Phase = 'scanning' | 'looking-up' | 'error'
 
-export function ScanScreen({ mode = 'add', onResult, onConsume, removed, onUndo, onClose }: ScanScreenProps) {
+export function ScanScreen({ mode = 'add', onResult, onConsume, onKnownBarcode, removed, onUndo, onClose }: ScanScreenProps) {
   const videoRef = useRef<HTMLVideoElement>(null)
   const controlsRef = useRef<IScannerControls | null>(null)
   const handledRef = useRef(false)
   const lastRef = useRef<{ code: string; t: number }>({ code: '', t: 0 })
   // Callbacks dans une ref pour ne pas relancer la caméra à chaque rendu.
-  const cb = useRef({ mode, onResult, onConsume })
-  cb.current = { mode, onResult, onConsume }
+  const cb = useRef({ mode, onResult, onConsume, onKnownBarcode })
+  cb.current = { mode, onResult, onConsume, onKnownBarcode }
   const toast = useToast()
   const [phase, setPhase] = useState<Phase>('scanning')
   const [errorMsg, setErrorMsg] = useState('')
@@ -37,7 +39,7 @@ export function ScanScreen({ mode = 'add', onResult, onConsume, removed, onUndo,
     let cancelled = false
 
     async function onDetected(barcode: string) {
-      const { mode, onResult, onConsume } = cb.current
+      const { mode, onResult, onConsume, onKnownBarcode } = cb.current
       if (mode === 'consume') {
         // Anti-rebond : ignore le même code scanné dans la dernière seconde et demie.
         const now = Date.now()
@@ -47,6 +49,13 @@ export function ScanScreen({ mode = 'add', onResult, onConsume, removed, onUndo,
         return
       }
       if (handledRef.current) return
+      // Produit déjà en stock : +1 sans quitter le scanner (anti-rebond 3 s sur le même code).
+      if (onKnownBarcode) {
+        const now = Date.now()
+        if (lastRef.current.code === barcode && now - lastRef.current.t < 3000) return
+        lastRef.current = { code: barcode, t: now }
+        if (await onKnownBarcode(barcode)) return
+      }
       handledRef.current = true
       controlsRef.current?.stop()
       setPhase('looking-up')

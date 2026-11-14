@@ -65,6 +65,15 @@ export function App() {
   const auth = useAuth()
   const toast = useToast()
 
+  // Ajout par scan : un produit déjà en stock (même code-barres) passe simplement à +1.
+  async function addKnownByBarcode(barcode: string): Promise<boolean> {
+    const p = products.find((x) => x.barcode && x.barcode === barcode)
+    if (!p) return false
+    await adjustQuantity(p.id, 1)
+    toast(`${p.name} : ×${p.quantity + 1} en stock`)
+    return true
+  }
+
   // Retrait par scan : décrémente le produit correspondant au code-barres.
   async function consumeByBarcode(barcode: string) {
     const p = products.find((x) => x.barcode && x.barcode === barcode)
@@ -235,6 +244,7 @@ export function App() {
         return (
           <Suspense fallback={<div className="scan-screen" />}>
             <ScanScreen
+              onKnownBarcode={addKnownByBarcode}
               onResult={(initial) => replace({ name: 'product-form', product: null, initial, fromScan: true })}
               onClose={back}
             />
