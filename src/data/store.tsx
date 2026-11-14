@@ -43,6 +43,16 @@ import { buildNotifications, type Notification } from '../lib/analytics'
 import { DIET_LABELS } from '../types'
 import { lookupBarcode } from '../lib/openfoodfacts'
 
+/** Brouillon de recette issu d'une photo. */
+export interface ScannedRecipe {
+  title: string
+  course: string
+  timeMin: number
+  servings: number | null
+  ingredients: { name: string; qty: string }[]
+  steps: string[]
+}
+
 interface StoreValue {
   products: Product[]
   shopping: ShoppingItem[]
@@ -100,6 +110,8 @@ interface StoreValue {
   generateRecipe(opts?: { constraints?: string; course?: string }): Promise<Recipe>
   /** Analyse la photo d'un ticket de caisse (Claude Vision) → articles détectés. */
   scanReceipt(image: string, mediaType: string): Promise<ReceiptItem[]>
+  /** Lit la photo d'une recette (Claude Vision) → brouillon de recette. */
+  scanRecipe(images: { data: string; mediaType: string }[]): Promise<ScannedRecipe>
   /** Devine catégorie/conservation/unité + durée par mode pour un nom de produit. */
   enrichProduct(name: string): Promise<{
     category: Category
@@ -618,6 +630,14 @@ export function StoreProvider({ children }: { children: ReactNode }) {
         const items = (data as any)?.items
         if (!Array.isArray(items)) throw new Error((data as any)?.error || 'Réponse invalide')
         return items as ReceiptItem[]
+      },
+      async scanRecipe(images) {
+        if (!supabase) throw new Error('Connecte-toi pour scanner une recette')
+        const { data, error } = await supabase.functions.invoke('recipescan', { body: { images } })
+        if (error) throw new Error(error.message || 'Analyse impossible')
+        const d = data as any
+        if (!d || !Array.isArray(d.ingredients)) throw new Error(d?.error || 'Réponse invalide')
+        return d as ScannedRecipe
       },
       async scanExpiry(image, mediaType) {
         if (!supabase) throw new Error('Connecte-toi pour scanner une date')

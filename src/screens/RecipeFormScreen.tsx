@@ -1,8 +1,9 @@
-import { useMemo, useState } from 'react'
+import { useMemo, useRef, useState } from 'react'
 import { useStore } from '../data/store'
 import { useToast } from '../components/Toast'
 import { PageHeader } from '../components/PageHeader'
 import { Icon } from '../components/Icon'
+import { downscaleImage } from '../lib/imageResize'
 import type { Recipe, RecipeIngredient } from '../types'
 
 interface RecipeFormScreenProps {
@@ -22,7 +23,7 @@ const COURSES: [string, string][] = [
 const COURSE_VALUES = COURSES.map(([v]) => v)
 
 export function RecipeFormScreen({ recipe, onClose, onSaved }: RecipeFormScreenProps) {
-  const { addRecipe, updateRecipe, products, recipes, shopCatalog } = useStore()
+  const { addRecipe, updateRecipe, products, recipes, shopCatalog, scanRecipe } = useStore()
   const toast = useToast()
   const isEdit = !!recipe
 
@@ -51,6 +52,34 @@ export function RecipeFormScreen({ recipe, onClose, onSaved }: RecipeFormScreenP
   )
   const [steps, setSteps] = useState((recipe?.steps ?? []).join('\n'))
   const [busy, setBusy] = useState(false)
+  const fileRef = useRef<HTMLInputElement>(null)
+  const [reading, setReading] = useState(false)
+
+  // Photo(s) d'une recette : Claude la lit et pré-remplit le formulaire (à relire avant d'enregistrer).
+  async function onPhotos(e: React.ChangeEvent<HTMLInputElement>) {
+    const files = Array.from(e.target.files ?? []).slice(0, 4)
+    if (!files.length) return
+    setReading(true)
+    try {
+      const images = await Promise.all(files.map((f) => downscaleImage(f)))
+      const r = await scanRecipe(images)
+      if (!r.title && !r.ingredients.length && !r.steps.length) {
+        toast('Aucune recette lisible sur la photo')
+        return
+      }
+      if (r.title) setTitle(r.title)
+      setCourse(r.course)
+      if (r.timeMin) setTimeMin(String(r.timeMin))
+      if (r.ingredients.length) setIngredients(r.ingredients.map((i) => ({ name: i.name, qty: i.qty })))
+      if (r.steps.length) setSteps(r.steps.join('\n'))
+      toast('Recette lue : relis-la avant d’enregistrer')
+    } catch (err) {
+      toast(err instanceof Error ? err.message : 'Lecture impossible')
+    } finally {
+      setReading(false)
+      if (fileRef.current) fileRef.current.value = ''
+    }
+  }
 
   function setIng(i: number, p: Partial<RecipeIngredient>) {
     setIngredients((l) => l.map((ing, idx) => (idx === i ? { ...ing, ...p } : ing)))
@@ -95,6 +124,19 @@ export function RecipeFormScreen({ recipe, onClose, onSaved }: RecipeFormScreenP
     <div className="screen-fade">
       <PageHeader title={isEdit ? 'Modifier la recette' : 'Nouvelle recette'} onBack={onClose} />
 
+      <div className="form-group">
+      <div className="form-group-title">Recette</div>
+      {!isEdit && (
+        <div className="form-section recipe-photo">
+          <input ref={fileRef} type="file" accept="image/*" multiple hidden onChange={onPhotos} />
+          <button type="button" className="ai-complete-btn recipe-photo-btn" disabled={reading} onClick={() => fileRef.current?.click()}>
+            <Icon name="scan" width={2.2} />
+            {reading ? 'Lecture de la recette…' : 'Photographier une recette'}
+          </button>
+          <div className="recipe-photo-hint">Livre, carnet ou capture d'écran : jusqu'à 4 photos, tout est pré-rempli.</div>
+        </div>
+      )}
+
       <div className="form-section">
         <label className="form-label" htmlFor="rtitle">Nom de la recette</label>
         <input
@@ -109,7 +151,7 @@ export function RecipeFormScreen({ recipe, onClose, onSaved }: RecipeFormScreenP
 
       <div className="form-section">
         <label className="form-label">Type</label>
-        <div className="opt-grid">
+        <div className="opt-grid five">
           {COURSES.map(([val, label]) => (
             <button
               key={val}
@@ -135,9 +177,11 @@ export function RecipeFormScreen({ recipe, onClose, onSaved }: RecipeFormScreenP
           onChange={(e) => setTimeMin(e.target.value)}
         />
       </div>
+      </div>
 
-      <div className="form-section">
-        <label className="form-label">Ingrédients</label>
+      <div className="form-group">
+        <div className="form-group-title">Ingrédients</div>
+        <div className="form-section">
         {ingredients.map((ing, i) => {
           const q = ing.name.trim().toLowerCase()
           const sugg =
@@ -211,10 +255,13 @@ export function RecipeFormScreen({ recipe, onClose, onSaved }: RecipeFormScreenP
           <Icon name="plus" width={2.2} />
           Ajouter un ingrédient
         </button>
+        </div>
       </div>
 
+      <div className="form-group">
+        <div className="form-group-title">Étapes</div>
       <div className="form-section">
-        <label className="form-label" htmlFor="rsteps">Étapes (optionnel, une par ligne)</label>
+        <label className="form-label" htmlFor="rsteps">Une par ligne (optionnel)</label>
         <textarea
           id="rsteps"
           className="form-input"
@@ -224,8 +271,9 @@ export function RecipeFormScreen({ recipe, onClose, onSaved }: RecipeFormScreenP
           onChange={(e) => setSteps(e.target.value)}
         />
       </div>
+      </div>
 
-      <div className="btn-row" style={{ margin: '0 20px 20px' }}>
+      <div className="btn-row recipe-actions">
         <button className="btn-secondary" onClick={onClose} disabled={busy}>Annuler</button>
         <button className="btn-primary" onClick={save} disabled={busy || !title.trim()}>
           {busy ? 'Enregistrement…' : isEdit ? 'Enregistrer' : 'Créer la recette'}

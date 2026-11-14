@@ -2530,3 +2530,15 @@ body.is-selecting .add-bar { display: none; }
 @media (prefers-reduced-motion: reduce) { .search-hint span { animation: none; } .search-hint span:first-child { opacity: 1; } }
 
 .confirm-input { margin-top: 14px; width: 100%; }
+
+.recipe-photo-btn { width: 100%; justify-content: center; }
+.recipe-photo-hint { margin-top: 8px; font-size: 12px; color: var(--muted); text-align: center; }
+
+/* Formulaire recette : sections en cartes (comme la fiche produit), boutons alignés. */
+.opt-grid.five { grid-template-columns: repeat(6, 1fr); }
+.opt-grid.five .opt-btn { grid-column: span 2; padding: 12px 4px; font-size: 14px; font-weight: 600; text-align: center; }
+.opt-grid.five .opt-btn:nth-child(n+4) { grid-column: span 3; }
+.recipe-photo { padding-bottom: 14px; margin-bottom: 18px; border-bottom: 1px solid var(--border); }
+.btn-row.recipe-actions { padding: 0 16px; margin: 0 0 28px; }
+.btn-row.recipe-actions > * { height: 52px; border-radius: 16px; display: flex; align-items: center; justify-content: center; }
+.form-group .ing-row { margin-bottom: 10px; }
