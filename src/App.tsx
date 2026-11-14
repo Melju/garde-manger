@@ -23,6 +23,7 @@ import { Fab } from './components/Fab'
 import { useToast } from './components/Toast'
 import { useStore } from './data/store'
 import { useAuth } from './data/auth'
+import { InstallPrompt } from './components/InstallPrompt'
 import { lookupBarcode } from './lib/openfoodfacts'
 import { recallProduct } from './lib/productMemory'
 import { splitSize } from './lib/contenance'
@@ -190,6 +191,7 @@ export function App() {
       </aside>
 
       <main className={`app${!top && add ? ' with-fab' : ''}`}>
+        {!top && <InstallPrompt />}
         {/* Cloud configuré mais aucune session : l'app tourne sur le stockage local de cet appareil. */}
         {!top && auth.cloudEnabled && !auth.householdId && (
           <div className="local-banner" role="alert">
