@@ -93,21 +93,6 @@ export function ShoppingScreen({ addOpen, onCloseAdd }: ShoppingScreenProps) {
     setNewStore('')
   }
 
-  // Articles que tu achètes d'habitude dans ce magasin et qui manquent (stock faible ou absent), pas encore dans la liste.
-  const usualHere = useMemo(() => {
-    if (!store) return []
-    const inList = new Set(shopping.map((it) => it.name.trim().toLowerCase()))
-    return habitsFor(store)
-      .filter((h) => {
-        const k = h.name.trim().toLowerCase()
-        if (inList.has(k)) return false
-        const inStock = products.find((p) => p.name.trim().toLowerCase() === k)
-        return !inStock || inStock.quantity <= 1
-      })
-      .slice(0, 12)
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [store, shopping, products, storeTick])
-
   const remaining = shopping.filter((it) => !it.checked).length
 
   // Connaissance des articles : produits + historique + apprentissage (localStorage).
@@ -145,6 +130,34 @@ export function ShoppingScreen({ addOpen, onCloseAdd }: ShoppingScreenProps) {
     return { lookup: map, catalog }
   }, [products, history, shopping, shopCatalog])
 
+  // Stock actuel d'un article (somme des produits du même nom), undefined s'il n'est pas en stock.
+  const stockOf = (nm: string): number | undefined => {
+    const k = nm.trim().toLowerCase()
+    const found = products.filter((p) => p.name.trim().toLowerCase() === k)
+    return found.length ? found.reduce((t, p) => t + p.quantity, 0) : undefined
+  }
+  // Fréquence d'achat : le plus haut compteur entre l'apprentissage global et les habitudes du magasin.
+  const freqOf = (nm: string) => Math.max(lookup.get(nm.trim().toLowerCase())?.count ?? 0, store ? isUsualAt(store, nm) : 0)
+
+  // Les plus souvent achetés qui manquent (absents du stock ou presque) et pas encore dans la liste.
+  const usual = useMemo(() => {
+    const inList = new Set(shopping.map((it) => it.name.trim().toLowerCase()))
+    const seen = new Set<string>()
+    const out: { name: string; category: Category; unit: string; qty?: number; count: number; stock?: number }[] = []
+    const consider = (h: { name: string; category: Category; unit: string; qty?: number; count: number }) => {
+      const k = h.name.trim().toLowerCase()
+      if (!k || seen.has(k) || inList.has(k)) return
+      const st = stockOf(h.name)
+      if (st !== undefined && st > 1) return
+      seen.add(k)
+      out.push({ ...h, stock: st })
+    }
+    if (store) habitsFor(store).forEach(consider)
+    catalog.filter((it) => it.count >= 2).forEach(consider)
+    return out.sort((a, b) => b.count - a.count).slice(0, 12)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [store, shopping, products, catalog, storeTick])
+
   const typed = name.trim().toLowerCase()
 
   // Brouillon courant : unité + catégorie devinées depuis l'article.
@@ -172,11 +185,12 @@ export function ShoppingScreen({ addOpen, onCloseAdd }: ShoppingScreenProps) {
       arr.push(it)
       map.set(it.category, arr)
     }
-    if (store) for (const arr of map.values()) arr.sort((a, b) => isUsualAt(store, b.name) - isUsualAt(store, a.name))
+    // Dans chaque rayon, les articles les plus souvent achetés passent en premier.
+    for (const arr of map.values()) arr.sort((a, b) => freqOf(b.name) - freqOf(a.name))
     return CATEGORIES.map((c) => ({ category: c.id, items: map.get(c.id) ?? [] })).filter(
       (g) => g.items.length > 0,
     )
-  }, [shopping, store, storeTick])
+  }, [shopping, store, storeTick, lookup])
 
   function qtyLabel(quantity: number, unit?: string) {
     return unit ? formatContenance(quantity, unit) : `×${quantity}`
@@ -342,11 +356,11 @@ export function ShoppingScreen({ addOpen, onCloseAdd }: ShoppingScreenProps) {
           </div>
         </div>
       )}
-      {store && usualHere.length > 0 && (
+      {usual.length > 0 && (
         <div className="usual-here">
-          <div className="usual-title">Habituels chez {store} à racheter</div>
+          <div className="usual-title">Souvent achetés, à racheter</div>
           <div className="usual-list">
-            {usualHere.map((h) => (
+            {usual.map((h) => (
               <button
                 key={h.name}
                 type="button"
@@ -354,6 +368,7 @@ export function ShoppingScreen({ addOpen, onCloseAdd }: ShoppingScreenProps) {
                 onClick={() => addShoppingItem({ name: h.name, category: h.category, quantity: h.qty || 1, unit: h.unit || undefined, source: 'auto' })}
               >
                 + {h.name}
+                {h.stock !== undefined && <span className="usual-stock"> · {h.stock > 0 ? `${h.stock} en stock` : 'épuisé'}</span>}
               </button>
             ))}
           </div>
@@ -383,7 +398,13 @@ export function ShoppingScreen({ addOpen, onCloseAdd }: ShoppingScreenProps) {
                 <div className="checkbox">
                   <Icon name="check" width={3} />
                 </div>
-                <span className="shopping-name">{it.name}</span>
+                <span className="shopping-name">
+                  {it.name}
+                  {(() => {
+                    const st = stockOf(it.name)
+                    return st ? <span className="shopping-stock">{st} en stock</span> : null
+                  })()}
+                </span>
                 <div className="shop-step" onClick={(e) => e.stopPropagation()}>
                   <button aria-label="Diminuer" onClick={() => stepQty(it, -1)}>−</button>
                   <span className="shop-step-val">{qtyLabel(it.quantity, it.unit)}</span>
