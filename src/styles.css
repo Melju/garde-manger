@@ -2421,3 +2421,5 @@ input[type='date'].form-input::-webkit-calendar-picker-indicator {
 .form-footer .action-chip { flex: 0 0 auto; width: 46px; height: 46px; padding: 0; justify-content: center; border-radius: 14px; }
 .form-footer .form-save { flex: 1; width: auto; margin: 0; min-height: 46px; }
 .app { overflow-x: clip; } /* hidden casserait le position: sticky de la barre du formulaire */
+/* Formulaire produit : la barre sticky doit toucher le bas de l'écran (pas de marge de la nav en dessous) */
+.app:has(.form-footer), .app.with-fab:has(.form-footer) { padding-bottom: 0; }
