@@ -5,7 +5,7 @@ import { Icon } from '../components/Icon'
 import { ProductItem } from '../components/ProductItem'
 import { CATEGORIES, type Category, type Product } from '../types'
 import { remainingLabel, isBareWeightUnit, countPerPack, countLabel } from '../lib/contenance'
-import { expiryLabel, priorityProducts, urgentCount } from '../lib/expiry'
+import { urgentCount } from '../lib/expiry'
 import { budgetSummary } from '../lib/analytics'
 import { addProductsToStores, getStores, storesFor } from '../lib/stores'
 import { learnPlace } from '../lib/learnedPlace'
@@ -44,7 +44,6 @@ export function InventoryScreen({
   const [pickedLoc, setPickedLoc] = useState<string | null>(null)
   const storeChoices = useMemo(() => getStores(), [selecting])
 
-  const priority = useMemo(() => priorityProducts(products), [products])
   const urgent = useMemo(() => urgentCount(products), [products])
 
   const filtered = useMemo(() => {
@@ -194,27 +193,6 @@ export function InventoryScreen({
           <div className="label">Ce mois</div>
         </div>
       </div>
-
-      {priority.length > 0 && (
-        <div className="priority-section">
-          <div className="priority-header">
-            <Icon name="alert" />
-            <h2>À consommer en priorité</h2>
-          </div>
-          <div className="priority-scroll">
-            {priority.map((p) => (
-              <div key={p.id} className="priority-card" onClick={() => onEdit(p)}>
-                <div className="name">{p.name}</div>
-                <div className="expiry">{expiryLabel(p)}</div>
-                <div className="qty">
-                  ×{p.quantity}
-                  {p.unit ? ` ${p.unit}` : ''}
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
 
       <div className="search-row">
         <div className="search-input">
