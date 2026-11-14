@@ -4,7 +4,6 @@ import { useToast } from '../components/Toast'
 import { Icon } from '../components/Icon'
 import {
   CATEGORIES,
-  CONSERVATIONS,
   defaultConservation,
   type Category,
   type Conservation,
@@ -152,22 +151,27 @@ export function ProductFormScreen({ product, initial, onClose, onSaved }: Produc
     if (iso) setExpiryDate(iso)
   }
 
-  // L'emplacement découle de la conservation : réfrigéré → Réfrigérateur, congelé → Congélateur.
-  const CONS_LOCATION: Partial<Record<Conservation, string>> = {
-    refrigere: 'Réfrigérateur',
-    congele: 'Congélateur',
+  // La conservation (frais / réfrigéré / congelé) se déduit de l'emplacement : plus de double saisie.
+  function consOfLocation(l: string): Conservation {
+    const n = l.toLowerCase()
+    if (n.includes('congel') || n.includes('freez')) return 'congele'
+    if (n.includes('frigo') || n.includes('refrig') || n.includes('réfrig')) return 'refrigere'
+    return 'frais'
   }
-  function pickConservation(c: Conservation) {
+  function pickLocation(l: string) {
+    setLocation(l)
+    const c = consOfLocation(l)
     setConservation(c)
-    const auto = CONS_LOCATION[c]
-    if (auto) setLocation(auto)
-    // En repassant en « frais », on retire l'emplacement auto précédent.
-    else setLocation((cur) => (cur === 'Réfrigérateur' || cur === 'Congélateur' ? '' : cur))
-    // Si l'IA a fourni des durées, la DLC suit le mode de conservation choisi.
+    // Si l'IA a fourni des durées, la DLC suit l'emplacement choisi.
     if (aiShelf) {
       const days = aiShelf[c]
       if (days > 0) setExpiryDate(isoInDays(days))
     }
+  }
+  function pickConservation(c: Conservation) {
+    if (c === 'refrigere') pickLocation('Réfrigérateur')
+    else if (c === 'congele') pickLocation('Congélateur')
+    else pickLocation(consOfLocation(location) === 'frais' ? location : '')
   }
 
   // Quand on change de catégorie, on aligne la conservation par défaut (et l'emplacement).
@@ -383,22 +387,6 @@ export function ProductFormScreen({ product, initial, onClose, onSaved }: Produc
       )}
 
       <div className="form-section">
-        <label className="form-label">Conservation</label>
-        <div className="opt-grid">
-          {CONSERVATIONS.map((c) => (
-            <button
-              key={c.id}
-              type="button"
-              className={`opt-btn${conservation === c.id ? ' active' : ''}`}
-              onClick={() => pickConservation(c.id)}
-            >
-              {c.label}
-            </button>
-          ))}
-        </div>
-      </div>
-
-      <div className="form-section">
         <label className="form-label">Catégorie</label>
         <div className="opt-grid">
           {CATEGORIES.map((c) => (
@@ -512,14 +500,14 @@ export function ProductFormScreen({ product, initial, onClose, onSaved }: Produc
       </div>
 
       <div className="form-section">
-        <label className="form-label" htmlFor="location">Emplacement (optionnel)</label>
+        <label className="form-label" htmlFor="location">Emplacement</label>
         <div className="opt-grid">
           {LOCATIONS.map((l) => (
             <button
               key={l}
               type="button"
               className={`opt-btn${location === l ? ' active' : ''}`}
-              onClick={() => setLocation((cur) => (cur === l ? '' : l))}
+              onClick={() => pickLocation(location === l ? '' : l)}
             >
               {l}
             </button>
@@ -531,7 +519,7 @@ export function ProductFormScreen({ product, initial, onClose, onSaved }: Produc
           style={{ marginTop: 10 }}
           placeholder="Autre emplacement…"
           value={LOCATIONS.includes(location) ? '' : location}
-          onChange={(e) => setLocation(e.target.value)}
+          onChange={(e) => pickLocation(e.target.value)}
         />
       </div>
 
