@@ -193,3 +193,17 @@ function withFull(remaining: string, oldSize: string, p: Parsed): string {
   const full = splitSize(oldSize).full ?? formatContenance(p.value, p.unit)
   return `${remaining}/${full}`
 }
+
+/**
+ * Anciennes données : contenance réduite à une unité seule (« kg ») avec la quantité à part (×1).
+ * On lit ça comme « 1 kg ».
+ */
+export function isBareWeightUnit(size?: string): boolean {
+  return !!size && WEIGHT_UNITS.includes(size.trim())
+}
+
+/** Produit corrigé pour l'affichage : « kg » × 2 devient « 2 kg » × 1. */
+export function normalizeBareUnit<T extends { quantity: number; size?: string }>(p: T): T {
+  if (!isBareWeightUnit(p.size)) return p
+  return { ...p, size: formatContenance(p.quantity, p.size!.trim()), quantity: 1 }
+}

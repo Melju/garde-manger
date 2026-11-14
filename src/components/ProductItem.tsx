@@ -9,6 +9,7 @@ import {
   portionScale,
   formatContenance,
   stockLabel,
+  normalizeBareUnit,
 } from '../lib/contenance'
 import { Icon, categoryIcon } from './Icon'
 import { FoodIcon, hasFoodIcon } from './FoodIcon'
@@ -33,12 +34,14 @@ type Swipe = 'none' | 'left' | 'right'
  * - glisser à droite → marquer périmé (jeté)
  */
 export function ProductItem({
-  product,
+  product: rawProduct,
   onSelect,
   onRemoveQty,
   onWaste,
   onConsumePortion,
 }: ProductItemProps) {
+  // « kg » seul (ancienne saisie) est lu comme « 1 kg ».
+  const product = normalizeBareUnit(rawProduct)
   const [swipe, setSwipe] = useState<Swipe>('none')
   const startX = useRef<number | null>(null)
   const moved = useRef(false)
@@ -71,7 +74,7 @@ export function ProductItem({
       setSwipe('none')
       return
     }
-    onSelect(product)
+    onSelect(rawProduct)
   }
 
   const weightLabel = stockLabel(product)
@@ -89,7 +92,7 @@ export function ProductItem({
         <button
           className="qty-btn waste"
           onClick={() => {
-            onWaste(product)
+            onWaste(rawProduct)
             setSwipe('none')
           }}
         >
@@ -135,7 +138,7 @@ export function ProductItem({
             onConfirm={(v) => {
               setSwipe('none')
               if (v <= 0) return
-              onConsumePortion(product, consumeAmount(product.size!, v, scale.baseUnit))
+              onConsumePortion(rawProduct, consumeAmount(product.size!, v, scale.baseUnit))
             }}
           />
         ) : (
@@ -147,7 +150,7 @@ export function ProductItem({
             format={(v) => `−${v}`}
             onConfirm={(v) => {
               setSwipe('none')
-              onRemoveQty(product, v >= product.quantity ? 'all' : v)
+              onRemoveQty(rawProduct, v >= product.quantity ? 'all' : v)
             }}
           />
         )}
