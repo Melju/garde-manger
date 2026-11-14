@@ -53,7 +53,7 @@ interface ProductFormScreenProps {
 }
 
 export function ProductFormScreen({ product, initial, onClose, onSaved }: ProductFormScreenProps) {
-  const { addProduct, updateProduct, removeProduct, adjustQuantity, wasteProduct, enrichProduct, family } = useStore()
+  const { addProduct, updateProduct, removeProduct, adjustQuantity, wasteProduct, enrichProduct, family, products } = useStore()
   const toast = useToast()
   const isEdit = product !== null
   const [enriching, setEnriching] = useState(false)
@@ -115,6 +115,32 @@ export function ProductFormScreen({ product, initial, onClose, onSaved }: Produc
     : (product?.conservation ?? initial?.conservation ?? defaultConservation(initCategory))
   const [name, setName] = useState(product?.name ?? initial?.name ?? '')
   const [brand, setBrand] = useState(product?.brand ?? initial?.brand ?? '')
+  const [brandOpen, setBrandOpen] = useState(false)
+  // Marques connues (par fréquence) et marques corrélées au nom saisi (produits aux mots communs).
+  const { knownBrands, correlated } = useMemo(() => {
+    const count = new Map<string, { label: string; n: number }>()
+    const words = (s: string) => normalize(s).split(/[^a-z0-9]+/).filter((w) => w.length >= 4)
+    const mine = new Set(words(name))
+    const corr = new Map<string, { label: string; score: number }>()
+    for (const p of products) {
+      const b = p.brand?.trim()
+      if (!b) continue
+      const k = normalize(b)
+      count.set(k, { label: b, n: (count.get(k)?.n ?? 0) + 1 })
+      const shared = words(p.name).filter((w) => mine.has(w)).length
+      if (shared) corr.set(k, { label: b, score: (corr.get(k)?.score ?? 0) + shared })
+    }
+    return {
+      knownBrands: [...count.values()].sort((a, b) => b.n - a.n || a.label.localeCompare(b.label)).map((x) => x.label),
+      correlated: [...corr.values()].sort((a, b) => b.score - a.score).map((x) => x.label).slice(0, 5),
+    }
+  }, [products, name])
+  const brandQ = normalize(brand).trim()
+  const brandMatches = useMemo(
+    () => knownBrands.filter((b) => !brandQ || normalize(b).includes(brandQ)).slice(0, 6),
+    [knownBrands, brandQ],
+  )
+  const brandIsNew = brandQ !== '' && !knownBrands.some((b) => normalize(b) === brandQ)
   const [category, setCategory] = useState<Category>(initCategory)
   const [conservation, setConservation] = useState<Conservation>(initConservation)
   const [quantity, setQuantity] = useState(product?.quantity ?? initial?.quantity ?? 1)
@@ -396,15 +422,51 @@ export function ProductFormScreen({ product, initial, onClose, onSaved }: Produc
             autoFocus={!isEdit}
             onChange={(e) => setName(e.target.value)}
           />
-          <input
-            id="brand"
-            className="form-input"
-            style={{ marginTop: 8 }}
-            placeholder="Marque (facultatif)"
-            aria-label="Marque"
-            value={brand}
-            onChange={(e) => setBrand(e.target.value)}
-          />
+          <div className="brand-field">
+            <input
+              id="brand"
+              className="form-input"
+              placeholder="Marque (facultatif)"
+              aria-label="Marque"
+              autoComplete="off"
+              value={brand}
+              onFocus={() => setBrandOpen(true)}
+              onBlur={() => setTimeout(() => setBrandOpen(false), 150)}
+              onChange={(e) => {
+                setBrand(e.target.value)
+                setBrandOpen(true)
+              }}
+            />
+            {brand && (
+              <button type="button" className="brand-clear" aria-label="Effacer la marque" onMouseDown={(e) => e.preventDefault()} onClick={() => setBrand('')}>
+                ×
+              </button>
+            )}
+            {brandOpen && (brandMatches.length > 0 || brandIsNew) && (
+              <div className="brand-menu">
+                {brandMatches.map((b) => (
+                  <button key={b} type="button" className="brand-opt" onMouseDown={(e) => e.preventDefault()} onClick={() => { setBrand(b); setBrandOpen(false) }}>
+                    {b}
+                  </button>
+                ))}
+                {brandIsNew && (
+                  <button type="button" className="brand-opt add" onMouseDown={(e) => e.preventDefault()} onClick={() => { setBrand(brand.trim()); setBrandOpen(false) }}>
+                    + Ajouter « {brand.trim()} »
+                  </button>
+                )}
+              </div>
+            )}
+          </div>
+          {!brand.trim() && correlated.length > 0 && (
+            <div className="brand-suggest">
+              <span>Souvent avec ce type de produit :</span>
+              {correlated.map((b) => (
+                <button key={b} type="button" className="usual-chip" onClick={() => setBrand(b)}>
+                  {b}
+                </button>
+              ))}
+            </div>
+          )}
         </div>
         <div className="hero-row">
           <div className="hero-icon-col">
