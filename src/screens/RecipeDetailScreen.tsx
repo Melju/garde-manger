@@ -120,18 +120,18 @@ export function RecipeDetailScreen({ recipe, onBack, onGoShopping, onEdit }: Rec
         </div>
       )}
 
-      <div className="btn-row">
-        <button className="btn-secondary" onClick={addMissing}>
-          Ajouter manquants
-        </button>
-        <button className="btn-primary" onClick={prepared}>
+      <div className="form-footer">
+        <div className="form-actions">
+          <button type="button" className="action-chip" onClick={addMissing} aria-label="Ajouter les manquants aux courses" title="Ajouter les manquants aux courses">
+            <Icon name="cart" width={2} />
+          </button>
+          <button type="button" className="action-chip danger" onClick={handleDelete} aria-label="Supprimer la recette" title="Supprimer la recette">
+            <Icon name="trash" width={2} />
+          </button>
+        </div>
+        <button className="btn-primary form-save" onClick={prepared}>
+          <Icon name="check" width={2.4} />
           Recette préparée
-        </button>
-      </div>
-
-      <div className="btn-row" style={{ marginTop: 12 }}>
-        <button className="btn-secondary btn-danger" onClick={handleDelete}>
-          Supprimer la recette
         </button>
       </div>
     </div>
