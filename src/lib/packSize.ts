@@ -5,9 +5,19 @@ import { countUnit, formatContenance, parseContenance } from './contenance'
  * ou d'une valeur renvoyée par l'IA (« 500 g », « 24 sachets »).
  * Renvoie une contenance propre (« 300 g », « 12 sachets ») ou undefined si rien de fiable.
  */
+/** Unités écrites en toutes lettres (« 113 gram », « 1 litre ») → abréviations. */
+function cleanUnits(s: string): string {
+  return s
+    .replace(/\b(kilogrammes?|kilograms?|kilos?)\b/gi, 'kg')
+    .replace(/\b(grammes?|grams?)\b/gi, 'g')
+    .replace(/\b(millilitres?|milliliters?)\b/gi, 'ml')
+    .replace(/\b(centilitres?|centiliters?)\b/gi, 'cl')
+    .replace(/\b(litres?|liters?)\b/gi, 'l')
+}
+
 export function normalizeSize(raw?: string | null): string | undefined {
   if (!raw) return undefined
-  const m = String(raw).trim().toLowerCase().match(/^([\d.,]+)\s*(kg|g|ml|cl|l|sachets?|sach\.?|sct|pots?|tranches?|bo[iî]tes?|pi[eè]ces?|pcs?)$/)
+  const m = cleanUnits(String(raw)).trim().toLowerCase().match(/^([\d.,]+)\s*(kg|g|ml|cl|l|sachets?|sach\.?|sct|pots?|tranches?|bo[iî]tes?|pi[eè]ces?|pcs?)$/)
   if (!m) return undefined
   const value = Number(m[1].replace(',', '.'))
   if (!isFinite(value) || value <= 0) return undefined
@@ -22,7 +32,7 @@ export function normalizeSize(raw?: string | null): string | undefined {
 
 /** Cherche la contenance dans le libellé : multi-pack (« 6X33CL ») puis poids/volume, sinon sachets. */
 export function extractPackSize(label: string): string | undefined {
-  const s = label.toLowerCase().replace(/,/g, '.')
+  const s = cleanUnits(label).toLowerCase().replace(/,/g, '.')
   const multi = s.match(/(\d+)\s*[x×]\s*([\d.]+)\s*(kg|g|ml|cl|l)\b/)
   if (multi) {
     const n = Number(multi[1])

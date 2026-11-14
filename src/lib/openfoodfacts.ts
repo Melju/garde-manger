@@ -1,3 +1,4 @@
+import { extractPackSize } from './packSize'
 import { splitWeight } from './weightSplit'
 import type { Category, ProductInput } from '../types'
 
@@ -116,7 +117,7 @@ export async function lookupBarcode(barcode: string): Promise<BarcodeLookup> {
         brand,
         category: guessCategory(tags),
         quantity: 1,
-        size: packCount(String(p.quantity || ''), guessCategory(tags)) ?? ((p.quantity || '').trim() || undefined),
+        size: packCount(String(p.quantity || ''), guessCategory(tags)) ?? extractPackSize(String(p.quantity || '')) ?? ((p.quantity || '').trim() || undefined),
         imageUrl: p.image_front_url || p.image_url || undefined,
         nutriscore: grade,
         nova,

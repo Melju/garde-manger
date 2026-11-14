@@ -10,6 +10,7 @@ import { urgentCount } from '../lib/expiry'
 import { budgetSummary } from '../lib/analytics'
 import { splitBrand } from '../lib/brandSplit'
 import { splitWeight } from '../lib/weightSplit'
+import { extractPackSize } from '../lib/packSize'
 import { setProductStores } from '../lib/stores'
 import { addProductsToStores, getStores, storeInName, storesFor } from '../lib/stores'
 import { learnPlace } from '../lib/learnedPlace'
@@ -48,6 +49,7 @@ export function InventoryScreen({
   const [pickedLoc, setPickedLoc] = useState<string | null>(null)
   const storeChoices = useMemo(() => getStores(), [selecting])
   const brandBusy = useRef(false)
+  const weightBusy = useRef(false)
   // Une seule fois : associe aux produits déjà enregistrés le magasin cité dans leur nom (ex : « … Auchan »).
   useEffect(() => {
     const FLAG = 'miamm.brandstores.v1'
@@ -92,6 +94,7 @@ export function InventoryScreen({
     try {
       if (!products.length || brandBusy.current || localStorage.getItem(FLAG)) return
       localStorage.setItem(FLAG, '1')
+      weightBusy.current = true
       void (async () => {
         for (const p of products) {
           const r = splitWeight(p.name)
@@ -102,6 +105,26 @@ export function InventoryScreen({
           const shops = storesFor(p.name)
           await updateProduct(p.id, patch)
           if (shops.length) setProductStores(r.name, p.category, undefined, p.quantity, shops)
+        }
+        weightBusy.current = false
+      })()
+    } catch {
+      /* ignore */
+    }
+  }, [products])
+
+  // Une seule fois : répare les contenances illisibles (« 2 x 113 gram » → « 226 g »).
+  useEffect(() => {
+    const FLAG = 'miamm.sizefix.v1'
+    try {
+      if (!products.length || brandBusy.current || weightBusy.current || !localStorage.getItem('miamm.weightsplit.v1') || localStorage.getItem(FLAG)) return
+      localStorage.setItem(FLAG, '1')
+      void (async () => {
+        for (const p of products) {
+          if (!p.size || p.size.includes('/')) continue
+          if (/^[\d.,]+\s*(g|kg|mL|cl|L|pièces?|packs?|boîtes?|sachets?|pots?|tranches?)$/i.test(p.size.trim())) continue
+          const fixed = extractPackSize(p.size)
+          if (fixed && fixed !== p.size) await updateProduct(p.id, { size: fixed })
         }
       })()
     } catch {

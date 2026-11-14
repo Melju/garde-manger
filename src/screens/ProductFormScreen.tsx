@@ -587,6 +587,7 @@ export function ProductFormScreen({ product, initial, onClose, onSaved }: Produc
             onChange={(e) => setSizeUnit(e.target.value)}
           >
             <option value="">Unité…</option>
+            {sizeUnit && !SIZE_UNITS.includes(sizeUnit) && <option value={sizeUnit}>{sizeUnit}</option>}
             {SIZE_UNITS.map((u) => (
               <option key={u} value={u}>{u}</option>
             ))}
