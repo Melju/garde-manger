@@ -8,7 +8,7 @@ import { conservationOfLocation } from '../lib/location'
 import { remainingLabel, isBareWeightUnit, countPerPack, countLabel } from '../lib/contenance'
 import { urgentCount } from '../lib/expiry'
 import { budgetSummary } from '../lib/analytics'
-import { addProductsToStores, getStores, storesFor } from '../lib/stores'
+import { addProductsToStores, getStores, storeInName, storesFor } from '../lib/stores'
 import { learnPlace } from '../lib/learnedPlace'
 
 const LOCATIONS = ['Placard', 'Réfrigérateur', 'Congélateur', 'Cellier', 'Cave', 'Corbeille']
@@ -44,6 +44,22 @@ export function InventoryScreen({
   const [pickedCat, setPickedCat] = useState<Category | null>(null)
   const [pickedLoc, setPickedLoc] = useState<string | null>(null)
   const storeChoices = useMemo(() => getStores(), [selecting])
+  // Une seule fois : associe aux produits déjà enregistrés le magasin cité dans leur nom (ex : « … Auchan »).
+  useEffect(() => {
+    const FLAG = 'miamm.brandstores.v1'
+    try {
+      if (!products.length || localStorage.getItem(FLAG)) return
+      for (const p of products) {
+        const st = storeInName(p.name)
+        if (st && !storesFor(p.name).includes(st)) {
+          addProductsToStores([{ name: p.name, category: p.category, quantity: p.quantity }], [st])
+        }
+      }
+      localStorage.setItem(FLAG, '1')
+    } catch {
+      /* ignore */
+    }
+  }, [products.length > 0])
   // En sélection, la barre d'actions prend la place du bouton « Ajouter » (évite la superposition).
   useEffect(() => {
     document.body.classList.toggle('is-selecting', selecting)
