@@ -100,6 +100,8 @@ export function priorityProducts(products: Product[], now: Date = new Date()): P
   return products
     .filter((p) => {
       const s = expiryStatus(p, now)
+      // Un surgelé qui approche de sa date n'est pas une priorité (il se garde bien) : seulement s'il dépasse sa tolérance.
+      if (isFrozen(p)) return s === 'expired'
       return s === 'urgent' || s === 'soon' || s === 'expired'
     })
     .sort((a, b) => {

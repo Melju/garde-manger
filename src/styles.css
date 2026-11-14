@@ -2375,3 +2375,4 @@ input[type='date'].form-input::-webkit-calendar-picker-indicator {
   .product-hero .hero-icon img { width: 76px; height: 76px; }
 }
 .ticket-size { margin-top: 8px; font-size: 14px; padding: 8px 12px; }
+.status-tag.still-good { background: #e9f2fb; color: #3b6ea5; }

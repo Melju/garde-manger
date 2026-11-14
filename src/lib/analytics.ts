@@ -1,6 +1,6 @@
 import type { BudgetConfig, Category, Expense, HistoryEntry, Product, Settings } from '../types'
 import { categoryLabel } from '../types'
-import { daysUntilExpiry, expiryStatus, expiryLabel } from './expiry'
+import { daysUntilExpiry, expiryStatus, expiryLabel, isFrozen } from './expiry'
 import { monthKey, toISODate } from './dates'
 
 // ===== Notifications =====
@@ -35,7 +35,7 @@ export function buildNotifications(products: Product[], settings: Settings): Not
               : `${p.name} expire ${days === 0 ? "aujourd'hui" : days === 1 ? 'demain' : `dans ${days} jours`}`,
           desc: `Il reste ×${p.quantity}${p.unit ? ' ' + p.unit : ''} à consommer`,
         })
-      } else if (status === 'soon') {
+      } else if (status === 'soon' && !isFrozen(p)) {
         list.push({
           id: `exp-${p.id}`,
           kind: 'peremption',
