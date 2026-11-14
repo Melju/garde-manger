@@ -19,7 +19,7 @@ interface ScanScreenProps {
   /** Mode ajout : renvoie le produit déjà en stock pour ce code-barres (null si inconnu). */
   findKnown?: (barcode: string) => Product | null
   /** Mode ajout : ajoute n unités (avec leur péremption) au produit déjà en stock. */
-  onAddKnown?: (product: Product, n: number, expiry: string) => Promise<void>
+  onAddKnown?: (product: Product, n: number, expiries: string[]) => Promise<void>
   /** Mode ajout : fiche mémorisée pour un code-barres qui n'est plus en stock. */
   findMemory?: (barcode: string) => Partial<ProductInput> | null
   /** Mode ajout : produits ajoutés pendant cette session de scan en série. */
@@ -45,7 +45,10 @@ export function ScanScreen({ mode = 'add', onResult, onConsume, findKnown, onAdd
   const [known, setKnown] = useState<Product | null>(null)
   const [knownQty, setKnownQty] = useState(1)
   const [knownExpiry, setKnownExpiry] = useState('')
-  const [scanningDate, setScanningDate] = useState(false)
+  const [scanIdx, setScanIdx] = useState<number | null>(null) // -1 = date commune
+  const [diffDates, setDiffDates] = useState(false)
+  const [knownDates, setKnownDates] = useState<string[]>([])
+  const setDateAt = (i: number, v: string) => setKnownDates((d) => { const c = [...d]; c[i] = v; return c })
   const toast = useToast()
   const [phase, setPhase] = useState<Phase>('scanning')
   const [errorMsg, setErrorMsg] = useState('')
@@ -72,6 +75,8 @@ export function ScanScreen({ mode = 'add', onResult, onConsume, findKnown, onAdd
         pausedRef.current = true
         setKnownQty(1)
         setKnownExpiry('')
+        setDiffDates(false)
+        setKnownDates([])
         setKnown(k)
         return
       }
@@ -137,7 +142,8 @@ export function ScanScreen({ mode = 'add', onResult, onConsume, findKnown, onAdd
     const p = known
     const n = knownQty
     setKnown(null)
-    await onAddKnown?.(p, n, knownExpiry)
+    const exps = Array.from({ length: n }, (_, i) => (diffDates ? knownDates[i] || '' : knownExpiry))
+    await onAddKnown?.(p, n, exps)
     // Petit délai pour ne pas re-scanner immédiatement le même code.
     setTimeout(() => {
       pausedRef.current = false
@@ -196,13 +202,14 @@ export function ScanScreen({ mode = 'add', onResult, onConsume, findKnown, onAdd
             </div>
           )}
 
-          {known && scanningDate && (
+          {known && scanIdx !== null && (
             <DateScanner
               onResult={(r) => {
-                setKnownExpiry(r.date)
-                setScanningDate(false)
+                if (scanIdx === -1) setKnownExpiry(r.date)
+                else setDateAt(scanIdx!, r.date)
+                setScanIdx(null)
               }}
-              onClose={() => setScanningDate(false)}
+              onClose={() => setScanIdx(null)}
             />
           )}
           {known && (
@@ -226,21 +233,54 @@ export function ScanScreen({ mode = 'add', onResult, onConsume, findKnown, onAdd
                   </button>
                 </div>
                 <div className="scan-known-exp">
-                  <label className="form-label">Date de péremption de ce produit</label>
-                  <DatePicker value={knownExpiry} onChange={setKnownExpiry} />
-                  <div className="scan-known-exp-actions">
-                    <button type="button" className="usual-chip" onClick={() => setScanningDate(true)}>
-                      Scanner la date
-                    </button>
-                    {!knownExpiry && (() => {
-                      const est = estimatedExpiryISO(known.name, known.conservation, known.category)
-                      return est ? (
-                        <button type="button" className="usual-chip" onClick={() => setKnownExpiry(est)}>
-                          Utiliser l'estimation
+                  {knownQty > 1 && (
+                    <div className="scan-known-exp-actions" style={{ marginTop: 0, marginBottom: 10 }}>
+                      <button type="button" className={`usual-chip${!diffDates ? ' on' : ''}`} onClick={() => setDiffDates(false)}>
+                        Même date pour tous
+                      </button>
+                      <button type="button" className={`usual-chip${diffDates ? ' on' : ''}`} onClick={() => setDiffDates(true)}>
+                        Une date par article
+                      </button>
+                    </div>
+                  )}
+                  {!diffDates || knownQty < 2 ? (
+                    <>
+                      <label className="form-label">Date de péremption</label>
+                      <DatePicker value={knownExpiry} onChange={setKnownExpiry} />
+                      <div className="scan-known-exp-actions">
+                        <button type="button" className="usual-chip" onClick={() => setScanIdx(-1)}>
+                          Scanner la date
                         </button>
-                      ) : null
-                    })()}
-                  </div>
+                        {!knownExpiry && (() => {
+                          const est = estimatedExpiryISO(known.name, known.conservation, known.category)
+                          return est ? (
+                            <button type="button" className="usual-chip" onClick={() => setKnownExpiry(est)}>
+                              Utiliser l'estimation
+                            </button>
+                          ) : null
+                        })()}
+                      </div>
+                    </>
+                  ) : (
+                    <div className="scan-known-multi">
+                      {Array.from({ length: knownQty }, (_, i) => (
+                        <div key={i} className="scan-known-multi-row">
+                          <div className="scan-known-multi-n">Article {i + 1}</div>
+                          <DatePicker value={knownDates[i] || ''} onChange={(v) => setDateAt(i, v)} />
+                          <div className="scan-known-exp-actions">
+                            <button type="button" className="usual-chip" onClick={() => setScanIdx(i)}>
+                              Scanner
+                            </button>
+                            {i > 0 && knownDates[i - 1] && knownDates[i] !== knownDates[i - 1] && (
+                              <button type="button" className="usual-chip" onClick={() => setDateAt(i, knownDates[i - 1])}>
+                                Idem article {i}
+                              </button>
+                            )}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
                 </div>
                 <button className="btn-primary" onClick={confirmKnown}>
                   Ajouter {knownQty}

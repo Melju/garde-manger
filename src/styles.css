@@ -2305,3 +2305,9 @@ input[type='date'].form-input::-webkit-calendar-picker-indicator {
 .scan-added-check { width: 22px; height: 22px; border-radius: 50%; background: #2e9e5b; color: #fff; display: inline-flex; align-items: center; justify-content: center; font-size: 13px; flex-shrink: 0; }
 .scan-added-name { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .scan-added-count { font-weight: 800; font-size: 16px; }
+
+.usual-chip.on { background: var(--accent, #2e9e5b); color: #fff; border-color: transparent; }
+.scan-known-multi { display: flex; flex-direction: column; gap: 12px; max-height: 38vh; overflow-y: auto; }
+.scan-known-multi-row { border-top: 1px solid rgba(0,0,0,0.08); padding-top: 10px; }
+.scan-known-multi-row:first-child { border-top: none; padding-top: 0; }
+.scan-known-multi-n { font-size: 12px; font-weight: 700; color: var(--muted); margin-bottom: 4px; }

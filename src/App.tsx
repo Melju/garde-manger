@@ -71,17 +71,22 @@ export function App() {
   function findKnownByBarcode(barcode: string) {
     return products.find((x) => x.barcode && x.barcode === barcode) ?? null
   }
-  async function addKnown(p: Product, n: number, expiry: string) {
-    if (!expiry || expiry === p.expiryDate) {
-      await adjustQuantity(p.id, n)
-      toast(`${p.name} : +${n}, ×${p.quantity + n} en stock`)
-    } else {
-      // Nouvelle péremption : nouveau lot, copié depuis le produit connu (contenance d'origine).
-      const { id: _id, createdAt: _c, updatedAt: _u, ...rest } = p
-      const full = splitSize(p.size).full
-      await addProduct({ ...rest, size: full ?? p.size, quantity: n, expiryDate: expiry })
-      toast(`${p.name} : +${n} avec la nouvelle date`)
+  async function addKnown(p: Product, n: number, expiries: string[]) {
+    // Regroupe les articles par date : même date que le produit (ou vide) = +quantité, sinon nouveau lot.
+    const groups = new Map<string, number>()
+    for (const e of expiries) {
+      const k = !e || e === p.expiryDate ? '' : e
+      groups.set(k, (groups.get(k) ?? 0) + 1)
     }
+    const same = groups.get('') ?? 0
+    if (same > 0) await adjustQuantity(p.id, same)
+    const { id: _id, createdAt: _c, updatedAt: _u, ...rest } = p
+    const full = splitSize(p.size).full
+    for (const [date, count] of groups) {
+      if (!date) continue
+      await addProduct({ ...rest, size: full ?? p.size, quantity: count, expiryDate: date })
+    }
+    toast(groups.size > 1 ? `${p.name} : +${n} (dates différentes)` : `${p.name} : +${n}`)
     logScanAdded(p.name, n)
   }
   // Produit scanné mais plus en stock : on reprend sa dernière fiche (sans péremption).
