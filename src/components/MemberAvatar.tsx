@@ -2,7 +2,12 @@ import type { FamilyMember } from '../types'
 
 /** Avatars disponibles (fichiers public/avatars/<id>.webp). */
 export const AVATARS = {
-  personne: Array.from({ length: 25 }, (_, i) => `personne-${String(i + 1).padStart(2, '0')}`),
+  personne: [
+    'famille-01',
+    'famille-02',
+    'famille-03',
+    ...Array.from({ length: 25 }, (_, i) => `personne-${String(i + 1).padStart(2, '0')}`),
+  ],
   animal: Array.from({ length: 25 }, (_, i) => `animal-${String(i + 1).padStart(2, '0')}`),
 }
 
