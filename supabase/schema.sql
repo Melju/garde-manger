@@ -125,6 +125,7 @@ create table if not exists products (
   quantity     numeric not null default 1,
   unit         text,
   size         text,
+  brand        text,
   expiry_date  date,
   price        numeric,
   barcode      text,

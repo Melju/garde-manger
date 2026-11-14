@@ -77,6 +77,8 @@ export interface Product {
   unit?: string
   /** Conditionnement / taille (ex: « 400g », « 500g »). Texte libre, optionnel. */
   size?: string
+  /** Marque du produit (ex : « Garden Gourmet »). Optionnel. */
+  brand?: string
   /** Date de péremption au format ISO (YYYY-MM-DD). Optionnel. */
   expiryDate?: string
   /** Prix unitaire en euros, optionnel (pour le budget plus tard). */

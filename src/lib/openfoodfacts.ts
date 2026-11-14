@@ -83,9 +83,12 @@ export async function lookupBarcode(barcode: string): Promise<BarcodeLookup> {
     const brand: string | undefined = (p.brands || '').split(',')[0]?.trim() || undefined
     const tags: string[] = Array.isArray(p.categories_tags) ? p.categories_tags : []
 
+    // La marque a son propre champ : on la retire du nom si Open Food Facts l'y a mise.
     let displayName = name
-    if (brand && name && !name.toLowerCase().includes(brand.toLowerCase())) {
-      displayName = `${name} ${brand}`
+    if (brand && name) {
+      const esc = brand.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+      const stripped = name.replace(new RegExp(`(^|\\s)${esc}(?=\\s|$)`, 'i'), ' ').replace(/\s+/g, ' ').trim()
+      if (stripped.length >= 3) displayName = stripped
     }
 
     const grade: string | undefined =
@@ -107,6 +110,7 @@ export async function lookupBarcode(barcode: string): Promise<BarcodeLookup> {
       prefill: {
         barcode,
         name: displayName || undefined,
+        brand,
         category: guessCategory(tags),
         quantity: 1,
         size: packCount(String(p.quantity || ''), guessCategory(tags)) ?? ((p.quantity || '').trim() || undefined),

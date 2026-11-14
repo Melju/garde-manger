@@ -171,6 +171,7 @@ export function ProductItem({
         </div>
         <div className="product-info">
           <div className="product-name">{product.name}</div>
+          {product.brand && <div className="product-brand">{product.brand}</div>}
           <div className="product-meta">{meta}</div>
         </div>
         <div className="product-right">

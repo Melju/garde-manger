@@ -8,6 +8,8 @@ import { conservationOfLocation } from '../lib/location'
 import { remainingLabel, isBareWeightUnit, countPerPack, countLabel } from '../lib/contenance'
 import { urgentCount } from '../lib/expiry'
 import { budgetSummary } from '../lib/analytics'
+import { splitBrand } from '../lib/brandSplit'
+import { setProductStores } from '../lib/stores'
 import { addProductsToStores, getStores, storeInName, storesFor } from '../lib/stores'
 import { learnPlace } from '../lib/learnedPlace'
 
@@ -60,6 +62,27 @@ export function InventoryScreen({
       /* ignore */
     }
   }, [products.length > 0])
+  // Une seule fois : sort la marque du nom des produits existants (champ « marque »).
+  useEffect(() => {
+    const FLAG = 'miamm.brandsplit.v1'
+    try {
+      if (!products.length || localStorage.getItem(FLAG)) return
+      localStorage.setItem(FLAG, '1')
+      void (async () => {
+        for (const p of products) {
+          if (p.brand) continue
+          const r = splitBrand(p.name)
+          if (!r || r.name.length < 3) continue
+          const shops = storesFor(p.name)
+          await updateProduct(p.id, { name: r.name, brand: r.brand })
+          if (shops.length) setProductStores(r.name, p.category, undefined, p.quantity, shops)
+        }
+      })()
+    } catch {
+      /* ignore */
+    }
+  }, [products.length > 0])
+
   // En sélection, la barre d'actions prend la place du bouton « Ajouter » (évite la superposition).
   useEffect(() => {
     document.body.classList.toggle('is-selecting', selecting)

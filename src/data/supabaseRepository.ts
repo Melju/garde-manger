@@ -26,6 +26,7 @@ function toProduct(r: any): Product {
     quantity: Number(r.quantity),
     unit: r.unit ?? undefined,
     size: r.size ?? undefined,
+    brand: r.brand ?? undefined,
     expiryDate: r.expiry_date ?? undefined,
     price: r.price != null ? Number(r.price) : undefined,
     barcode: r.barcode ?? undefined,
@@ -113,6 +114,7 @@ export class SupabaseRepository implements Repository {
         quantity: input.quantity,
         unit: input.unit ?? null,
         size: input.size ?? null,
+        brand: input.brand ?? null,
         expiry_date: input.expiryDate ?? null,
         price: input.price ?? null,
         barcode: input.barcode ?? null,
@@ -140,6 +142,7 @@ export class SupabaseRepository implements Repository {
     if (has('quantity') && patch.quantity !== undefined) row.quantity = patch.quantity
     if (has('unit')) row.unit = patch.unit ?? null
     if (has('size')) row.size = patch.size ?? null
+    if (has('brand')) row.brand = patch.brand ?? null
     if (has('expiryDate')) row.expiry_date = patch.expiryDate ?? null
     if (has('price')) row.price = patch.price ?? null
     if (has('barcode')) row.barcode = patch.barcode ?? null

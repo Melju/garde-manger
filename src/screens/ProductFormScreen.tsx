@@ -63,7 +63,7 @@ export function ProductFormScreen({ product, initial, onClose, onSaved }: Produc
     const known = storesFor(product?.name ?? '')
     if (known.length) return known
     // Marque de distributeur dans le nom (ex : « Farce veggie Auchan ») : on coche ce magasin.
-    const brandStore = product ? undefined : storeInName(initial?.name ?? '')
+    const brandStore = product ? undefined : storeInName(`${initial?.name ?? ''} ${initial?.brand ?? ''}`)
     if (brandStore) return [brandStore]
     const cur = getCurrentStore()
     return !product && cur ? [cur] : []
@@ -114,6 +114,7 @@ export function ProductFormScreen({ product, initial, onClose, onSaved }: Produc
     ? consOfLocation(initLoc)
     : (product?.conservation ?? initial?.conservation ?? defaultConservation(initCategory))
   const [name, setName] = useState(product?.name ?? initial?.name ?? '')
+  const [brand, setBrand] = useState(product?.brand ?? initial?.brand ?? '')
   const [category, setCategory] = useState<Category>(initCategory)
   const [conservation, setConservation] = useState<Conservation>(initConservation)
   const [quantity, setQuantity] = useState(product?.quantity ?? initial?.quantity ?? 1)
@@ -280,6 +281,7 @@ export function ProductFormScreen({ product, initial, onClose, onSaved }: Produc
     const sizeStr = [sizeValue.trim(), sizeUnit].filter(Boolean).join(' ').trim()
     return {
       name: name.trim(),
+      brand: brand.trim() || undefined,
       category,
       conservation,
       quantity,
@@ -393,6 +395,15 @@ export function ProductFormScreen({ product, initial, onClose, onSaved }: Produc
             value={name}
             autoFocus={!isEdit}
             onChange={(e) => setName(e.target.value)}
+          />
+          <input
+            id="brand"
+            className="form-input"
+            style={{ marginTop: 8 }}
+            placeholder="Marque (facultatif)"
+            aria-label="Marque"
+            value={brand}
+            onChange={(e) => setBrand(e.target.value)}
           />
         </div>
         <div className="hero-row">
