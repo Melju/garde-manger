@@ -178,18 +178,31 @@ export function InventoryScreen({
         ? Array.from({ length: p.quantity }, (_, i) => ({ key: `${p.id}:${i}`, p: { ...p, quantity: 1 }, full: p as Product | undefined }))
         : [{ key: p.id, p, full: undefined as Product | undefined }],
     )
-    // Lignes identiques consécutives (même nom, marque et contenance) : on les rassemble visuellement.
+    // Lignes identiques consécutives (même nom, marque et contenance) : un groupe, replié par défaut.
     const sig = (x: Product) => `${normalize(x.name)}|${normalize(x.brand ?? '')}|${x.size ?? ''}|${x.category}`
-    return list.map((r, i) => {
-      if (selecting) return { ...r, grp: undefined as 'first' | 'middle' | 'last' | undefined }
-      const same = (a?: (typeof list)[number]) => !!a && sig(a.p) === sig(r.p)
-      const prev = same(list[i - 1])
-      const next = same(list[i + 1])
-      const grp = prev && next ? 'middle' : next ? 'first' : prev ? 'last' : undefined
-      return { ...r, grp: grp as 'first' | 'middle' | 'last' | undefined }
-    })
+    type Row = (typeof list)[number] & { sig: string; gIndex: number; gSize: number }
+    const out: Row[] = []
+    for (let i = 0; i < list.length; ) {
+      let j = i + 1
+      const sg = sig(list[i].p)
+      while (!selecting && j < list.length && sig(list[j].p) === sg) j++
+      for (let k = i; k < j; k++) out.push({ ...list[k], sig: sg, gIndex: k - i, gSize: j - i })
+      i = j
+    }
+    return out
   }, [filtered, selecting])
 
+
+  const [openGroups, setOpenGroups] = useState<Set<string>>(new Set())
+  function toggleGroup(sg: string) {
+    setOpenGroups((prev) => {
+      const next = new Set(prev)
+      if (next.has(sg)) next.delete(sg)
+      else next.add(sg)
+      return next
+    })
+  }
+  const shown = useMemo(() => rows.filter((r) => r.gSize === 1 || r.gIndex === 0 || openGroups.has(r.sig)), [rows, openGroups])
 
   // Chargement progressif : on affiche 30 lignes puis 30 de plus à l'approche du bas de la liste.
   const PAGE = 30
@@ -198,7 +211,7 @@ export function InventoryScreen({
   useEffect(() => setVisible(PAGE), [search, selecting])
   useEffect(() => {
     const el = sentinelRef.current
-    if (!el || visible >= rows.length) return
+    if (!el || visible >= shown.length) return
     const io = new IntersectionObserver(
       (entries) => {
         if (entries.some((e) => e.isIntersecting)) setVisible((v) => v + PAGE)
@@ -207,7 +220,7 @@ export function InventoryScreen({
     )
     io.observe(el)
     return () => io.disconnect()
-  }, [visible, rows.length])
+  }, [visible, shown.length])
 
   function togglePick(id: string) {
     setPicked((prev) => {
@@ -403,7 +416,7 @@ export function InventoryScreen({
                 <button type="button" onClick={() => setPicked(new Set())}>Aucun</button>
               </div>
             ) : null}
-            {rows.slice(0, visible).map(({ key, p, full, grp }, idx) =>
+            {shown.slice(0, visible).map(({ key, p, full, sig, gSize, gIndex }, idx) =>
               selecting ? (
                 <button
                   key={p.id}
@@ -428,7 +441,10 @@ export function InventoryScreen({
                   key={key}
                   product={p}
                   detail={full}
-                  groupPos={grp}
+                  groupPos={gSize > 1 && openGroups.has(sig) ? (gIndex === 0 ? 'first' : gIndex === gSize - 1 ? 'last' : 'middle') : undefined}
+                  groupCount={gIndex === 0 ? gSize : undefined}
+                  groupOpen={openGroups.has(sig)}
+                  onToggleGroup={() => toggleGroup(sig)}
                   onSelect={onEdit}
                   onRemoveQty={handleRemoveQty}
                   onWaste={handleWaste}
@@ -439,7 +455,7 @@ export function InventoryScreen({
                 />
               ),
             )}
-            {visible < rows.length && <div ref={sentinelRef} className="list-sentinel" aria-hidden />}
+            {visible < shown.length && <div ref={sentinelRef} className="list-sentinel" aria-hidden />}
           </>
         ) : (
           <div className="empty-state">

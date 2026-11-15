@@ -2652,3 +2652,13 @@ body.is-selecting .add-bar { display: none; }
 .swipe-wrapper.grp-first { border-bottom-left-radius: 0; border-bottom-right-radius: 0; border-bottom-style: dashed; }
 .swipe-wrapper.grp-middle { border-radius: 0; border-top-width: 0; border-bottom-style: dashed; }
 .swipe-wrapper.grp-last { border-top-width: 0; border-top-left-radius: 0; border-top-right-radius: 0; margin-bottom: 8px; }
+
+.group-chip { display: inline-flex; align-items: center; gap: 4px; margin-top: 4px; padding: 2px 8px; border-radius: 999px; border: 1px solid var(--border); background: var(--surface); color: var(--brand); font-size: 12px; font-weight: 700; cursor: pointer; }
+.group-chip svg { transition: transform .2s ease; }
+.group-chip.open svg { transform: rotate(180deg); }
+
+/* Actions de glissement : cachées tant qu'on ne glisse pas (évite de les voir clignoter au défilement rapide) */
+.swipe-wrapper .swipe-actions { visibility: hidden; transition: visibility 0s linear .32s; }
+.swipe-wrapper.is-active .swipe-actions,
+.swipe-wrapper.swiped-left .swipe-actions,
+.swipe-wrapper.swiped-right .swipe-actions { visibility: visible; transition: none; }

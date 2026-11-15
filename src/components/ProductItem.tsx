@@ -27,6 +27,10 @@ interface ProductItemProps {
   detail?: Product
   /** Position dans un groupe de lignes identiques (rassemblées visuellement). */
   groupPos?: 'first' | 'middle' | 'last'
+  /** Nombre de lignes identiques rassemblées (affiché sur la ligne de tête). */
+  groupCount?: number
+  groupOpen?: boolean
+  onToggleGroup?: () => void
   onSelect: (product: Product) => void
   onRemoveQty: (product: Product, qty: number | 'all') => void
   onWaste: (product: Product) => void
@@ -50,6 +54,9 @@ export function ProductItem({
   product: rawProduct,
   detail,
   groupPos,
+  groupCount,
+  groupOpen,
+  onToggleGroup,
   onSelect,
   onRemoveQty,
   onWaste,
@@ -142,6 +149,10 @@ export function ProductItem({
       setSwipe('none')
       return
     }
+    if (groupCount && groupCount > 1 && !groupOpen && onToggleGroup) {
+      onToggleGroup()
+      return
+    }
     onSelect(detail ?? rawProduct)
   }
 
@@ -153,7 +164,7 @@ export function ProductItem({
 
   return (
     <div
-      className={`swipe-wrapper${groupPos ? ` grp grp-${groupPos}` : ''}${swipe === 'left' ? ' swiped-left' : swipe === 'right' ? ' swiped-right' : ''}`}
+      className={`swipe-wrapper${groupPos ? ` grp grp-${groupPos}` : ''}${dragX !== null || demo ? ' is-active' : ''}${swipe === 'left' ? ' swiped-left' : swipe === 'right' ? ' swiped-right' : ''}`}
       style={{ ['--open-right' as string]: `${OPEN_RIGHT}px` }}
     >
       {/* Action gauche révélée par un glissement vers la droite : périmé */}
@@ -197,6 +208,23 @@ export function ProductItem({
           <div className="product-name">{product.name}</div>
           {product.brand && <div className="product-brand">{product.brand}</div>}
           <div className="product-meta">{meta}</div>
+          {groupCount && groupCount > 1 && (groupPos === 'first' || !groupOpen) && (
+            <button
+              type="button"
+              className={`group-chip${groupOpen ? ' open' : ''}`}
+              onClick={(e) => {
+                e.stopPropagation()
+                onToggleGroup?.()
+              }}
+              onPointerDown={(e) => e.stopPropagation()}
+              aria-expanded={!!groupOpen}
+            >
+              {groupCount} identiques
+              <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+                <path d="m6 9 6 6 6-6" />
+              </svg>
+            </button>
+          )}
         </div>
         <div className="product-right">
           <div className="product-qty">{qtyLabel}</div>
