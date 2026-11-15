@@ -78,6 +78,8 @@ interface StoreValue {
   unreadNotifCount: number
   /** Marque toutes les notifications actuelles comme vues (efface le badge). */
   markNotificationsRead(): void
+  /** Masque des notifications (elles reviennent si leur gravité ou la quantité change). */
+  dismissNotifications(ids: string[]): void
   /** Copie les produits/courses du stockage local de cet appareil vers le cloud. */
   importLocalData(): Promise<number>
   /** Complète les infos manquantes (photo, Nutri-Score, allergènes…) des produits ayant un code-barres, via Open Food Facts. */
@@ -197,6 +199,13 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   })
   const [loading, setLoading] = useState(true)
   const [offline, setOffline] = useState(false)
+  const [dismissedNotif, setDismissedNotif] = useState<string[]>(() => {
+    try {
+      return JSON.parse(localStorage.getItem('gm.notif.dismissed') || '[]')
+    } catch {
+      return []
+    }
+  })
   const [seenNotif, setSeenNotif] = useState<string[]>(() => {
     try {
       return JSON.parse(localStorage.getItem('gm.notif.seen') || '[]')
@@ -323,7 +332,11 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     }
   }, [cloud, auth.householdId, loadAll])
 
-  const notifications = useMemo(() => buildNotifications(products, settings), [products, settings])
+  const allNotifications = useMemo(() => buildNotifications(products, settings), [products, settings])
+  const notifications = useMemo(
+    () => allNotifications.filter((n) => !dismissedNotif.includes(notifKey(n))),
+    [allNotifications, dismissedNotif],
+  )
 
   const value = useMemo<StoreValue>(() => {
     // Ajoute une entrée d'historique et met à jour l'état + le stockage.
@@ -363,6 +376,18 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       offline,
       notifications,
       unreadNotifCount: notifications.filter((n) => !seenNotif.includes(n.id)).length,
+      dismissNotifications(ids: string[]) {
+        const keys = allNotifications.filter((n) => ids.includes(n.id)).map(notifKey)
+        // On ne garde que les clés encore pertinentes pour que la liste ne grossisse pas indéfiniment.
+        const live = new Set(allNotifications.map(notifKey))
+        const next = [...new Set([...dismissedNotif.filter((k) => live.has(k)), ...keys])]
+        setDismissedNotif(next)
+        try {
+          localStorage.setItem('gm.notif.dismissed', JSON.stringify(next))
+        } catch {
+          /* ignore */
+        }
+      },
       markNotificationsRead() {
         const ids = notifications.map((n) => n.id)
         setSeenNotif(ids)
@@ -874,7 +899,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
         await loadAll()
       },
     }
-  }, [repo, products, shopping, recipes, family, mealPlan, history, expenses, shopCatalog, budget, settings, loading, offline, notifications, seenNotif, loadAll])
+  }, [repo, products, shopping, recipes, family, mealPlan, history, expenses, shopCatalog, budget, settings, loading, offline, notifications, allNotifications, dismissedNotif, seenNotif, loadAll])
 
   return <StoreContext.Provider value={value}>{children}</StoreContext.Provider>
 }
@@ -886,3 +911,8 @@ export function useStore(): StoreValue {
 }
 
 export { AVATAR_COLORS }
+
+/** Clé de masquage : une notification masquée réapparaît si sa gravité ou son texte de quantité change. */
+function notifKey(n: Notification): string {
+  return `${n.id}|${n.severity}|${n.kind === 'stock' ? n.desc : ''}`
+}

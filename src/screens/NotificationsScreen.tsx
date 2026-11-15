@@ -18,7 +18,7 @@ const ICON_BY_SEVERITY: Record<NotifSeverity, IconName> = {
 type Tab = 'toutes' | NotifKind
 
 export function NotificationsScreen({ onBack }: NotificationsScreenProps) {
-  const { notifications, markNotificationsRead } = useStore()
+  const { notifications, markNotificationsRead, dismissNotifications } = useStore()
   const [tab, setTab] = useState<Tab>('toutes')
 
   // À l'ouverture, on marque les notifications comme vues (efface le badge).
@@ -49,6 +49,14 @@ export function NotificationsScreen({ onBack }: NotificationsScreenProps) {
         ))}
       </div>
 
+      {list.length > 0 && (
+        <div className="notif-actions">
+          <button className="notif-clear" onClick={() => dismissNotifications(list.map((n) => n.id))}>
+            Tout effacer{tab === 'toutes' ? '' : ' dans cet onglet'}
+          </button>
+        </div>
+      )}
+
       <div className="notif-list">
         {list.length === 0 ? (
           <div className="empty-state">
@@ -65,6 +73,9 @@ export function NotificationsScreen({ onBack }: NotificationsScreenProps) {
                 <div className="notif-title">{n.title}</div>
                 <div className="notif-desc">{n.desc}</div>
               </div>
+              <button className="notif-dismiss" aria-label="Effacer" onClick={() => dismissNotifications([n.id])}>
+                <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><path d="M6 6l12 12M18 6L6 18" /></svg>
+              </button>
             </div>
           ))
         )}
