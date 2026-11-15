@@ -376,7 +376,7 @@ button { font-family: inherit; }
 }
 .swipe-wrapper .product-item.dragging { transition: none; }
 .swipe-wrapper.swiped-left .product-item { transform: translateX(-216px); }
-.swipe-wrapper.swiped-right .product-item { transform: translateX(120px); }
+.swipe-wrapper.swiped-right .product-item { transform: translateX(var(--open-right, 120px)); }
 .swipe-actions {
   position: absolute;
   top: 0;
@@ -385,7 +385,7 @@ button { font-family: inherit; }
   z-index: 1;
 }
 .swipe-actions.right { right: 0; width: 216px; }
-.swipe-actions.left { left: 0; width: 120px; }
+.swipe-actions.left { left: 0; width: var(--open-right, 120px); }
 .swipe-qty-picker { display: flex; flex: 1; background: var(--danger); }
 .qty-btn {
   flex: 1;
@@ -2637,3 +2637,5 @@ body.is-selecting .add-bar { display: none; }
 .open-result { margin: 0 8px 14px; font-size: 14px; font-weight: 700; color: var(--fg); }
 .opened-note { margin-top: 10px; font-size: 13px; font-weight: 700; color: var(--brand-strong); }
 .open-btn { margin-top: 10px; }
+
+.qty-btn.open { background: var(--brand-strong); }

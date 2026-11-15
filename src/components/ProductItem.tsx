@@ -1,7 +1,9 @@
 import { useRef, useState } from 'react'
+import { createPortal } from 'react-dom'
 import type { Product } from '../types'
-import { categoryLabel } from '../types'
-import { expiryLabel, expiryStatus } from '../lib/expiry'
+import { categoryLabel, isNonFood } from '../types'
+import { expiryLabel, expiryStatus, isFrozen } from '../lib/expiry'
+import { OpenProductSheet } from './OpenProductSheet'
 import { categoryColor } from '../lib/categoryColors'
 import {
   isWeightProduct,
@@ -69,7 +71,10 @@ export function ProductItem({
 
   // Glissement progressif : la ligne suit le doigt, puis s'ouvre ou se referme selon la position relâchée.
   const OPEN_LEFT = 216
-  const OPEN_RIGHT = 120
+  // Glissement à droite : « Ouvert » (si applicable) + « Périmé ».
+  const canOpen = !product.openedAt && !isNonFood(product.category) && !isFrozen(product)
+  const [opening, setOpening] = useState(false)
+  const OPEN_RIGHT = canOpen ? 240 : 120
   const base = swipe === 'left' ? -OPEN_LEFT : swipe === 'right' ? OPEN_RIGHT : 0
   const [dragX, setDragX] = useState<number | null>(null)
   const startY = useRef(0)
@@ -143,9 +148,15 @@ export function ProductItem({
   return (
     <div
       className={`swipe-wrapper${swipe === 'left' ? ' swiped-left' : swipe === 'right' ? ' swiped-right' : ''}`}
+      style={{ ['--open-right' as string]: `${OPEN_RIGHT}px` }}
     >
       {/* Action gauche révélée par un glissement vers la droite : périmé */}
       <div className="swipe-actions left">
+        {canOpen && (
+          <button className="qty-btn open" onClick={() => setOpening(true)}>
+            Ouvert<span>péremption revue</span>
+          </button>
+        )}
         <button
           className="qty-btn waste"
           onClick={() => {
@@ -186,6 +197,19 @@ export function ProductItem({
           <span className={`status-tag ${status}`}>{expiryLabel(product)}</span>
         </div>
       </div>
+
+      {opening &&
+        createPortal(
+          <OpenProductSheet
+            product={rawProduct}
+            onClose={() => setOpening(false)}
+            onDone={() => {
+              setOpening(false)
+              setSwipe('none')
+            }}
+          />,
+          document.body,
+        )}
 
       {/* Action droite révélée par un glissement vers la gauche : molette de retrait */}
       <div className="swipe-actions right">
