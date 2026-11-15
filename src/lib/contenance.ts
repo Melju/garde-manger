@@ -182,7 +182,12 @@ export function stockLabel(p: { quantity: number; size?: string }): string | nul
   if (p.quantity > 1) return `${p.quantity} × ${curLabel}`
   const fu = parseContenance(full)
   if (fu && family(fu.unit) === family(cur.unit) && toBase(cur.value, cur.unit) < toBase(fu.value, fu.unit) - 0.001) {
-    return `${curLabel} / ${formatContenance(fu.value, fu.unit)}`
+    const fullLabel = formatContenance(fu.value, fu.unit)
+    // Même unité des deux côtés : « 3 / 10 pièces » plutôt que « 3 pièces / 10 pièces »
+    const m = curLabel.match(/^(\S+)\s+(.+)$/)
+    const unitOf = (l: string) => l.replace(/^\S+\s+/, '').replace(/s$/, '')
+    if (m && fullLabel.includes(' ') && unitOf(curLabel) === unitOf(fullLabel)) return `${m[1]} / ${fullLabel}`
+    return `${curLabel} / ${fullLabel}`
   }
   return curLabel
 }
