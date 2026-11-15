@@ -36,6 +36,15 @@ export function DatePicker({
     onChange(iso)
     setOpen(false)
   }
+  // Choisir un mois ou une année change aussi la date du champ (même jour, ramené à la fin du mois si besoin).
+  function setMonthYear(y: number, m: number) {
+    setView(new Date(y, m, 1))
+    setMode('days')
+    if (value) {
+      const day = Math.min(fromISODate(value).getDate(), new Date(y, m + 1, 0).getDate())
+      onChange(toISODate(new Date(y, m, day)))
+    }
+  }
   const shift = (n: number) => setView(new Date(first.getFullYear(), first.getMonth() + n, 1))
 
   const quick: [string, number][] = [
@@ -102,10 +111,7 @@ export function DatePicker({
                   key={m}
                   type="button"
                   className={i === first.getMonth() ? 'sel' : ''}
-                  onClick={() => {
-                    setView(new Date(first.getFullYear(), i, 1))
-                    setMode('days')
-                  }}
+                  onClick={() => setMonthYear(first.getFullYear(), i)}
                 >
                   {MONTHS_SHORT[i]}
                 </button>
@@ -119,10 +125,7 @@ export function DatePicker({
                   key={y}
                   type="button"
                   className={y === first.getFullYear() ? 'sel' : y === new Date().getFullYear() ? 'today' : ''}
-                  onClick={() => {
-                    setView(new Date(y, first.getMonth(), 1))
-                    setMode('days')
-                  }}
+                  onClick={() => setMonthYear(y, first.getMonth())}
                 >
                   {y}
                 </button>

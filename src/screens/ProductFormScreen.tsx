@@ -222,7 +222,8 @@ export function ProductFormScreen({ product, initial, onClose, onSaved }: Produc
     // Si l'IA a fourni des durées, la DLC suit l'emplacement choisi.
     if (aiShelf) {
       const days = aiShelf[c]
-      if (days > 0) {
+      // Une date saisie ou lue à la main n'est jamais écrasée par l'estimation.
+      if (days > 0 && (!expiryDate || expiryDate === autoDate.current)) {
         const iso = isoInDays(days)
         autoDate.current = iso
         setExpiryDate(iso)
