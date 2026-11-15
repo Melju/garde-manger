@@ -2644,3 +2644,5 @@ body.is-selecting .add-bar { display: none; }
 .date-actions { display: flex; flex-wrap: wrap; align-items: stretch; gap: 8px; margin-top: 10px; }
 .date-actions .ai-complete-btn { margin-top: 0; flex: 1 1 auto; justify-content: center; min-height: 42px; }
 .date-actions .opened-note { margin: 0; align-self: center; }
+
+.list-sentinel { height: 1px; }

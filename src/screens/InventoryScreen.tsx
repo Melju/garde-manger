@@ -182,6 +182,24 @@ export function InventoryScreen({
     [filtered, selecting],
   )
 
+  // Chargement progressif : on affiche 30 lignes puis 30 de plus à l'approche du bas de la liste.
+  const PAGE = 30
+  const [visible, setVisible] = useState(PAGE)
+  const sentinelRef = useRef<HTMLDivElement | null>(null)
+  useEffect(() => setVisible(PAGE), [search, selecting])
+  useEffect(() => {
+    const el = sentinelRef.current
+    if (!el || visible >= rows.length) return
+    const io = new IntersectionObserver(
+      (entries) => {
+        if (entries.some((e) => e.isIntersecting)) setVisible((v) => v + PAGE)
+      },
+      { rootMargin: '800px 0px' },
+    )
+    io.observe(el)
+    return () => io.disconnect()
+  }, [visible, rows.length])
+
   function togglePick(id: string) {
     setPicked((prev) => {
       const next = new Set(prev)
@@ -376,7 +394,7 @@ export function InventoryScreen({
                 <button type="button" onClick={() => setPicked(new Set())}>Aucun</button>
               </div>
             ) : null}
-            {rows.map(({ key, p, full }, idx) =>
+            {rows.slice(0, visible).map(({ key, p, full }, idx) =>
               selecting ? (
                 <button
                   key={p.id}
@@ -411,6 +429,7 @@ export function InventoryScreen({
                 />
               ),
             )}
+            {visible < rows.length && <div ref={sentinelRef} className="list-sentinel" aria-hidden />}
           </>
         ) : (
           <div className="empty-state">
