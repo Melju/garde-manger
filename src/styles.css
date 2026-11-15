@@ -2736,3 +2736,11 @@ body.is-selecting .add-bar { display: none; }
 .sticky-zone .header { position: static; padding-bottom: 10px; }
 .sticky-zone .week-nav, .sticky-zone .filter-tabs, .sticky-zone .search-row { margin-bottom: 8px; }
 .sticky-zone .btn-row { margin: 0 0 8px !important; }
+
+/* Aération de la zone collante */
+.sticky-zone { padding-bottom: 14px; }
+.sticky-zone .header { padding-bottom: 14px; }
+.sticky-zone .header-left p { margin-top: 4px; }
+.sticky-zone .week-nav, .sticky-zone .filter-tabs, .sticky-zone .search-row { margin-bottom: 0; }
+.sticky-zone + * { margin-top: 18px; }
+.sticky-zone + .generate-list-btn { margin-bottom: 14px; }
