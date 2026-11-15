@@ -431,14 +431,15 @@ export function InventoryScreen({
 
       <div className="stats-strip stats-mobile">{statsBoxes}</div>
 
+      {search.trim() && (
+        <div className="list-header list-header-outer">
+          <span className="list-count">
+            {filtered.length} résultat{filtered.length > 1 ? 's' : ''}
+          </span>
+        </div>
+      )}
+
       <div className={`product-list${selecting ? ' selecting' : ''}${view === 'tiles' ? ' tiles' : ''}`}>
-        {search.trim() && (
-          <div className="list-header">
-            <span className="list-count">
-              {filtered.length} résultat{filtered.length > 1 ? 's' : ''}
-            </span>
-          </div>
-        )}
 
         {filtered.length > 0 ? (
           <>
