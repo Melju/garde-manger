@@ -59,6 +59,16 @@ export async function allowedEmails(): Promise<string[]> {
   return (data ?? []) as string[]
 }
 
+export interface AllowedStatus { email: string; signedUpAt: string | null }
+
+/** Adresses autorisées avec leur date d'inscription (null = pas encore inscrit). */
+export async function allowedStatus(): Promise<AllowedStatus[]> {
+  if (!supabase) return []
+  const { data, error } = await supabase.rpc('admin_allowed_status')
+  if (error) throw new Error(error.message)
+  return ((data ?? []) as { email: string; signed_up_at: string | null }[]).map((r) => ({ email: r.email, signedUpAt: r.signed_up_at }))
+}
+
 export async function allowEmail(email: string): Promise<void> {
   if (!supabase) throw new Error('Connecte-toi')
   const { error } = await supabase.rpc('admin_allow_email', { p_email: email })

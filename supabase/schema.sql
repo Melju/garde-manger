@@ -476,6 +476,23 @@ begin
 end;
 $$;
 
+create or replace function admin_allowed_status()
+returns table(email text, signed_up_at timestamptz, last_seen_at timestamptz)
+language plpgsql
+security definer
+set search_path = public, auth
+as $$
+begin
+  if not is_admin() then raise exception 'Réservé à l''administrateur'; end if;
+  return query
+    select a.email::text, u.created_at, u.last_sign_in_at
+    from allowed_emails a
+    left join auth.users u on lower(u.email) = lower(a.email)
+    order by a.email;
+end;
+$$;
+grant execute on function admin_allowed_status() to authenticated;
+
 grant execute on function is_admin() to authenticated;
 grant execute on function admin_allowed_list() to authenticated;
 grant execute on function admin_allow_email(text) to authenticated;

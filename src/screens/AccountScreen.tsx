@@ -3,7 +3,7 @@ import { useAuth } from '../data/auth'
 import { useStore } from '../data/store'
 import { useToast } from '../components/Toast'
 import { PageHeader } from '../components/PageHeader'
-import { aiStatus, setAiKey, clearAiKey, isAdmin, allowedEmails, allowEmail, removeAllowedEmail, aiOverview, setHouseholdQuota, type AiStatus, type HouseholdQuota } from '../lib/aiKey'
+import { aiStatus, setAiKey, clearAiKey, isAdmin, allowedEmails, allowedStatus, type AllowedStatus, allowEmail, removeAllowedEmail, aiOverview, setHouseholdQuota, type AiStatus, type HouseholdQuota } from '../lib/aiKey'
 import { useConfirm, usePrompt } from '../components/Confirm'
 
 interface AccountScreenProps {
@@ -28,6 +28,7 @@ export function AccountScreen({ onBack }: AccountScreenProps) {
   const [quotas, setQuotas] = useState<HouseholdQuota[]>([])
   const [admin, setAdmin] = useState(false)
   const [allowed, setAllowed] = useState<string[]>([])
+  const [signups, setSignups] = useState<Record<string, string | null>>({})
   const [newEmail, setNewEmail] = useState('')
 
   useEffect(() => {
@@ -35,6 +36,7 @@ export function AccountScreen({ onBack }: AccountScreenProps) {
       setAdmin(a)
       if (a) {
         allowedEmails().then(setAllowed).catch(() => {})
+        allowedStatus().then(toSignupMap).then(setSignups).catch(() => {})
         aiOverview().then(setQuotas).catch(() => {})
       }
     })
@@ -46,6 +48,7 @@ export function AccountScreen({ onBack }: AccountScreenProps) {
       await allowEmail(newEmail)
       setNewEmail('')
       setAllowed(await allowedEmails())
+      allowedStatus().then(toSignupMap).then(setSignups).catch(() => {})
       toast('Adresse autorisée')
       await shareInvite()
     } catch (e) {
@@ -94,6 +97,7 @@ export function AccountScreen({ onBack }: AccountScreenProps) {
     try {
       await removeAllowedEmail(email)
       setAllowed(await allowedEmails())
+      allowedStatus().then(toSignupMap).then(setSignups).catch(() => {})
     } catch (e) {
       toast(e instanceof Error ? e.message : 'Suppression impossible')
     }
@@ -383,7 +387,14 @@ export function AccountScreen({ onBack }: AccountScreenProps) {
           </p>
           {allowed.map((e) => (
             <div className="setting-row access-row" key={e}>
-              <div className="access-email">{e}</div>
+              <div className="access-text">
+                <div className="access-email">{e}</div>
+                {e.toLowerCase() in signups && (
+                  signups[e.toLowerCase()]
+                    ? <span className="access-badge ok">Inscrit le {new Date(signups[e.toLowerCase()]!).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short', year: 'numeric' })}</span>
+                    : <span className="access-badge wait">Pas encore inscrit</span>
+                )}
+              </div>
               <div className="access-actions">
                 <button className="btn-secondary store-edit-btn" onClick={() => shareInvite()}>Inviter</button>
                 <button className="btn-secondary btn-danger store-edit-btn" onClick={() => dropAllowed(e)}>Retirer</button>
@@ -511,4 +522,10 @@ export function AccountScreen({ onBack }: AccountScreenProps) {
       </div>
     </div>
   )
+}
+
+function toSignupMap(rows: AllowedStatus[]): Record<string, string | null> {
+  const m: Record<string, string | null> = {}
+  for (const r of rows) m[r.email.toLowerCase()] = r.signedUpAt
+  return m
 }

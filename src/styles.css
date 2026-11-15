@@ -2768,3 +2768,7 @@ body.is-selecting .add-bar { display: none; }
 .access-row { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; gap: 12px; }
 .access-email { font-size: 14px; font-weight: 600; min-width: 0; overflow-wrap: anywhere; }
 .access-actions { display: flex; gap: 8px; }
+.access-text { min-width: 0; display: flex; flex-direction: column; align-items: flex-start; gap: 5px; }
+.access-badge { font-size: 11.5px; font-weight: 700; padding: 3px 8px; border-radius: 999px; }
+.access-badge.ok { background: #e6f4ea; color: #2f7a46; }
+.access-badge.wait { background: #fff3e0; color: #a85d00; }
