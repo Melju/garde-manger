@@ -122,29 +122,41 @@ export function RecipesScreen({ onOpenRecipe, onOpenFamily }: RecipesScreenProps
 
       <div className="product-list">
         <div className="ai-block">
-          <div className={`ai-suggest-card${generating ? ' busy' : ''}`} onClick={handleGenerate}>
-            <div className="ai-icon">
-              <Icon name="sparkles" />
+          <div className={`ai-gen${generating ? ' busy' : ''}`}>
+            <div className="ai-gen-head">
+              <div className="ai-icon">
+                <Icon name="sparkles" />
+              </div>
+              <div className="ai-text">
+                <div className="ai-title">Générer une recette avec l'IA</div>
+                <div className="ai-desc">Créée à partir de ton stock · Claude</div>
+              </div>
             </div>
-            <div className="ai-text">
-              <div className="ai-title">{generating ? 'Génération en cours…' : 'Génère une recette créative'}</div>
-              <div className="ai-desc">À partir de ton stock · Claude</div>
-            </div>
-            <div className="ai-selects" onClick={(e) => e.stopPropagation()}>
-              <Select
-                className="ai-select"
-                ariaLabel="Type de plat"
-                value={course}
-                onChange={setCourse}
-                options={COURSES.map(([val, label]) => ({ value: val, label }))}
-              />
-              <Select
-                className="ai-select"
-                ariaLabel="Style de recette"
-                value={constraint}
-                onChange={setConstraint}
-                options={CONSTRAINTS.map(([val, label]) => ({ value: val, label }))}
-              />
+            <div className="ai-gen-fields">
+              <label className="ai-field">
+                <span>Type de plat</span>
+                <Select
+                  className="ai-select"
+                  ariaLabel="Type de plat"
+                  value={course}
+                  onChange={setCourse}
+                  options={COURSES.map(([val, label]) => ({ value: val, label }))}
+                />
+              </label>
+              <label className="ai-field">
+                <span>Style</span>
+                <Select
+                  className="ai-select"
+                  ariaLabel="Style de recette"
+                  value={constraint}
+                  onChange={setConstraint}
+                  options={CONSTRAINTS.map(([val, label]) => ({ value: val, label }))}
+                />
+              </label>
+              <button className="btn-primary ai-gen-btn" disabled={generating} onClick={handleGenerate}>
+                <Icon name="sparkles" />
+                {generating ? 'Génération en cours…' : 'Générer'}
+              </button>
             </div>
           </div>
         </div>

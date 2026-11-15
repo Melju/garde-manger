@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { createPortal } from 'react-dom'
 
 export interface SelectOption {
   value: string
@@ -41,7 +42,7 @@ export function Select({ value, onChange, options, placeholder, title, className
       >
         {current?.label ?? placeholder ?? value}
       </button>
-      {open && (
+      {open && createPortal(
         <div className="cselect-overlay" onClick={() => setOpen(false)}>
           <div className="cselect-sheet" role="listbox" aria-label={ariaLabel} onClick={(e) => e.stopPropagation()}>
             <div className="cselect-handle" />
@@ -69,7 +70,8 @@ export function Select({ value, onChange, options, placeholder, title, className
               ))}
             </div>
           </div>
-        </div>
+        </div>,
+        document.body,
       )}
     </>
   )

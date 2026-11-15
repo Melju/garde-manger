@@ -2751,3 +2751,15 @@ body.is-selecting .add-bar { display: none; }
 .sticky-zone .header-actions { flex-shrink: 0; }
 
 .list-header-outer { margin: 0 20px 12px; }
+
+/* Bloc de génération IA : champs explicites + bouton Générer */
+.ai-gen { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 16px; display: flex; flex-direction: column; gap: 14px; }
+.ai-gen.busy { opacity: 0.75; pointer-events: none; }
+.ai-gen-head { display: flex; align-items: center; gap: 14px; }
+.ai-gen-fields { display: flex; gap: 10px; align-items: flex-end; flex-wrap: wrap; }
+.ai-field { display: flex; flex-direction: column; gap: 4px; flex: 1 1 140px; min-width: 0; }
+.ai-field > span { font-size: 12px; font-weight: 700; color: var(--muted); }
+.ai-gen .ai-select { width: 100%; text-align: left; padding: 11px 12px; font-size: 14px; border-radius: 12px; }
+.ai-gen-btn { flex: 0 0 auto; display: inline-flex; align-items: center; justify-content: center; gap: 8px; min-height: 44px; padding: 0 22px; }
+.ai-gen-btn svg { width: 18px; height: 18px; }
+@media (max-width: 520px) { .ai-gen-btn { flex: 1 1 100%; } }
