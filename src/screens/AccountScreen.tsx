@@ -140,11 +140,10 @@ export function AccountScreen({ onBack }: AccountScreenProps) {
   }, [auth.displayName])
 
   async function shareInvite() {
-    const codeStr = auth.inviteCode ?? ''
-    const text = `Rejoins notre garde-manger Miamm ! 1) Ouvre https://food.graphikeo.com et saisis ton adresse e-mail pour recevoir ton code de connexion. 2) Va dans Plus > Compte > Rejoindre un foyer et entre le code : ${codeStr}`
+    const text = `Je t'invite sur Miamm, l'appli pour gérer ton garde-manger (stock, dates de péremption, recettes, courses). Ouvre https://food.graphikeo.com, saisis ton adresse e-mail et entre le code reçu par e-mail (pense à regarder dans les indésirables). Choisis ensuite « Créer mon foyer » pour démarrer ton propre garde-manger.`
     try {
       if (navigator.share) {
-        await navigator.share({ title: 'Miamm — code du foyer', text })
+        await navigator.share({ title: 'Invitation à Miamm', text })
       } else {
         await navigator.clipboard?.writeText(text)
         toast('Invitation copiée')
