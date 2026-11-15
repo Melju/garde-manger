@@ -51,6 +51,8 @@ export type IconName =
   | 'bottle'
   | 'droplet'
   | 'cake'
+  | 'grid'
+  | 'list'
   | 'snowflake'
 
 const paths: Record<IconName, React.ReactNode> = {
@@ -323,6 +325,20 @@ const paths: Record<IconName, React.ReactNode> = {
   ),
   droplet: (
     <path d="M12 2.7s6 6.1 6 10.3a6 6 0 0 1-12 0c0-4.2 6-10.3 6-10.3Z" />
+  ),
+  grid: (
+    <>
+      <rect x="3.5" y="3.5" width="7" height="7" rx="1.5" />
+      <rect x="13.5" y="3.5" width="7" height="7" rx="1.5" />
+      <rect x="3.5" y="13.5" width="7" height="7" rx="1.5" />
+      <rect x="13.5" y="13.5" width="7" height="7" rx="1.5" />
+    </>
+  ),
+  list: (
+    <>
+      <path d="M8 6h13M8 12h13M8 18h13" />
+      <path d="M3.5 6h.01M3.5 12h.01M3.5 18h.01" />
+    </>
   ),
   cake: (
     <>

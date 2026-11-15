@@ -29,6 +29,8 @@ interface ProductItemProps {
   groupPos?: 'first' | 'middle' | 'last'
   /** Nombre de lignes identiques rassemblées (affiché sur la ligne de tête). */
   groupCount?: number
+  /** Pas de glissement (affichage en tuiles sur PC). */
+  noSwipe?: boolean
   groupOpen?: boolean
   onToggleGroup?: () => void
   onSelect: (product: Product) => void
@@ -55,6 +57,7 @@ export function ProductItem({
   detail,
   groupPos,
   groupCount,
+  noSwipe,
   groupOpen,
   onToggleGroup,
   onSelect,
@@ -100,6 +103,7 @@ export function ProductItem({
     return v
   }
   function onPointerDown(e: React.PointerEvent) {
+    if (noSwipe) return
     if (demo) onDemoDone?.()
     startX.current = e.clientX
     startY.current = e.clientY
@@ -107,6 +111,7 @@ export function ProductItem({
     captured.current = false
   }
   function onPointerMove(e: React.PointerEvent) {
+    if (noSwipe) return
     if (startX.current === null) return
     const dx = e.clientX - startX.current
     const dy = e.clientY - startY.current

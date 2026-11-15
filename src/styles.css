@@ -2662,3 +2662,31 @@ body.is-selecting .add-bar { display: none; }
 .swipe-wrapper.is-active .swipe-actions,
 .swipe-wrapper.swiped-left .swipe-actions,
 .swipe-wrapper.swiped-right .swipe-actions { visibility: visible; transition: none; }
+
+/* ---------- Stock sur PC : pleine largeur + affichage en tuiles ---------- */
+@media (max-width: 759px) { .view-toggle { display: none !important; } }
+@media (min-width: 760px) {
+  .app.wide { max-width: none; margin: 0; min-width: 0; }
+  .app.wide .header, .app.wide .stats-strip, .app.wide .search-row, .app.wide .product-list { padding-left: 32px; padding-right: 32px; }
+  .app.wide .stats-strip { max-width: 760px; }
+  .app.wide .search-row { max-width: 760px; }
+  .app.wide .product-list:not(.tiles) { max-width: 980px; }
+
+  .product-list.tiles { display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 14px; align-items: start; }
+  .product-list.tiles > .swipe-hint,
+  .product-list.tiles > .list-sentinel,
+  .product-list.tiles > .empty-state { grid-column: 1 / -1; }
+  .product-list.tiles .swipe-wrapper { margin-bottom: 0; }
+  .product-list.tiles .swipe-actions { display: none; }
+  .product-list.tiles .product-item { flex-direction: column; align-items: stretch; gap: 12px; padding: 16px; height: 100%; }
+  .product-list.tiles .product-icon { width: 76px; height: 76px; }
+  .product-list.tiles .product-img { width: 66px; height: 66px; }
+  .product-list.tiles .product-right { display: flex; flex-direction: row; align-items: center; justify-content: space-between; width: 100%; gap: 8px; margin-top: auto; }
+  .product-list.tiles .group-chip { margin-top: 6px; }
+}
+
+/* Sur PC, le logo est déjà dans la barre latérale : on retire le doublon du haut de page. */
+@media (min-width: 760px) {
+  .shell .header .logo { display: none; }
+  .shell .header { justify-content: flex-end; }
+}

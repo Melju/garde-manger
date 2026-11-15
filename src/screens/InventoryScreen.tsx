@@ -205,6 +205,22 @@ export function InventoryScreen({
   const shown = useMemo(() => rows.filter((r) => r.gSize === 1 || r.gIndex === 0 || openGroups.has(r.sig)), [rows, openGroups])
 
   // Chargement progressif : on affiche 30 lignes puis 30 de plus à l'approche du bas de la liste.
+  const [view, setView] = useState<'list' | 'tiles'>(() => {
+    try {
+      return localStorage.getItem('miamm.inventory.view') === 'tiles' ? 'tiles' : 'list'
+    } catch {
+      return 'list'
+    }
+  })
+  function toggleView() {
+    const next = view === 'tiles' ? 'list' : 'tiles'
+    setView(next)
+    try {
+      localStorage.setItem('miamm.inventory.view', next)
+    } catch {
+      /* ignore */
+    }
+  }
   const PAGE = 30
   const [visible, setVisible] = useState(PAGE)
   const sentinelRef = useRef<HTMLDivElement | null>(null)
@@ -345,6 +361,14 @@ export function InventoryScreen({
             <Icon name={cloudMode && !offline ? 'cloud' : 'phone'} />
           </span>
           <button
+            className="icon-btn view-toggle"
+            onClick={toggleView}
+            aria-label={view === 'tiles' ? 'Affichage en liste' : 'Affichage en tuiles'}
+            title={view === 'tiles' ? 'Affichage en liste' : 'Affichage en tuiles'}
+          >
+            <Icon name={view === 'tiles' ? 'list' : 'grid'} />
+          </button>
+          <button
             className={`icon-btn${selecting ? ' on' : ''}`}
             onClick={() => (selecting ? stopSelecting() : setSelecting(true))}
             aria-label="Modifier plusieurs produits (magasin, catégorie, emplacement)"
@@ -399,7 +423,7 @@ export function InventoryScreen({
         </div>
       </div>
 
-      <div className={`product-list${selecting ? ' selecting' : ''}`}>
+      <div className={`product-list${selecting ? ' selecting' : ''}${view === 'tiles' ? ' tiles' : ''}`}>
         {search.trim() && (
           <div className="list-header">
             <span className="list-count">
@@ -441,8 +465,9 @@ export function InventoryScreen({
                   key={key}
                   product={p}
                   detail={full}
-                  groupPos={gSize > 1 && openGroups.has(sig) ? (gIndex === 0 ? 'first' : gIndex === gSize - 1 ? 'last' : 'middle') : undefined}
+                  groupPos={view === 'list' && gSize > 1 && openGroups.has(sig) ? (gIndex === 0 ? 'first' : gIndex === gSize - 1 ? 'last' : 'middle') : undefined}
                   groupCount={gIndex === 0 ? gSize : undefined}
+                  noSwipe={view === 'tiles'}
                   groupOpen={openGroups.has(sig)}
                   onToggleGroup={() => toggleGroup(sig)}
                   onSelect={onEdit}
