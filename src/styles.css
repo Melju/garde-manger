@@ -2704,3 +2704,12 @@ body.is-selecting .add-bar { display: none; }
   .app.wide .header-left { display: flex; align-items: center; }
   .app.wide .search-row { max-width: none; }
 }
+
+/* Tuiles : toutes de la même hauteur, même avec la pastille « N identiques » */
+@media (min-width: 760px) {
+  .product-list.tiles { grid-auto-rows: 1fr; align-items: stretch; }
+  .product-list.tiles .swipe-wrapper { height: 100%; display: flex; flex-direction: column; }
+  .product-list.tiles .swipe-wrapper > .product-item,
+  .product-list.tiles .swipe-wrapper > .swipe-content { flex: 1; height: 100%; box-sizing: border-box; }
+  .product-list.tiles .product-info { flex: 1; }
+}
