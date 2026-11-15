@@ -2749,3 +2749,6 @@ body.is-selecting .add-bar { display: none; }
 .sticky-zone ~ .product-list { margin-top: 18px; }
 .screen-fade { min-width: 0; max-width: 100%; }
 .sticky-zone .header-actions { flex-shrink: 0; }
+
+/* Tuiles : « N résultats » et autres en-têtes sur toute la largeur de la grille */
+.product-list.tiles > .list-header { grid-column: 1 / -1; margin: 0; padding: 0 2px; }
