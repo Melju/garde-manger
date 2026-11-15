@@ -9,6 +9,7 @@ export const CATEGORY_COLORS: Record<Category, { bg: string; fg: string }> = {
   poissons: { bg: 'oklch(0.93 0.06 235)', fg: 'oklch(0.55 0.15 240)' }, // bleu
   laitiers: { bg: 'oklch(0.95 0.07 90)', fg: 'oklch(0.55 0.13 85)' }, // crème / jaune
   epicerie: { bg: 'oklch(0.93 0.06 65)', fg: 'oklch(0.52 0.13 60)' }, // ambre
+  huiles: { bg: 'oklch(0.95 0.09 100)', fg: 'oklch(0.58 0.14 95)' }, // jaune doré
   conserves: { bg: 'oklch(0.92 0.04 255)', fg: 'oklch(0.5 0.11 255)' }, // ardoise
   sucreries: { bg: 'oklch(0.94 0.07 350)', fg: 'oklch(0.58 0.19 350)' }, // rose bonbon
   apero: { bg: 'oklch(0.93 0.07 310)', fg: 'oklch(0.55 0.18 305)' }, // violet

@@ -108,6 +108,7 @@ const CAT_BASE: Partial<Record<Category, ShelfEstimate>> = {
   poissons: { days: 2, group: 'Poissons' },
   laitiers: { days: 10, group: 'Produits laitiers' },
   epicerie: { days: 365, group: 'Épicerie' },
+  huiles: { days: 540, group: 'Épicerie' },
   conserves: { days: 720, group: 'Épicerie' },
   sucreries: { days: 365, group: 'Épicerie' },
   apero: { days: 180, group: 'Épicerie' },
@@ -200,7 +201,7 @@ export function durationLabel(days: number): string {
 // Mots-clés dont la date est une DDM (« à consommer de préférence avant ») même dans un rayon frais.
 const DDM_KW = ['oeuf', 'beurre', 'parmesan', 'comte', 'emmental', 'gruyere', 'miel', 'pain', 'baguette', 'brioche']
 const DLC_KW = ['jambon', 'saucisse', 'poulet', 'dinde', 'lardon', 'bacon', 'hache', 'poisson', 'saumon', 'crevette', 'yaourt', 'creme', 'lait frais', 'mozzarella', 'plat cuisine', 'traiteur']
-const DDM_CATS = new Set<Category>(['epicerie', 'conserves', 'sucreries', 'apero', 'boissons', 'surgeles', 'fruits', 'legumes'])
+const DDM_CATS = new Set<Category>(['epicerie', 'huiles', 'conserves', 'sucreries', 'apero', 'boissons', 'surgeles', 'fruits', 'legumes'])
 const DLC_CATS = new Set<Category>(['viandes', 'viandes-vg', 'poissons', 'laitiers'])
 
 /**

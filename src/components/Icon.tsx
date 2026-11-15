@@ -49,6 +49,7 @@ export type IconName =
   | 'candy'
   | 'wineglass'
   | 'bottle'
+  | 'droplet'
   | 'snowflake'
 
 const paths: Record<IconName, React.ReactNode> = {
@@ -319,6 +320,9 @@ const paths: Record<IconName, React.ReactNode> = {
       <path d="m12 8 1-6h2" />
     </>
   ),
+  droplet: (
+    <path d="M12 2.7s6 6.1 6 10.3a6 6 0 0 1-12 0c0-4.2 6-10.3 6-10.3Z" />
+  ),
   snowflake: (
     <>
       <line x1="2" x2="22" y1="12" y2="12" />
@@ -343,6 +347,7 @@ const CATEGORY_ICON: Record<Category, IconName> = {
   poissons: 'fish',
   laitiers: 'milk',
   epicerie: 'wheat',
+  huiles: 'droplet',
   conserves: 'can',
   sucreries: 'candy',
   apero: 'wineglass',

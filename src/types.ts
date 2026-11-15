@@ -9,6 +9,7 @@ export type Category =
   | 'poissons'
   | 'laitiers'
   | 'epicerie'
+  | 'huiles'
   | 'conserves'
   | 'sucreries'
   | 'apero'
@@ -25,6 +26,7 @@ export const CATEGORIES: { id: Category; label: string }[] = [
   { id: 'poissons', label: 'Poissons' },
   { id: 'laitiers', label: 'Laitiers' },
   { id: 'epicerie', label: 'Épicerie' },
+  { id: 'huiles', label: 'Huiles' },
   { id: 'conserves', label: 'Conserves' },
   { id: 'sucreries', label: 'Sucreries' },
   { id: 'apero', label: 'Apéro' },

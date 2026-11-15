@@ -3,6 +3,7 @@ import type { Category } from '../types'
 /** Mots-clés (FR, sans accent) → catégorie, pour deviner depuis un nom libre. */
 const RULES: { cat: Category; words: string[] }[] = [
   { cat: 'maison', words: ['papier toilette', 'essuie tout', 'sopalin', 'essuie-tout', 'essuie tout', 'liquide vaisselle', 'lave vaisselle', 'lessive', 'adoucissant', 'javel', 'nettoyant', 'eponge', 'sac poubelle', 'sacs poubelle', 'film alimentaire', 'papier alu', 'papier aluminium', 'papier cuisson', 'mouchoir', 'savon', 'gel douche', 'shampoing', 'dentifrice', 'brosse a dents', 'deodorant', 'coton', 'couche', 'croquettes chien', 'croquettes chat', 'litiere', 'piles', 'ampoule', 'rasoir', 'serviette hygienique', 'papier wc', 'papier hygienique', 'multi usage', 'lingette', 'demaquillant', 'bain de bouche', 'pile aa', 'sopalin', 'detartrant', 'desodorisant'] },
+  { cat: 'epicerie', words: ['vinaigre', 'vinaigrette', 'mayonnaise'] },
   { cat: 'laitiers', words: ['lait', 'yaourt', 'yogourt', 'fromage', 'beurre', 'creme', 'oeuf', 'mozzarella', 'comte', 'emmental', 'chevre'] },
   { cat: 'fruits', words: ['pomme', 'banane', 'orange', 'fraise', 'raisin', 'poire', 'peche', 'abricot', 'kiwi', 'citron', 'fruit', 'cerise', 'melon', 'ananas', 'mangue'] },
   { cat: 'legumes', words: ['tomate', 'carotte', 'salade', 'courgette', 'oignon', 'ail', 'poireau', 'pomme de terre', 'patate', 'legume', 'brocoli', 'epinard', 'haricot', 'poivron', 'champignon', 'concombre', 'avocat'] },
@@ -24,6 +25,8 @@ function normalize(s: string): string {
 /** Devine la catégorie d'un article à partir de son nom (libre). */
 export function guessCategoryFromName(name: string): Category {
   const n = normalize(name)
+  // « Huile d'olive », « huile de tournesol »… (pas « thon à l'huile », qui reste un poisson en conserve)
+  if (/^(huile|huiles)\b/.test(n.trim())) return 'huiles'
   for (const { cat, words } of RULES) {
     if (words.some((w) => n.includes(w))) return cat
   }
