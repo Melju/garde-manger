@@ -170,11 +170,12 @@ export function InventoryScreen({
   }, [products, search, selecting])
 
   // Liste : un produit au poids/volume en plusieurs paquets (2 × 200 g) s'affiche en une ligne par paquet,
-  // pour retirer des grammes sur l'un sans toucher l'autre. La fiche, elle, garde le total.
+  // pour retirer des grammes sur l'un sans toucher l'autre (4 paquets max, hors boissons : un lot de
+  // 6 bouteilles reste sur une ligne avec « −1, −2 »). La fiche, elle, garde le total.
   const rows = useMemo(
     () =>
       filtered.flatMap((p) =>
-        !selecting && p.quantity > 1 && isWeightProduct(p.size)
+        !selecting && p.quantity > 1 && p.quantity <= 4 && p.category !== 'boissons' && isWeightProduct(p.size)
           ? Array.from({ length: p.quantity }, (_, i) => ({ key: `${p.id}:${i}`, p: { ...p, quantity: 1 }, full: p as Product | undefined }))
           : [{ key: p.id, p, full: undefined as Product | undefined }],
       ),
