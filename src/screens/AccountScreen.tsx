@@ -155,10 +155,10 @@ export function AccountScreen({ onBack }: AccountScreenProps) {
   }, [auth.displayName])
 
   async function shareInvite() {
-    const text = `Je t'invite sur Miamm, l'appli pour gérer ton garde-manger (stock, dates de péremption, recettes, courses). Ouvre https://food.graphikeo.com, saisis ton adresse e-mail et entre le code reçu par e-mail (pense à regarder dans les indésirables). Choisis ensuite « Créer mon foyer » pour démarrer ton propre garde-manger.`
+    const text = `Je t'invite sur Miam miam, l'appli pour gérer ton garde-manger (stock, dates de péremption, recettes, courses). Ouvre https://food.graphikeo.com, saisis ton adresse e-mail et entre le code reçu par e-mail (pense à regarder dans les indésirables). Choisis ensuite « Créer mon foyer » pour démarrer ton propre garde-manger.`
     try {
       if (navigator.share) {
-        await navigator.share({ title: 'Invitation à Miamm', text })
+        await navigator.share({ title: 'Invitation à Miam miam', text })
       } else {
         await navigator.clipboard?.writeText(text)
         toast('Invitation copiée')

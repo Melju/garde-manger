@@ -35,7 +35,7 @@ export function RecipeDetailScreen({ recipe, onBack, onGoShopping, onEdit }: Rec
       const url = `${location.origin}/?r=${token}`
       if (typeof navigator.share === 'function') {
         try {
-          await navigator.share({ title: recipe.title, text: `Une recette Miamm à découvrir : ${recipe.title}`, url })
+          await navigator.share({ title: recipe.title, text: `Une recette Miam miam à découvrir : ${recipe.title}`, url })
           return
         } catch (e) {
           if ((e as Error).name === 'AbortError') return

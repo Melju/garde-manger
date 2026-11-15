@@ -373,7 +373,7 @@ export function InventoryScreen({
       <header className="header">
         <div className="header-left">
           <div className="stats-strip stats-desktop">{statsBoxes}</div>
-          <h1 className="logo"><img src={`${import.meta.env.BASE_URL}logo.webp`} alt="Miamm" /></h1>
+          <h1 className="logo"><img src={`${import.meta.env.BASE_URL}logo.webp`} alt="Miam miam" /></h1>
         </div>
         <div className="header-actions">
           <span className={`sync-ico${offline ? ' off' : ''}`} role="img" aria-label={syncLabel} title={syncLabel}>

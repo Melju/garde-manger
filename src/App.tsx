@@ -184,7 +184,7 @@ export function App() {
   if (!auth.ready || loading)
     return (
       <div className="splash">
-        <img className="splash-logo-img" src={`${import.meta.env.BASE_URL}logo.webp`} alt="Miamm" />
+        <img className="splash-logo-img" src={`${import.meta.env.BASE_URL}logo.webp`} alt="Miam miam" />
         <div className="splash-spin" />
       </div>
     )
@@ -220,7 +220,7 @@ export function App() {
     <div className="shell">
       {/* Barre latérale (bureau uniquement, masquée en mobile via CSS) */}
       <aside className="sidebar">
-        <div className="sidebar-logo"><img src={`${import.meta.env.BASE_URL}logo.webp`} alt="Miamm" /></div>
+        <div className="sidebar-logo"><img src={`${import.meta.env.BASE_URL}logo.webp`} alt="Miam miam" /></div>
         <nav className="sidebar-nav">
           {NAV.map((n) => (
             <button

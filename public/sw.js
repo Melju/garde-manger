@@ -6,7 +6,7 @@ self.addEventListener('push', (event) => {
   let data = {}
   try { data = event.data ? event.data.json() : {} } catch (_) { /* texte brut */ }
   event.waitUntil(
-    self.registration.showNotification(data.title || 'Miamm', {
+    self.registration.showNotification(data.title || 'Miam miam', {
       body: data.body || '',
       icon: './icon-192-v2.png',
       badge: './icon-192-v2.png',

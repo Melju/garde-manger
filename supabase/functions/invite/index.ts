@@ -7,7 +7,7 @@
 const BASE_URL = Deno.env.get('SUPABASE_URL')!
 const ANON = Deno.env.get('SUPABASE_ANON_KEY')!
 const SERVICE = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
-const FROM = 'Miamm <garde-manger@graphikeo.com>'
+const FROM = 'Miam miam <garde-manger@graphikeo.com>'
 const APP_URL = 'https://food.graphikeo.com'
 
 function json(obj: unknown, status = 200): Response {
@@ -23,10 +23,10 @@ function emailHtml(inviter: string, to: string): string {
 <html lang="fr">
 <body style="margin:0;background:#eef2f1;font-family:-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;color:#1b2733;">
   <div style="max-width:460px;margin:0 auto;padding:32px 24px;">
-    <img src="${APP_URL}/logo.png" alt="Miamm" width="150" style="display:block;width:150px;height:auto;margin:0 0 16px;" />
-    <h1 style="font-size:20px;margin:0 0 14px;">Tu es invité(e) sur Miamm</h1>
+    <img src="${APP_URL}/logo.png" alt="Miam miam" width="150" style="display:block;width:150px;height:auto;margin:0 0 16px;" />
+    <h1 style="font-size:20px;margin:0 0 14px;">Tu es invité(e) sur Miam miam</h1>
     <p style="font-size:15px;line-height:1.55;margin:0 0 14px;color:#48596b;">
-      ${esc(inviter)} t'invite à utiliser Miamm, l'appli pour gérer ton garde-manger :
+      ${esc(inviter)} t'invite à utiliser Miam miam, l'appli pour gérer ton garde-manger :
       ton stock, les dates de péremption, des idées de recettes et ta liste de courses.
     </p>
     <p style="font-size:15px;line-height:1.55;margin:0 0 22px;color:#48596b;">
@@ -98,9 +98,9 @@ Deno.serve(async (req) => {
       from: FROM,
       to: [email],
       reply_to: inviter,
-      subject: 'Tu es invité(e) sur Miamm',
+      subject: 'Tu es invité(e) sur Miam miam',
       html: emailHtml(inviter, email),
-      text: `${inviter} t'invite sur Miamm, l'appli pour gérer ton garde-manger.\n\n1) Ouvre ${APP_URL} et saisis ${email}.\n2) Entre le code à 6 chiffres reçu par e-mail.\n3) Choisis « Créer mon foyer ».`,
+      text: `${inviter} t'invite sur Miam miam, l'appli pour gérer ton garde-manger.\n\n1) Ouvre ${APP_URL} et saisis ${email}.\n2) Entre le code à 6 chiffres reçu par e-mail.\n3) Choisis « Créer mon foyer ».`,
     }),
   })
   if (!send.ok) {

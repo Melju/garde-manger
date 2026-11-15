@@ -136,7 +136,7 @@ export function SettingsScreen({ onBack }: SettingsScreenProps) {
             <div className="setting-title">Alerte chaque matin</div>
             <div className="setting-desc">
               {push === 'needs-install'
-                ? "Ajoute d'abord Miamm à l'écran d'accueil (Partager, puis Sur l'écran d'accueil)"
+                ? "Ajoute d'abord Miam miam à l'écran d'accueil (Partager, puis Sur l'écran d'accueil)"
                 : push === 'denied'
                   ? "Bloquées : autorise les notifications dans les réglages du téléphone"
                   : push === 'unsupported'
@@ -315,7 +315,7 @@ export function SettingsScreen({ onBack }: SettingsScreenProps) {
 
       <div className="form-section">
         <p style={{ color: 'var(--muted)', fontSize: 13, textAlign: 'center' }}>
-          Miamm · version 0.3
+          Miam miam · version 0.3
         </p>
       </div>
     </div>

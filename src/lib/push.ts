@@ -65,5 +65,5 @@ export async function disablePush(): Promise<void> {
 /** Notification locale de test (vérifie l'autorisation et le service worker, sans passer par le serveur). */
 export async function testPush(): Promise<void> {
   const reg = await registration()
-  await reg?.showNotification('Miamm', { body: 'Les notifications fonctionnent sur cet appareil.', icon: './icon-192.png', tag: 'miamm-test' })
+  await reg?.showNotification('Miam miam', { body: 'Les notifications fonctionnent sur cet appareil.', icon: './icon-192.png', tag: 'miamm-test' })
 }

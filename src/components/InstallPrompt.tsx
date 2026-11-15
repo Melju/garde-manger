@@ -76,7 +76,7 @@ export function InstallPrompt() {
     <div className="install-banner" role="dialog" aria-label="Installer l'application">
       <img src={`${import.meta.env.BASE_URL}icon-192-v2.png`} alt="" />
       <div className="install-text">
-        <strong>Installer Miamm</strong>
+        <strong>Installer Miam miam</strong>
         <span>{evt ? 'Accès direct depuis ton dock ou ton écran d’accueil.' : hint}</span>
       </div>
       {evt && <button className="install-go" onClick={install}>Installer</button>}

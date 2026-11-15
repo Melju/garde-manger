@@ -3,7 +3,7 @@ import { useToast } from './Toast'
 /** Secours quand le partage natif est refusé : copier le lien ou relancer le partage. */
 export function ShareLinkSheet({ title, url, onClose }: { title: string; url: string; onClose: () => void }) {
   const toast = useToast()
-  const text = `Une recette Miamm à découvrir : ${title}`
+  const text = `Une recette Miam miam à découvrir : ${title}`
   async function copy() {
     try {
       await navigator.clipboard.writeText(`${text}\n${url}`)
