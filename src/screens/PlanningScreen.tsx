@@ -60,6 +60,7 @@ export function PlanningScreen() {
 
   return (
     <div className="screen-fade">
+      <div className="sticky-zone">
       <header className="header">
         <div className="header-left">
           <h1>Planning des repas</h1>
@@ -74,6 +75,19 @@ export function PlanningScreen() {
         <span>{label}</span>
         <button onClick={() => setWeekRef((d) => addDays(d, 7))} aria-label="Semaine suivante">
           <Icon name="chevron" />
+        </button>
+      </div>
+
+      </div>
+
+      <button className="generate-list-btn" onClick={handleGenerateWeek} disabled={planning}>
+        <Icon name="sparkles" />
+        {planning ? 'Génération du menu…' : 'Planifier ma semaine (IA)'}
+      </button>
+
+      <div className="btn-row" style={{ marginBottom: 14 }}>
+        <button className="btn-primary" onClick={generateList}>
+          Générer la liste de courses
         </button>
       </div>
 
@@ -104,17 +118,6 @@ export function PlanningScreen() {
           </div>
         )
       })}
-
-      <button className="generate-list-btn" onClick={handleGenerateWeek} disabled={planning}>
-        <Icon name="sparkles" />
-        {planning ? 'Génération du menu…' : 'Planifier ma semaine (IA)'}
-      </button>
-
-      <div className="btn-row" style={{ marginTop: 8 }}>
-        <button className="btn-primary" onClick={generateList}>
-          Générer la liste de courses
-        </button>
-      </div>
 
       {drawer && (
         <MealPlanDrawer date={drawer.date} slot={drawer.slot} onClose={() => setDrawer(null)} />

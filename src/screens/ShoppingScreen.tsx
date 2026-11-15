@@ -266,6 +266,7 @@ export function ShoppingScreen({ addOpen, onCloseAdd }: ShoppingScreenProps) {
 
   return (
     <div className="screen-fade">
+      <div className="sticky-zone">
       <header className="header">
         <div className="header-left">
           <h1>Liste de courses</h1>
@@ -290,6 +291,13 @@ export function ShoppingScreen({ addOpen, onCloseAdd }: ShoppingScreenProps) {
           </button>
         </div>
       )}
+
+      </div>
+
+      <button className="generate-list-btn" onClick={handleGenerate}>
+        <Icon name="sparkles" />
+        Générer depuis les stocks faibles
+      </button>
 
       <div className="store-bar">
         <button type="button" className="store-chip" onClick={() => setPickingStore((v) => !v)}>
@@ -374,11 +382,6 @@ export function ShoppingScreen({ addOpen, onCloseAdd }: ShoppingScreenProps) {
           </div>
         </div>
       )}
-
-      <button className="generate-list-btn" onClick={handleGenerate}>
-        <Icon name="sparkles" />
-        Générer depuis les stocks faibles
-      </button>
 
       {grouped.length === 0 ? (
         <div className="empty-state">

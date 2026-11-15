@@ -369,6 +369,7 @@ export function InventoryScreen({
 
   return (
     <div className="screen-fade">
+      <div className="sticky-zone">
       <header className="header">
         <div className="header-left">
           <div className="stats-strip stats-desktop">{statsBoxes}</div>
@@ -403,8 +404,6 @@ export function InventoryScreen({
         </div>
       </header>
 
-      <div className="stats-strip stats-mobile">{statsBoxes}</div>
-
       <div className="search-row">
         <div className="search-input">
           <Icon name="search" />
@@ -427,6 +426,10 @@ export function InventoryScreen({
           {search && <ClearButton onClick={() => setSearch('')} />}
         </div>
       </div>
+
+      </div>
+
+      <div className="stats-strip stats-mobile">{statsBoxes}</div>
 
       <div className={`product-list${selecting ? ' selecting' : ''}${view === 'tiles' ? ' tiles' : ''}`}>
         {search.trim() && (

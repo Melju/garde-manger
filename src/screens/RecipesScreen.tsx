@@ -82,6 +82,7 @@ export function RecipesScreen({ onOpenRecipe, onOpenFamily }: RecipesScreenProps
 
   return (
     <div className="screen-fade">
+      <div className="sticky-zone">
       <header className="header">
         <div className="header-left">
           <h1>Recettes</h1>
@@ -115,6 +116,8 @@ export function RecipesScreen({ onOpenRecipe, onOpenFamily }: RecipesScreenProps
             {label}
           </button>
         ))}
+      </div>
+
       </div>
 
       <div className="product-list">
