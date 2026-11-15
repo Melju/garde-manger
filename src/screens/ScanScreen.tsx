@@ -103,8 +103,32 @@ export function ScanScreen({ mode = 'add', onResult, onConsume, findKnown, onAdd
         v.srcObject = stream
         void v.play().catch(() => {})
         // Boucle de lecture : une tentative de décodage toutes les ~150 ms.
+        let reviving = false
         const timer = window.setInterval(() => {
-          if (!v.videoWidth || v.paused) return
+          // Le flux peut avoir été coupé (scanner de date qui libère la caméra, iOS qui met la vidéo en pause
+          // après un sélecteur de date) : on le relance au lieu de rester bloqué sur une image figée.
+          const cur = v.srcObject as MediaStream | null
+          const live = !!cur && cur.getVideoTracks().some((t) => t.readyState === 'live')
+          if (!live) {
+            if (reviving || cancelled) return
+            reviving = true
+            acquireCamera()
+              .then((st) => {
+                if (cancelled) return
+                v.srcObject = st
+                void v.play().catch(() => {})
+              })
+              .catch(() => {})
+              .finally(() => {
+                reviving = false
+              })
+            return
+          }
+          if (v.paused) {
+            void v.play().catch(() => {})
+            return
+          }
+          if (!v.videoWidth) return
           try {
             const r = reader.decode(v)
             if (r) void onDetected(r.getText())
@@ -144,11 +168,16 @@ export function ScanScreen({ mode = 'add', onResult, onConsume, findKnown, onAdd
     const n = knownQty
     setKnown(null)
     const exps = Array.from({ length: n }, (_, i) => (diffDates ? knownDates[i] || '' : knownExpiry))
-    await onAddKnown?.(p, n, exps)
-    // Petit délai pour ne pas re-scanner immédiatement le même code.
-    setTimeout(() => {
-      pausedRef.current = false
-    }, 1200)
+    try {
+      await onAddKnown?.(p, n, exps)
+    } catch (e) {
+      toast(e instanceof Error ? e.message : 'Ajout impossible')
+    } finally {
+      // Petit délai pour ne pas re-scanner immédiatement le même code ; le scan reprend même en cas d'erreur.
+      setTimeout(() => {
+        pausedRef.current = false
+      }, 1200)
+    }
   }
   function cancelKnown() {
     setKnown(null)
