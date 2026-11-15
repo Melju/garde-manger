@@ -116,6 +116,10 @@ interface StoreValue {
   scanReceipt(image: string, mediaType: string): Promise<ReceiptItem[]>
   /** Lit la photo d'une recette (Claude Vision) → brouillon de recette. */
   scanRecipe(images: { data: string; mediaType: string }[]): Promise<ScannedRecipe>
+  /** Crée un lien de partage (instantané) d'une recette ; renvoie le jeton. */
+  shareRecipe(recipe: Recipe): Promise<string>
+  /** Lit une recette partagée par jeton (compte connecté requis). */
+  getSharedRecipe(token: string): Promise<RecipeInput>
   /** Devine catégorie/conservation/unité + durée par mode pour un nom de produit. */
   enrichProduct(name: string): Promise<{
     category: Category
@@ -638,6 +642,42 @@ export function StoreProvider({ children }: { children: ReactNode }) {
         const d = data as any
         if (!d || !Array.isArray(d.ingredients)) throw new Error(d?.error || 'Réponse invalide')
         return d as ScannedRecipe
+      },
+      async shareRecipe(recipe) {
+        if (!supabase) throw new Error('Connecte-toi pour partager une recette')
+        const payload = {
+          title: recipe.title,
+          timeMin: recipe.timeMin,
+          cuisine: recipe.cuisine ?? null,
+          tags: recipe.tags.filter((t) => t !== 'perso'),
+          ingredients: recipe.ingredients.map((i) => ({ name: i.name, qty: i.qty ?? '' })),
+          steps: recipe.steps ?? [],
+          servings: recipe.servings ?? null,
+          notes: recipe.notes ?? null,
+        }
+        const { data, error } = await supabase.rpc('share_recipe', { p_recipe: payload })
+        if (error || typeof data !== 'string') throw new Error(error?.message || 'Partage impossible')
+        return data
+      },
+      async getSharedRecipe(token) {
+        if (!supabase) throw new Error('Connecte-toi pour ouvrir cette recette')
+        const { data, error } = await supabase.rpc('get_shared_recipe', { p_token: token })
+        if (error) throw new Error(error.message || 'Lien invalide')
+        const d = data as any
+        if (!d || typeof d.title !== 'string' || !Array.isArray(d.ingredients)) {
+          throw new Error('Ce lien a expiré ou n’existe pas')
+        }
+        return {
+          title: d.title,
+          timeMin: Number(d.timeMin) || 0,
+          cuisine: d.cuisine ?? undefined,
+          tags: Array.isArray(d.tags) ? d.tags : [],
+          favorite: false,
+          ingredients: d.ingredients.map((i: any) => ({ name: String(i.name ?? ''), qty: i.qty || undefined })),
+          steps: Array.isArray(d.steps) ? d.steps : [],
+          servings: d.servings ?? undefined,
+          notes: d.notes ?? undefined,
+        }
       },
       async scanPrice(image, mediaType) {
         if (!supabase) throw new Error('Connecte-toi pour scanner un prix')

@@ -4,6 +4,8 @@ import { useStore } from '../data/store'
 import { useToast } from '../components/Toast'
 import { PageHeader } from '../components/PageHeader'
 import { Icon } from '../components/Icon'
+import { ShareLinkSheet } from '../components/ShareLinkSheet'
+import { useState } from 'react'
 import { linkedProduct, recipeStock, adaptationFor } from '../lib/recipesLib'
 import type { Recipe } from '../types'
 
@@ -15,7 +17,31 @@ interface RecipeDetailScreenProps {
 }
 
 export function RecipeDetailScreen({ recipe, onBack, onGoShopping, onEdit }: RecipeDetailScreenProps) {
-  const { products, family, addManyShopping, prepareRecipe, removeRecipe } = useStore()
+  const { products, family, addManyShopping, prepareRecipe, removeRecipe, shareRecipe } = useStore()
+  const [shareUrl, setShareUrl] = useState<string | null>(null)
+  const [sharing, setSharing] = useState(false)
+
+  async function handleShare() {
+    if (sharing) return
+    setSharing(true)
+    try {
+      const token = await shareRecipe(recipe)
+      const url = `${location.origin}/?r=${token}`
+      if (typeof navigator.share === 'function') {
+        try {
+          await navigator.share({ title: recipe.title, text: `Une recette Miamm à découvrir : ${recipe.title}`, url })
+          return
+        } catch (e) {
+          if ((e as Error).name === 'AbortError') return
+        }
+      }
+      setShareUrl(url)
+    } catch (e) {
+      toast(e instanceof Error ? e.message : 'Partage impossible')
+    } finally {
+      setSharing(false)
+    }
+  }
   const toast = useToast()
   const askConfirm = useConfirm()
 
@@ -53,9 +79,14 @@ export function RecipeDetailScreen({ recipe, onBack, onGoShopping, onEdit }: Rec
         title="Recette"
         onBack={onBack}
         action={
-          <button className="icon-btn" onClick={() => onEdit(recipe)} aria-label="Modifier">
-            <Icon name="pencil" />
-          </button>
+          <div style={{ display: 'flex', gap: 4 }}>
+            <button className="icon-btn" onClick={handleShare} disabled={sharing} aria-label="Partager la recette">
+              <Icon name="share" />
+            </button>
+            <button className="icon-btn" onClick={() => onEdit(recipe)} aria-label="Modifier">
+              <Icon name="pencil" />
+            </button>
+          </div>
         }
       />
 
@@ -109,6 +140,8 @@ export function RecipeDetailScreen({ recipe, onBack, onGoShopping, onEdit }: Rec
           </div>
         </div>
       )}
+
+      {shareUrl && <ShareLinkSheet title={recipe.title} url={shareUrl} onClose={() => setShareUrl(null)} />}
 
       {recipe.notes && (
         <div className="form-section">

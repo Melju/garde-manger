@@ -1,5 +1,5 @@
 import { useConfirm } from './components/Confirm'
-import { lazy, Suspense, useLayoutEffect, useRef, useState } from 'react'
+import { lazy, Suspense, useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { InventoryScreen } from './screens/InventoryScreen'
 import { ShoppingScreen } from './screens/ShoppingScreen'
 import { ProductFormScreen } from './screens/ProductFormScreen'
@@ -25,6 +25,7 @@ import { Fab } from './components/Fab'
 import { useToast } from './components/Toast'
 import { useStore } from './data/store'
 import { useAuth } from './data/auth'
+import { SharedRecipeScreen } from './screens/SharedRecipeScreen'
 import { InstallPrompt } from './components/InstallPrompt'
 import { lookupBarcode } from './lib/openfoodfacts'
 import { recallProduct } from './lib/productMemory'
@@ -60,6 +61,7 @@ type Route =
   | { name: 'waste' }
   | { name: 'recipe-detail'; recipe: Recipe }
   | { name: 'recipe-form'; recipe?: Recipe }
+  | { name: 'shared-recipe'; token: string }
   | { name: 'family' }
   | { name: 'member-edit'; member: FamilyMember | null }
   | { name: 'settings' }
@@ -149,6 +151,33 @@ export function App() {
     else if (d < prevDepth.current) window.scrollTo(0, scrollSaved.current[d] ?? 0)
     prevDepth.current = d
   }, [stack.length])
+
+  // Lien de recette partagée (?r=jeton) : on mémorise le jeton, puis on ouvre l'aperçu une fois connecté.
+  useEffect(() => {
+    try {
+      const u = new URL(window.location.href)
+      const r = u.searchParams.get('r')
+      if (r && /^[a-z0-9]{8,32}$/i.test(r)) {
+        localStorage.setItem('miamm.pendingshare', r)
+        u.searchParams.delete('r')
+        window.history.replaceState({}, '', u.pathname + u.search + u.hash)
+      }
+    } catch {
+      /* ignore */
+    }
+  }, [])
+  useEffect(() => {
+    if (!auth.ready || loading || !auth.householdId) return
+    try {
+      const t = localStorage.getItem('miamm.pendingshare')
+      if (t) {
+        localStorage.removeItem('miamm.pendingshare')
+        setStack([{ name: 'shared-recipe', token: t }])
+      }
+    } catch {
+      /* ignore */
+    }
+  }, [auth.ready, auth.householdId, loading])
 
   // On attend que l'auth soit résolue (évite d'afficher « local » un bref instant
   // avant la bascule en cloud) et que les données soient chargées.
@@ -334,6 +363,14 @@ export function App() {
             onBack={back}
             onGoShopping={() => goTab('shopping')}
             onEdit={(recipe) => push({ name: 'recipe-form', recipe })}
+          />
+        )
+      case 'shared-recipe':
+        return (
+          <SharedRecipeScreen
+            token={route.token}
+            onBack={back}
+            onAdded={(recipe) => setStack([{ name: 'recipe-detail', recipe }])}
           />
         )
       case 'recipe-form':
