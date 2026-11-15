@@ -6,7 +6,7 @@ import { PageHeader } from '../components/PageHeader'
 import { Icon } from '../components/Icon'
 import { ShareLinkSheet } from '../components/ShareLinkSheet'
 import { useState } from 'react'
-import { linkedProduct, recipeStock, adaptationFor } from '../lib/recipesLib'
+import { linkedProduct, recipeStock, adaptationFor, scaleQty } from '../lib/recipesLib'
 import type { Recipe } from '../types'
 
 interface RecipeDetailScreenProps {
@@ -20,6 +20,8 @@ export function RecipeDetailScreen({ recipe, onBack, onGoShopping, onEdit }: Rec
   const { products, family, addManyShopping, prepareRecipe, removeRecipe, shareRecipe } = useStore()
   const [shareUrl, setShareUrl] = useState<string | null>(null)
   const [sharing, setSharing] = useState(false)
+  const base = recipe.servings ?? 0
+  const [people, setPeople] = useState(base || 4)
 
   async function handleShare() {
     if (sharing) return
@@ -95,13 +97,31 @@ export function RecipeDetailScreen({ recipe, onBack, onGoShopping, onEdit }: Rec
         <p style={{ color: 'var(--muted)', fontSize: 14 }}>
           {[
             recipe.timeMin ? `${recipe.timeMin} min` : '',
-            recipe.servings ? `${recipe.servings} pers.` : '',
             recipe.cuisine ?? '',
           ]
             .filter(Boolean)
             .join(' · ')}
         </p>
       </div>
+
+      {base > 0 && (
+        <div className="servings-stepper">
+          <span>Pour</span>
+          <button type="button" className="icon-btn" onClick={() => setPeople((n) => Math.max(1, n - 1))} aria-label="Moins de personnes" disabled={people <= 1}>
+            <Icon name="minus" width={2.4} />
+          </button>
+          <strong>{people}</strong>
+          <button type="button" className="icon-btn" onClick={() => setPeople((n) => Math.min(50, n + 1))} aria-label="Plus de personnes">
+            <Icon name="plus" width={2.4} />
+          </button>
+          <span>personne{people > 1 ? 's' : ''}</span>
+          {people !== base && (
+            <button type="button" className="servings-reset" onClick={() => setPeople(base)}>
+              Initial : {base}
+            </button>
+          )}
+        </div>
+      )}
 
       <div className="form-section">
         <label className="form-label">Ingrédients</label>
@@ -120,7 +140,7 @@ export function RecipeDetailScreen({ recipe, onBack, onGoShopping, onEdit }: Rec
                       : 'Pas encore acheté'}
                   </span>
                 </span>
-                {ing.qty && <span className="ingredient-qty">{ing.qty}</span>}
+                {ing.qty && <span className="ingredient-qty">{base > 0 ? scaleQty(ing.qty, base, people) : ing.qty}</span>}
               </div>
             )
           })}

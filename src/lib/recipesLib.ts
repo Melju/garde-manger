@@ -108,3 +108,41 @@ export function adaptationFor(recipe: Recipe, member: FamilyMember): string | nu
   if (notes.length === 0) return null
   return notes.join(', ')
 }
+
+const UNI: Record<string, number> = { '⅛': 0.125, '½': 0.5, '¼': 0.25, '¾': 0.75, '⅓': 1 / 3, '⅔': 2 / 3 }
+const NUM = '(?:\\d+\\s+\\d+\\/\\d+|\\d+\\/\\d+|\\d+(?:[.,]\\d+)?|[½¼¾⅓⅔⅛])'
+const QTY_RE = new RegExp(`^(\\s*)(${NUM})(?:(\\s*(?:-|à)\\s*)(${NUM}))?`)
+
+function parseNum(s: string): number {
+  if (UNI[s] !== undefined) return UNI[s]
+  const mixed = s.match(/^(\d+)\s+(\d+)\/(\d+)$/)
+  if (mixed) return Number(mixed[1]) + Number(mixed[2]) / Number(mixed[3])
+  const frac = s.match(/^(\d+)\/(\d+)$/)
+  if (frac) return Number(frac[1]) / Number(frac[2])
+  return Number(s.replace(',', '.'))
+}
+
+function fmtNum(v: number): string {
+  if (v >= 100) return String(Math.round(v))
+  const whole = Math.floor(v + 1e-9)
+  const f = v - whole
+  const marks: [number, string][] = [[0.125, '⅛'], [0.25, '¼'], [1 / 3, '⅓'], [0.5, '½'], [2 / 3, '⅔'], [0.75, '¾']]
+  if (v < 10) {
+    if (f < 0.04) return String(whole)
+    if (f > 0.96) return String(whole + 1)
+    for (const [x, ch] of marks) if (Math.abs(f - x) < 0.04) return whole > 0 ? `${whole}${ch}` : ch
+  }
+  const r = v >= 10 ? Math.round(v * 10) / 10 : Math.round(v * 100) / 100
+  return String(r).replace('.', ',')
+}
+
+/** Adapte une quantité libre ("200 g", "1/2 c. à café", "2-3") à un autre nombre de personnes. */
+export function scaleQty(qty: string | undefined, from: number, to: number): string | undefined {
+  if (!qty || !from || from === to) return qty
+  const m = qty.match(QTY_RE)
+  if (!m) return qty
+  const k = to / from
+  const a = fmtNum(parseNum(m[2]) * k)
+  const b = m[4] ? fmtNum(parseNum(m[4]) * k) : ''
+  return `${m[1]}${a}${m[3] ?? ''}${b}${qty.slice(m[0].length)}`
+}
