@@ -2780,3 +2780,4 @@ body.is-selecting .add-bar { display: none; }
 .notif-dismiss { flex: 0 0 auto; width: 32px; height: 32px; margin-left: auto; border: none; border-radius: 10px; background: transparent; color: var(--muted); display: grid; place-items: center; cursor: pointer; }
 .notif-dismiss:hover { background: var(--accent-soft); color: var(--fg); }
 .tab-host[hidden] { display: none !important; }
+.access-share-link { display: block; margin: 10px auto 0; border: none; background: none; color: var(--brand); font: inherit; font-size: 13px; font-weight: 600; text-decoration: underline; cursor: pointer; }

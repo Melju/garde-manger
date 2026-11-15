@@ -3,7 +3,7 @@ import { useAuth } from '../data/auth'
 import { useStore } from '../data/store'
 import { useToast } from '../components/Toast'
 import { PageHeader } from '../components/PageHeader'
-import { aiStatus, setAiKey, clearAiKey, isAdmin, allowedEmails, allowedStatus, type AllowedStatus, allowEmail, removeAllowedEmail, aiOverview, setHouseholdQuota, type AiStatus, type HouseholdQuota } from '../lib/aiKey'
+import { invokeFn, aiStatus, setAiKey, clearAiKey, isAdmin, allowedEmails, allowedStatus, type AllowedStatus, allowEmail, removeAllowedEmail, aiOverview, setHouseholdQuota, type AiStatus, type HouseholdQuota } from '../lib/aiKey'
 import { useConfirm, usePrompt } from '../components/Confirm'
 
 interface AccountScreenProps {
@@ -29,6 +29,7 @@ export function AccountScreen({ onBack }: AccountScreenProps) {
   const [admin, setAdmin] = useState(false)
   const [allowed, setAllowed] = useState<string[]>([])
   const [signups, setSignups] = useState<Record<string, string | null>>({})
+  const [sending, setSending] = useState<string | null>(null)
   const [newEmail, setNewEmail] = useState('')
 
   useEffect(() => {
@@ -42,15 +43,29 @@ export function AccountScreen({ onBack }: AccountScreenProps) {
     })
   }, [auth.householdId])
 
+  /** Envoie le vrai e-mail d'invitation (autorise aussi l'adresse côté serveur). */
+  async function sendInvite(email: string) {
+    setSending(email)
+    try {
+      const { error } = await invokeFn('invite', { email })
+      if (error) throw error
+      toast(`Invitation envoyée à ${email}`)
+    } catch (e) {
+      toast(e instanceof Error ? e.message : "L'invitation n'a pas pu partir")
+    } finally {
+      setSending(null)
+    }
+  }
+
   async function addAllowed() {
     setBusy(true)
     try {
-      await allowEmail(newEmail)
+      const email = newEmail.trim().toLowerCase()
+      await allowEmail(email)
       setNewEmail('')
       setAllowed(await allowedEmails())
       allowedStatus().then(toSignupMap).then(setSignups).catch(() => {})
-      toast('Adresse autorisée')
-      await shareInvite()
+      await sendInvite(email)
     } catch (e) {
       toast(e instanceof Error ? e.message : 'Ajout impossible')
     } finally {
@@ -395,7 +410,9 @@ export function AccountScreen({ onBack }: AccountScreenProps) {
                 )}
               </div>
               <div className="access-actions">
-                <button className="btn-secondary store-edit-btn" onClick={() => shareInvite()}>Inviter</button>
+                <button className="btn-secondary store-edit-btn" disabled={sending === e} onClick={() => sendInvite(e)}>
+                  {sending === e ? 'Envoi…' : 'Inviter'}
+                </button>
                 <button className="btn-secondary btn-danger store-edit-btn" onClick={() => dropAllowed(e)}>Retirer</button>
               </div>
             </div>
@@ -411,7 +428,10 @@ export function AccountScreen({ onBack }: AccountScreenProps) {
             style={{ marginTop: 8 }}
           />
           <button className="btn-secondary" style={{ marginTop: 8 }} disabled={busy || !newEmail.includes('@')} onClick={addAllowed}>
-            Autoriser et inviter
+            Autoriser et envoyer l'invitation
+          </button>
+          <button className="access-share-link" onClick={() => shareInvite()}>
+            Ou partager l'invitation par message (SMS, WhatsApp…)
           </button>
         </div>
       )}
