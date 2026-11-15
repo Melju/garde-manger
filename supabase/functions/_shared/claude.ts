@@ -42,7 +42,11 @@ export async function callClaude(opts: {
   const model = modelFor(opts.tier ?? 'smart')
   const content: unknown[] = []
   for (const img of opts.images ?? []) {
-    content.push({ type: 'image', source: { type: 'base64', media_type: img.mediaType, data: img.data } })
+    if (img.mediaType === 'application/pdf') {
+      content.push({ type: 'document', source: { type: 'base64', media_type: 'application/pdf', data: img.data } })
+    } else {
+      content.push({ type: 'image', source: { type: 'base64', media_type: img.mediaType, data: img.data } })
+    }
   }
   content.push({ type: 'text', text: opts.prompt })
   let resp: Response

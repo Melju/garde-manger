@@ -2781,3 +2781,21 @@ body.is-selecting .add-bar { display: none; }
 .notif-dismiss:hover { background: var(--accent-soft); color: var(--fg); }
 .tab-host[hidden] { display: none !important; }
 .access-share-link { display: block; margin: 10px auto 0; border: none; background: none; color: var(--brand); font: inherit; font-size: 13px; font-weight: 600; text-decoration: underline; cursor: pointer; }
+
+/* Retrait par scan : choix de la quantité */
+.scan-consume-sheet { gap: 14px; padding-top: 10px; }
+.scs-head { padding: 4px 4px 0; }
+.scs-name { font-size: 18px; font-weight: 800; }
+.scs-stock { font-size: 13px; color: var(--muted); margin-top: 2px; }
+.scs-tabs { display: flex; gap: 6px; }
+.scs-tabs button { flex: 1; border: 1px solid var(--border); background: none; color: var(--fg-2); border-radius: 12px; padding: 10px 6px; font: inherit; font-size: 14px; font-weight: 700; cursor: pointer; }
+.scs-tabs button.on { background: var(--accent-soft); color: var(--fg); border-color: var(--brand); }
+.scs-stepper { display: flex; align-items: center; justify-content: center; gap: 14px; }
+.scs-stepper > button:not(.scs-all) { width: 48px; height: 48px; border-radius: 14px; border: 1px solid var(--border); background: var(--surface); color: var(--fg); font-size: 24px; font-weight: 700; cursor: pointer; }
+.scs-stepper > button:disabled { opacity: 0.35; }
+.scs-stepper > span { min-width: 44px; text-align: center; font-size: 28px; font-weight: 800; }
+.scs-all { border: none; background: none; color: var(--brand); font: inherit; font-weight: 700; cursor: pointer; }
+.scs-go { width: 100%; min-height: 50px; }
+.scs-fracs { display: grid; grid-template-columns: 1fr; gap: 8px; }
+.scs-fracs .btn-secondary { min-height: 48px; font-size: 15px; }
+.scs-cancel { border: none; background: none; color: var(--muted); font: inherit; font-weight: 600; padding: 8px; cursor: pointer; }

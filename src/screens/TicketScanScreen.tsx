@@ -9,6 +9,8 @@ import type { ReceiptItem } from '../types'
 interface TicketScanScreenProps {
   onClose: () => void
   onAdded: () => void
+  /** « file » : ticket électronique (PDF ou capture), sans ouvrir l'appareil photo. */
+  mode?: 'photo' | 'file'
 }
 
 /** Réduit une image à max 1280px de large en JPEG (limite payload + coût). */
@@ -39,7 +41,19 @@ function downscale(file: File): Promise<{ data: string; mediaType: string }> {
   })
 }
 
-export function TicketScanScreen({ onClose, onAdded }: TicketScanScreenProps) {
+/** PDF lu tel quel (base64), limité pour rester sous la taille d'envoi. */
+function readPdf(file: File): Promise<{ data: string; mediaType: string }> {
+  return new Promise((resolve, reject) => {
+    if (file.size > 8 * 1024 * 1024) return reject(new Error('PDF trop lourd (8 Mo maximum)'))
+    const reader = new FileReader()
+    reader.onload = () => resolve({ data: String(reader.result).split(',')[1], mediaType: 'application/pdf' })
+    reader.onerror = () => reject(new Error('Lecture du fichier impossible'))
+    reader.readAsDataURL(file)
+  })
+}
+
+export function TicketScanScreen({ onClose, onAdded, mode = 'photo' }: TicketScanScreenProps) {
+  const electronic = mode === 'file'
   const { scanReceipt } = useStore()
   const toast = useToast()
   const fileRef = useRef<HTMLInputElement>(null)
@@ -52,7 +66,8 @@ export function TicketScanScreen({ onClose, onAdded }: TicketScanScreenProps) {
     setBusy(true)
     toast('Lecture du ticket…')
     try {
-      const { data, mediaType } = await downscale(file)
+      const isPdf = file.type === 'application/pdf' || /\.pdf$/i.test(file.name)
+      const { data, mediaType } = isPdf ? await readPdf(file) : await downscale(file)
       const found = await scanReceipt(data, mediaType)
       if (found.length === 0) toast('Aucun article détecté')
       setItems(found)
@@ -66,29 +81,36 @@ export function TicketScanScreen({ onClose, onAdded }: TicketScanScreenProps) {
 
   return (
     <div className="screen-fade">
-      <PageHeader title="Scanner un ticket" onBack={onClose} />
+      <PageHeader title={electronic ? 'Ticket électronique' : 'Scanner un ticket'} onBack={onClose} />
 
       {!items ? (
         <div className="ticket-intro">
           <div className="ticket-illus">
             <Icon name="receipt" />
           </div>
-          <p>Prends en photo (ou choisis) ton ticket de caisse. Claude en extrait les articles, tu valides, et ils sont ajoutés au stock.</p>
+          {electronic ? (
+            <p>
+              Choisis le PDF du ticket reçu par e-mail ou une capture d'écran du ticket dans l'appli du magasin
+              (Lidl Plus, Carrefour, Colruyt…). Claude en extrait les articles, tu valides, et ils sont ajoutés au stock.
+            </p>
+          ) : (
+            <p>Prends en photo (ou choisis) ton ticket de caisse. Claude en extrait les articles, tu valides, et ils sont ajoutés au stock.</p>
+          )}
           <button className="btn-primary" disabled={busy} onClick={() => fileRef.current?.click()}>
-            {busy ? 'Analyse en cours…' : 'Prendre / choisir une photo'}
+            {busy ? 'Analyse en cours…' : electronic ? 'Choisir le PDF ou la capture' : 'Prendre / choisir une photo'}
           </button>
           <input
             ref={fileRef}
             type="file"
-            accept="image/*"
-            capture="environment"
+            accept={electronic ? 'application/pdf,.pdf,image/*' : 'image/*'}
+            capture={electronic ? undefined : 'environment'}
             style={{ display: 'none' }}
             onChange={onPick}
           />
         </div>
       ) : items.length === 0 ? (
         <div className="form-section">
-          <p style={{ color: 'var(--muted)' }}>Aucun article détecté sur cette photo.</p>
+          <p style={{ color: 'var(--muted)' }}>Aucun article détecté sur ce ticket.</p>
           <button className="btn-secondary" onClick={() => setItems(null)}>Réessayer</button>
         </div>
       ) : (

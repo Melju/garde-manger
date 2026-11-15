@@ -29,7 +29,8 @@ import { SharedRecipeScreen } from './screens/SharedRecipeScreen'
 import { InstallPrompt } from './components/InstallPrompt'
 import { lookupBarcode } from './lib/openfoodfacts'
 import { recallProduct } from './lib/productMemory'
-import { splitSize } from './lib/contenance'
+import { splitSize, consumeFraction, remainingLabel } from './lib/contenance'
+import { ScanConsumeSheet, type ConsumeChoice } from './components/ScanConsumeSheet'
 import type { FamilyMember, Product, ProductInput, Recipe } from './types'
 
 // Chargé à la demande : la bibliothèque de scan (ZXing) est lourde.
@@ -52,7 +53,7 @@ type Route =
   | { name: 'product-form'; product: Product | null; initial?: Partial<ProductInput>; fromScan?: boolean }
   | { name: 'scan' }
   | { name: 'scan-consume' }
-  | { name: 'ticket-scan' }
+  | { name: 'ticket-scan'; mode?: 'photo' | 'file' }
   | { name: 'bulk-add' }
   | { name: 'notifications' }
   | { name: 'stats' }
@@ -69,7 +70,9 @@ type Route =
   | { name: 'add-menu' }
 
 export function App() {
-  const { loading, products, adjustQuantity, addProduct } = useStore()
+  const { loading, products, adjustQuantity, addProduct, updateProduct } = useStore()
+  const [pendingConsume, setPendingConsume] = useState<Product | null>(null)
+  const pendingRef = useRef(false)
   const askConfirm = useConfirm()
   const auth = useAuth()
   const toast = useToast()
@@ -103,6 +106,7 @@ export function App() {
 
   // Retrait par scan : décrémente le produit correspondant au code-barres.
   async function consumeByBarcode(barcode: string) {
+    if (pendingRef.current) return // une feuille de choix est déjà ouverte
     const p = products.find((x) => x.barcode && x.barcode === barcode)
     if (!p) {
       // Produit inconnu : on propose de l'ajouter (bascule vers le mode ajout).
@@ -112,14 +116,44 @@ export function App() {
       }
       return
     }
-    await adjustQuantity(p.id, -1)
-    const left = p.quantity - 1
-    toast(left > 0 ? `${p.name} : reste ×${left}` : `${p.name} retiré du stock`)
-    setConsumeLog((log) => {
-      const ex = log.find((e) => e.id === p.id)
-      if (ex) return log.map((e) => (e.id === p.id ? { ...e, count: e.count + 1 } : e))
-      return [{ id: p.id, name: p.name, count: 1 }, ...log]
-    })
+    // On ne retire plus directement : l'utilisateur choisit la quantité (le scan suivant attend).
+    pendingRef.current = true
+    setPendingConsume(p)
+  }
+
+  async function confirmConsume(c: ConsumeChoice) {
+    const p = pendingConsume
+    pendingRef.current = false
+    setPendingConsume(null)
+    if (!p) return
+    if (c.kind === 'units') {
+      const n = Math.min(c.n, p.quantity)
+      await adjustQuantity(p.id, -n)
+      const left = p.quantity - n
+      toast(left > 0 ? `${p.name} : reste ×${left}` : `${p.name} retiré du stock`)
+      setConsumeLog((log) => {
+        const ex = log.find((e) => e.id === p.id)
+        if (ex) return log.map((e) => (e.id === p.id ? { ...e, count: e.count + n } : e))
+        return [{ id: p.id, name: p.name, count: n }, ...log]
+      })
+      return
+    }
+    // Une partie d'un paquet : la contenance de ce paquet diminue.
+    const newSize = p.size ? consumeFraction(p.size, c.f) : null
+    if (newSize === null) {
+      await adjustQuantity(p.id, -1)
+      toast(`${p.name} : paquet terminé`)
+      return
+    }
+    if (p.quantity > 1) {
+      // Un paquet entamé parmi plusieurs pleins : il devient un lot à part.
+      const { id: _i, createdAt: _c, updatedAt: _u, ...rest } = p as Product & { createdAt?: string; updatedAt?: string }
+      await updateProduct(p.id, { quantity: p.quantity - 1 })
+      await addProduct({ ...rest, quantity: 1, size: newSize })
+    } else {
+      await updateProduct(p.id, { size: newSize })
+    }
+    toast(`${p.name} : ${remainingLabel(newSize)} restant`)
   }
 
   // Annule un retrait scanné (remet +1 au stock).
@@ -340,11 +374,23 @@ export function App() {
       case 'scan-consume':
         return (
           <Suspense fallback={<div className="scan-screen" />}>
-            <ScanScreen mode="consume" onConsume={consumeByBarcode} onClose={back} removed={consumeLog} onUndo={undoConsume} />
+            <>
+              <ScanScreen mode="consume" onConsume={consumeByBarcode} onClose={back} removed={consumeLog} onUndo={undoConsume} />
+              {pendingConsume && (
+                <ScanConsumeSheet
+                  product={pendingConsume}
+                  onConfirm={confirmConsume}
+                  onCancel={() => {
+                    pendingRef.current = false
+                    setPendingConsume(null)
+                  }}
+                />
+              )}
+            </>
           </Suspense>
         )
       case 'ticket-scan':
-        return <TicketScanScreen onClose={back} onAdded={() => goTab('inventory')} />
+        return <TicketScanScreen key={route.mode ?? 'photo'} mode={route.mode} onClose={back} onAdded={() => goTab('inventory')} />
       case 'bulk-add':
         return <BulkAddScreen onClose={back} onAdded={() => goTab('inventory')} />
       case 'notifications':
@@ -400,7 +446,7 @@ export function App() {
             onManual={() => replace({ name: 'product-form', product: null })}
             onBulk={() => replace({ name: 'bulk-add' })}
             onTicket={() => replace({ name: 'ticket-scan' })}
-            onTicketEmail={() => toast('Ticket par email — bientôt disponible')}
+            onTicketEmail={() => replace({ name: 'ticket-scan', mode: 'file' })}
           />
         )
     }

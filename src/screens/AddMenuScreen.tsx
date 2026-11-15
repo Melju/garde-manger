@@ -32,11 +32,10 @@ export function AddMenuScreen({
       onClick: onTicket,
     },
     {
-      icon: 'bell',
+      icon: 'receipt',
       title: 'Ticket électronique',
-      desc: 'Importez depuis e-mail ou application',
+      desc: "PDF reçu par e-mail ou capture de l'appli du magasin",
       onClick: onTicketEmail,
-      soon: true,
     },
     {
       icon: 'sparkles',

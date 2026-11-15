@@ -23,10 +23,10 @@ Deno.serve(async (req) => {
     /* vide */
   }
   const image: string = typeof body.image === 'string' ? body.image : ''
-  const mediaType: string = typeof body.mediaType === 'string' ? body.mediaType : 'image/jpeg'
+  const mediaType: string = ['image/jpeg', 'image/png', 'image/webp', 'image/gif', 'application/pdf'].includes(body.mediaType) ? body.mediaType : 'image/jpeg'
   if (!image) return json({ error: 'Aucune image fournie' }, 400)
 
-  const prompt = `Voici la photo d'un ticket de caisse de courses alimentaires.
+  const prompt = `Voici un ticket de caisse de courses alimentaires (photo, capture d'écran ou ticket électronique en PDF).
 Extrais UNIQUEMENT les articles alimentaires / produits du quotidien achetés (ignore le total,
 la TVA, le magasin, la carte de fidélité, les remises non liées à un produit).
 
@@ -43,7 +43,7 @@ Pour chaque article, donne :
 
 Réponds STRICTEMENT en JSON valide, sans texte autour :
 {"items":[{"name":string,"quantity":number,"size":string|null,"unit":string,"price":number|null,"category":string}]}
-Si l'image n'est pas un ticket lisible, renvoie {"items":[]}.`
+Si le document n'est pas un ticket lisible, renvoie {"items":[]}.`
 
   const res = await callClaude({ apiKey: gate.apiKey,
     prompt,
