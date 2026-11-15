@@ -2726,3 +2726,7 @@ body.is-selecting .add-bar { display: none; }
 .recipe-icon svg { width: 46%; height: 46%; }
 .recipe-header { gap: 12px; align-items: center; }
 .recipe-header .recipe-info { flex: 1; min-width: 0; }
+
+.recipe-icon-row { display: flex; align-items: center; gap: 14px; }
+.recipe-icon-btn { width: 68px; height: 68px; border-radius: 18px; border: 1px dashed var(--border, #ddd); background: var(--brand-soft, oklch(0.95 0.03 190)); display: grid; place-items: center; color: var(--brand); cursor: pointer; flex: none; }
+.recipe-icon-hint { display: flex; flex-direction: column; align-items: flex-start; font-size: 13px; color: var(--muted); }

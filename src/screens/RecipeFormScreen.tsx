@@ -6,7 +6,9 @@ import { Icon } from '../components/Icon'
 import { downscaleImage } from '../lib/imageResize'
 import type { Recipe, RecipeIngredient } from '../types'
 import { FormFooter } from '../components/FormFooter'
-import { linkedProduct } from '../lib/recipesLib'
+import { linkedProduct, recipeIconSlug } from '../lib/recipesLib'
+import { searchIcons } from '../lib/iconThemes'
+import { productImageUrl } from '../lib/productImage'
 
 interface RecipeFormScreenProps {
   /** Recette à modifier, ou null pour une création. */
@@ -65,6 +67,9 @@ export function RecipeFormScreen({ recipe, onClose, onSaved }: RecipeFormScreenP
   const [steps, setSteps] = useState((recipe?.steps ?? []).join('\n'))
   const [servings, setServings] = useState(recipe?.servings ? String(recipe.servings) : '')
   const [servingsUnit, setServingsUnit] = useState(recipe?.servingsUnit ?? '')
+  const [icon, setIcon] = useState<string | null>(recipe?.icon ?? null)
+  const [pickingIcon, setPickingIcon] = useState(false)
+  const [iconQuery, setIconQuery] = useState('')
   const [notes, setNotes] = useState(recipe?.notes ?? '')
   const [busy, setBusy] = useState(false)
   const fileRef = useRef<HTMLInputElement>(null)
@@ -123,6 +128,7 @@ export function RecipeFormScreen({ recipe, onClose, onSaved }: RecipeFormScreenP
         servings: Number(servings) > 0 ? Math.round(Number(servings)) : undefined,
         servingsUnit: Number(servings) > 0 && servingsUnit.trim() && servingsUnit.trim().toLowerCase() !== 'personnes' ? servingsUnit.trim() : undefined,
         notes: notes.trim() || undefined,
+        icon: icon ?? undefined,
       }
       if (isEdit && recipe) {
         await updateRecipe(recipe.id, input)
@@ -167,6 +173,55 @@ export function RecipeFormScreen({ recipe, onClose, onSaved }: RecipeFormScreenP
           autoFocus={!isEdit}
           onChange={(e) => setTitle(e.target.value)}
         />
+      </div>
+
+      <div className="form-section">
+        <label className="form-label">Icône</label>
+        <div className="recipe-icon-row">
+          <button type="button" className="recipe-icon-btn" onClick={() => setPickingIcon((v) => !v)} aria-label="Choisir l'icône de la recette">
+            {(() => {
+              const slug = icon ?? recipeIconSlug({ title, ingredients: ingredients.filter((i) => i.name.trim()) } as Recipe)
+              return slug ? <img src={productImageUrl(slug)} alt="" width={52} height={52} /> : <Icon name="book" />
+            })()}
+          </button>
+          <div className="recipe-icon-hint">
+            {icon ? 'Icône choisie' : 'Automatique, selon le nom et les ingrédients'}
+            <button type="button" className="icon-pick-auto" onClick={() => setPickingIcon((v) => !v)}>
+              {pickingIcon ? 'Fermer' : 'Changer'}
+            </button>
+            {icon && (
+              <button type="button" className="icon-pick-auto" onClick={() => setIcon(null)}>
+                Automatique
+              </button>
+            )}
+          </div>
+        </div>
+        {pickingIcon && (
+          <div className="icon-picker">
+            <input
+              className="form-input"
+              placeholder="Chercher une icône (crêpes, pâtes, gâteau…)"
+              value={iconQuery}
+              onChange={(e) => setIconQuery(e.target.value)}
+            />
+            <div className="icon-grid">
+              {searchIcons(iconQuery).map((s) => (
+                <button
+                  key={s}
+                  type="button"
+                  title={s.replace(/-/g, ' ')}
+                  className={`icon-cell${s === icon ? ' active' : ''}`}
+                  onClick={() => {
+                    setIcon(s)
+                    setPickingIcon(false)
+                  }}
+                >
+                  <img src={productImageUrl(s)} alt={s} width={44} height={44} loading="lazy" />
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
       </div>
 
       <div className="form-section">

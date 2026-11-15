@@ -150,6 +150,7 @@ export function scaleQty(qty: string | undefined, from: number, to: number): str
 
 /** Icône d'une recette : devinée depuis le titre, sinon depuis son premier ingrédient reconnu. */
 export function recipeIconSlug(recipe: Recipe): string | null {
+  if (recipe.icon) return recipe.icon
   const fromTitle = productImageSlug(recipe.title)
   if (fromTitle) return fromTitle
   for (const ing of recipe.ingredients) {

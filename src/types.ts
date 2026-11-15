@@ -187,6 +187,8 @@ export interface Recipe {
   servings?: number
   /** Unité de la quantité de base : « personnes » par défaut, ou « crêpes », « portions »… */
   servingsUnit?: string
+  /** Icône choisie à la main (nom du fichier dans public/icons) ; sinon devinée. */
+  icon?: string
   /** Notes libres : conservation, astuces, variantes. */
   notes?: string
 }
