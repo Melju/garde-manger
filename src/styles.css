@@ -2719,3 +2719,4 @@ body.is-selecting .add-bar { display: none; }
   .shell .app { max-width: none; margin: 0; min-width: 0; }
   .app .screen-fade { padding-left: 12px; padding-right: 12px; }
 }
+.ai-block { padding: 0 0 14px; }

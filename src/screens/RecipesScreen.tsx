@@ -117,6 +117,34 @@ export function RecipesScreen({ onOpenRecipe, onOpenFamily }: RecipesScreenProps
       </div>
 
       <div className="product-list">
+        <div className="ai-block">
+          <div className={`ai-suggest-card${generating ? ' busy' : ''}`} onClick={handleGenerate}>
+            <div className="ai-icon">
+              <Icon name="sparkles" />
+            </div>
+            <div className="ai-text">
+              <div className="ai-title">{generating ? 'Génération en cours…' : 'Génère une recette créative'}</div>
+              <div className="ai-desc">À partir de ton stock · Claude</div>
+            </div>
+            <div className="ai-selects" onClick={(e) => e.stopPropagation()}>
+              <Select
+                className="ai-select"
+                ariaLabel="Type de plat"
+                value={course}
+                onChange={setCourse}
+                options={COURSES.map(([val, label]) => ({ value: val, label }))}
+              />
+              <Select
+                className="ai-select"
+                ariaLabel="Style de recette"
+                value={constraint}
+                onChange={setConstraint}
+                options={CONSTRAINTS.map(([val, label]) => ({ value: val, label }))}
+              />
+            </div>
+          </div>
+        </div>
+
         {filtered.map((recipe) => {
           const stock = recipeStock(recipe, products)
           const adaptations = family
@@ -165,34 +193,6 @@ export function RecipesScreen({ onOpenRecipe, onOpenFamily }: RecipesScreenProps
             </div>
           )
         })}
-
-        <div className="ai-block">
-          <div className={`ai-suggest-card${generating ? ' busy' : ''}`} onClick={handleGenerate}>
-            <div className="ai-icon">
-              <Icon name="sparkles" />
-            </div>
-            <div className="ai-text">
-              <div className="ai-title">{generating ? 'Génération en cours…' : 'Génère une recette créative'}</div>
-              <div className="ai-desc">À partir de ton stock · Claude</div>
-            </div>
-            <div className="ai-selects" onClick={(e) => e.stopPropagation()}>
-              <Select
-                className="ai-select"
-                ariaLabel="Type de plat"
-                value={course}
-                onChange={setCourse}
-                options={COURSES.map(([val, label]) => ({ value: val, label }))}
-              />
-              <Select
-                className="ai-select"
-                ariaLabel="Style de recette"
-                value={constraint}
-                onChange={setConstraint}
-                options={CONSTRAINTS.map(([val, label]) => ({ value: val, label }))}
-              />
-            </div>
-          </div>
-        </div>
       </div>
     </div>
   )
