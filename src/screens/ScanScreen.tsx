@@ -42,6 +42,7 @@ export function ScanScreen({ mode = 'add', onResult, onConsume, findKnown, onAdd
   const cb = useRef({ mode, onResult, onConsume, findKnown, findMemory })
   cb.current = { mode, onResult, onConsume, findKnown, findMemory }
   const pausedRef = useRef(false)
+  const [addedOpen, setAddedOpen] = useState(false)
   const [known, setKnown] = useState<Product | null>(null)
   const [knownQty, setKnownQty] = useState(1)
   const [knownExpiry, setKnownExpiry] = useState('')
@@ -293,17 +294,26 @@ export function ScanScreen({ mode = 'add', onResult, onConsume, findKnown, onAdd
           )}
 
           {!isConsume && added && added.length > 0 && (
-            <div className="scan-added-card">
-              <div className="scan-added-title">Ajoutés pendant ce scan</div>
-              <ul className="scan-added-list">
-                {[...added].reverse().map((a) => (
-                  <li key={a.name} className="scan-added-row">
-                    <span className="scan-added-check">✓</span>
-                    <span className="scan-added-name">{a.name}</span>
-                    <span className="scan-added-count">×{a.count}</span>
-                  </li>
-                ))}
-              </ul>
+            <div className={`scan-added-card${addedOpen ? ' open' : ''}`}>
+              {addedOpen && (
+                <ul className="scan-added-list">
+                  {[...added].reverse().map((a) => (
+                    <li key={a.name} className="scan-added-row">
+                      <span className="scan-added-check">✓</span>
+                      <span className="scan-added-name">{a.name}</span>
+                      <span className="scan-added-count">×{a.count}</span>
+                    </li>
+                  ))}
+                </ul>
+              )}
+              <button type="button" className="scan-added-bar" onClick={() => setAddedOpen((o) => !o)} aria-expanded={addedOpen}>
+                <span className="scan-added-check">✓</span>
+                <span className="scan-added-name">
+                  {added.length > 1 ? `${added.length} produits · dernier : ` : ''}
+                  {added[added.length - 1].name}
+                </span>
+                <span className="scan-added-chev" aria-hidden>{addedOpen ? '▾' : '▴'}</span>
+              </button>
             </div>
           )}
 
