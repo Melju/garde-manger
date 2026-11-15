@@ -8,6 +8,7 @@ import { normalize } from './productIcon'
  * Retourne null si rien ne correspond : l'appelant retombe sur le pictogramme de secours.
  */
 const RULES: [string[], string][] = [
+  [['oignon au vinaigre', 'oignons au vinaigre', 'oignon vinaigre', 'oignons vinaigre', 'oignon grelot', 'oignons grelots', 'petits oignons au vinaigre', 'petit oignon au vinaigre', 'petits oignons vinaigre', 'oignons blancs au vinaigre', 'pickles oignons'], 'oignons-vinaigre'],
   [['liquide vaisselle', 'produit vaisselle', 'lave vaisselle', 'tablettes lave vaisselle', 'pastilles lave vaisselle'], 'liquide-vaisselle'],
   [['lessive', 'lessives', 'adoucissant', 'detachant', 'capsules lessive'], 'lessive'],
   [['javel', 'eau de javel', 'desinfectant', 'destop', 'deboucheur'], 'javel'],
