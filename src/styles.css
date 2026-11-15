@@ -2744,3 +2744,8 @@ body.is-selecting .add-bar { display: none; }
 .sticky-zone .week-nav, .sticky-zone .filter-tabs, .sticky-zone .search-row { margin-bottom: 0; }
 .sticky-zone + * { margin-top: 18px; }
 .sticky-zone + .generate-list-btn { margin-bottom: 14px; }
+
+/* Respiration sous la zone collante (liste de produits, tuiles) et pas de débordement à droite */
+.sticky-zone ~ .product-list { margin-top: 18px; }
+.screen-fade { min-width: 0; max-width: 100%; }
+.sticky-zone .header-actions { flex-shrink: 0; }
