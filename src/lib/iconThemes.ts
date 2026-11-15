@@ -1,3 +1,4 @@
+import { iconsForKeyword } from './productImage'
 import { ICON_SLUGS } from './iconList'
 import { normalize } from './productIcon'
 
@@ -41,6 +42,7 @@ export function searchIcons(query: string): string[] {
   if (!q) return ICON_SLUGS
   const byName = ICON_SLUGS.filter((s) => s.replace(/-/g, ' ').includes(q))
   const out = new Set(byName)
+  for (const s of iconsForKeyword(query)) if (valid.has(s)) out.add(s)
   if (q.length >= 3) {
     for (const t of THEMES) {
       const hit = t.words.some((w) => w === q || (q.length >= 4 && (w.startsWith(q) || q.startsWith(w))))

@@ -535,3 +535,14 @@ export function chosenIconValue(slug: string): string {
 export function realPhotoUrl(imageUrl?: string): string | undefined {
   return imageUrl && !imageUrl.startsWith(CHOSEN) ? imageUrl : undefined
 }
+
+/** Slugs dont un mot-clé de reconnaissance contient la recherche (pour le sélecteur d'icône). */
+export function iconsForKeyword(query: string): string[] {
+  const q = normalize(query).trim()
+  if (q.length < 3) return []
+  const out = new Set<string>()
+  for (const [words, slug] of RULES) {
+    if (words.some((w) => w.includes(q))) out.add(slug)
+  }
+  return [...out]
+}
