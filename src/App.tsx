@@ -241,7 +241,7 @@ export function App() {
         )}
       </aside>
 
-      <main className={`app${!top && add ? ' with-fab' : ''}${!top && tab === 'inventory' ? ' wide' : ''}`}>
+      <main className={`app${!top && add ? ' with-fab' : ''} wide`}>
         {!top && <InstallPrompt />}
         {/* Cloud configuré mais aucune session : l'app tourne sur le stockage local de cet appareil. */}
         {!top && auth.cloudEnabled && !auth.householdId && (
