@@ -116,6 +116,8 @@ interface StoreValue {
   scanReceipt(image: string, mediaType: string): Promise<ReceiptItem[]>
   /** Lit la photo d'une recette (Claude Vision) → brouillon de recette. */
   scanRecipe(images: { data: string; mediaType: string }[]): Promise<ScannedRecipe>
+  /** Marque 1 exemplaire comme ouvert : péremption raccourcie (frigo), reste du stock inchangé. */
+  openProduct(product: Product, days: number): Promise<void>
   /** Crée un lien de partage (instantané) d'une recette ; renvoie le jeton. */
   shareRecipe(recipe: Recipe): Promise<string>
   /** Lit une recette partagée par jeton (compte connecté requis). */
@@ -642,6 +644,35 @@ export function StoreProvider({ children }: { children: ReactNode }) {
         const d = data as any
         if (!d || !Array.isArray(d.ingredients)) throw new Error(d?.error || 'Réponse invalide')
         return d as ScannedRecipe
+      },
+      async openProduct(product, days) {
+        const today = new Date()
+        const target = toISODate(new Date(today.getFullYear(), today.getMonth(), today.getDate() + days))
+        const expiry = product.expiryDate && product.expiryDate < target ? product.expiryDate : target
+        const patch = {
+          openedAt: toISODate(today),
+          expiryDate: expiry,
+          dateType: 'dlc' as const,
+          conservation: 'refrigere' as const,
+          location: product.conservation === 'refrigere' ? product.location : 'Réfrigérateur',
+        }
+        if (product.quantity > 1) {
+          // Un seul exemplaire est ouvert : on le sépare du lot fermé (ou on le range avec un lot déjà ouvert pareil).
+          const twin = products.find(
+            (p) =>
+              p.id !== product.id && p.name === product.name && p.brand === product.brand && p.size === product.size &&
+              p.openedAt === patch.openedAt && p.expiryDate === patch.expiryDate,
+          )
+          await repo.updateProduct(product.id, { quantity: product.quantity - 1 })
+          if (twin) await repo.updateProduct(twin.id, { quantity: twin.quantity + 1 })
+          else {
+            const { id: _i, createdAt: _c, updatedAt: _u, ...rest } = product
+            await repo.addProduct({ ...rest, ...patch, quantity: 1 })
+          }
+        } else {
+          await repo.updateProduct(product.id, patch)
+        }
+        setProducts(await repo.listProducts())
       },
       async shareRecipe(recipe) {
         if (!supabase) throw new Error('Connecte-toi pour partager une recette')

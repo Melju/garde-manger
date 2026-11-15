@@ -136,7 +136,7 @@ export function ProductItem({
 
   const weightLabel = stockLabel(product)
   // Au poids / volume, la quantité est affichée à droite (« 700 g / 1 kg ») : pas de doublon dans la ligne de détail.
-  const meta = [categoryLabel(product.category), weightLabel ? null : product.size].filter(Boolean).join(' · ')
+  const meta = [categoryLabel(product.category), weightLabel ? null : product.size, product.openedAt ? 'Ouvert' : null].filter(Boolean).join(' · ')
   const qtyLabel =
     weightLabel ?? (product.unit ? `×${product.quantity} ${product.unit}` : `×${product.quantity}`)
 

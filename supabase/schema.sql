@@ -566,3 +566,6 @@ revoke all on function share_recipe(jsonb) from public, anon;
 revoke all on function get_shared_recipe(text) from public, anon;
 grant execute on function share_recipe(jsonb) to authenticated;
 grant execute on function get_shared_recipe(text) to authenticated;
+
+-- Produit ouvert : date d ouverture (péremption raccourcie)
+alter table products add column if not exists opened_at date;

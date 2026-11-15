@@ -33,6 +33,7 @@ function toProduct(r: any): Product {
     conservation: r.conservation ?? undefined,
     dateType: r.date_type ?? undefined,
     location: r.location ?? undefined,
+    openedAt: r.opened_at ?? undefined,
     imageUrl: r.image_url ?? undefined,
     nutriscore: r.nutriscore ?? undefined,
     nova: r.nova ?? undefined,
@@ -124,6 +125,7 @@ export class SupabaseRepository implements Repository {
         conservation: input.conservation ?? null,
         date_type: input.dateType ?? null,
         location: input.location ?? null,
+        opened_at: input.openedAt ?? null,
         image_url: input.imageUrl ?? null,
         nutriscore: input.nutriscore ?? null,
         nova: input.nova ?? null,
@@ -152,6 +154,7 @@ export class SupabaseRepository implements Repository {
     if (has('conservation')) row.conservation = patch.conservation ?? null
     if (has('dateType')) row.date_type = patch.dateType ?? null
     if (has('location')) row.location = patch.location ?? null
+    if (has('openedAt')) row.opened_at = patch.openedAt ?? null
     if (has('imageUrl')) row.image_url = patch.imageUrl ?? null
     if (has('nutriscore')) row.nutriscore = patch.nutriscore ?? null
     if (has('nova')) row.nova = patch.nova ?? null

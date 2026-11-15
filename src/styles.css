@@ -2630,3 +2630,10 @@ body.is-selecting .add-bar { display: none; }
 .search-clear { flex: 0 0 auto; width: 26px; height: 26px; border-radius: 50%; border: none; background: var(--border); color: var(--muted); display: inline-flex; align-items: center; justify-content: center; padding: 0; cursor: pointer; }
 .search-clear svg, .search-input .search-clear svg { width: 13px; height: 13px; color: inherit; }
 .search-clear.abs { position: absolute; right: 10px; top: 50%; transform: translateY(-50%); }
+
+/* Produit ouvert */
+.open-hint { margin: 0 8px 10px; font-size: 13px; color: var(--muted); line-height: 1.4; }
+.open-chips { display: flex; flex-wrap: wrap; gap: 8px; padding: 0 8px 12px; }
+.open-result { margin: 0 8px 14px; font-size: 14px; font-weight: 700; color: var(--fg); }
+.opened-note { margin-top: 10px; font-size: 13px; font-weight: 700; color: var(--brand-strong); }
+.open-btn { margin-top: 10px; }

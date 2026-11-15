@@ -19,6 +19,8 @@ import { splitSize, countUnit } from '../lib/contenance'
 import { conservationOfLocation } from '../lib/location'
 import { estimateShelfLife, estimatedExpiryISO, durationLabel, guessDateType, isFrozenName } from '../lib/shelfLife'
 import { DatePicker } from '../components/DatePicker'
+import { OpenProductSheet } from '../components/OpenProductSheet'
+import { formatLong } from '../lib/dates'
 import { DateScanner, type ScannedDate } from '../components/DateScanner'
 import { PriceScanner } from '../components/PriceScanner'
 import { getCurrentStore, getStores, setProductStores, storeInName, storesFor } from '../lib/stores'
@@ -64,6 +66,7 @@ export function ProductFormScreen({ product, initial, onClose, onSaved }: Produc
   const isEdit = product !== null
   const [enriching, setEnriching] = useState(false)
   const [scanningDate, setScanningDate] = useState(false)
+  const [opening, setOpening] = useState(false)
   const [scanningPrice, setScanningPrice] = useState(false)
   // Magasins où ce produit s'achète : ceux déjà connus, sinon le magasin courant pour un nouveau produit.
   const [shops, setShops] = useState<string[]>(() => {
@@ -647,6 +650,18 @@ export function ProductFormScreen({ product, initial, onClose, onSaved }: Produc
             onResult={(r) => { setExtraAt(extraScan, r.date); setExtraScan(null) }}
             onClose={() => setExtraScan(null)}
           />
+        )}
+        {isEdit && product && !nonFood && conservation !== 'congele' && (
+          product.openedAt ? (
+            <div className="opened-note">Ouvert le {formatLong(product.openedAt)}</div>
+          ) : (
+            <button type="button" className="ai-complete-btn open-btn" onClick={() => setOpening(true)}>
+              {product.quantity > 1 ? `J'ai ouvert 1 produit sur ${product.quantity}` : "J'ai ouvert ce produit"}
+            </button>
+          )
+        )}
+        {opening && product && (
+          <OpenProductSheet product={product} onClose={() => setOpening(false)} onDone={onClose} />
         )}
         {estimate && !expiryDate && (
           <button type="button" className="estimate-hint" onClick={applyEstimate}>
