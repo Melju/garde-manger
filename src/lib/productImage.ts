@@ -8,6 +8,18 @@ import { normalize } from './productIcon'
  * Retourne null si rien ne correspond : l'appelant retombe sur le pictogramme de secours.
  */
 const RULES: [string[], string][] = [
+  [['gousse de vanille', 'gousses de vanille', 'gousse vanille', 'vanille en gousse', 'vanille bourbon gousse'], 'gousses-vanille'],
+  [['arome vanille', 'arome de vanille', 'extrait de vanille', 'vanille liquide', 'essence de vanille', 'arome naturel vanille'], 'arome-vanille'],
+  [['bicarbonate', 'bicarbonate de soude', 'bicarbonate alimentaire', 'bicarbonate de sodium'], 'bicarbonate'],
+  [['levure chimique', 'levure boulangere', 'levure de boulanger', 'levure patissiere', 'sachet de levure', 'sachets de levure', 'levure en sachet', 'levure seche'], 'levure-sachets'],
+  [['freeze pop', 'freeze pops', 'freezer pops', 'freezer pop', 'mocktails freeze', 'glacons a sucer', 'ice pops', 'ice pop'], 'freeze-pops'],
+  [['the glace peche', 'the glace a la peche', 'ice tea peche', 'fuzete', 'fuze tea', 'pesca e rosa', 'the pesche', 'eistee pfirsich'], 'the-glace-peche'],
+  [['gelatine', 'gelatine alimentaire', 'gelatine en feuilles', 'feuilles de gelatine', 'feuille de gelatine'], 'gelatine-feuilles'],
+  [['mini canape', 'mini canapes', 'canape', 'canapes', 'toasts apero', 'mini toasts'], 'mini-canapes'],
+  [['peches en conserve', 'peche en conserve', 'peches au sirop', 'peche au sirop', 'peches en boite', 'pfirsich', 'pfirsiche', 'demi peches', 'moities de peches'], 'peches-conserve'],
+  [['gingembre marine', 'gingembre confit', 'gingembre rose', 'sushi ginger', 'gari', 'ginger', 'mindestens ginger'], 'gingembre-pot'],
+  [['liant', 'liant pour sauces', 'liant sauces blanches', 'liant sauce blanche', 'epaississant sauce', 'roux instantane', 'sauce binder'], 'liant-sauces'],
+  [['feuille de brick', 'feuilles de brick', 'pate de brick', 'pates de brick', 'galette de brick', 'galettes de brick', 'brick pastry'], 'feuilles-brick'],
   [['wasabi', 'pate de wasabi', 'raifort japonais'], 'wasabi'],
   [['oignon frit', 'oignons frits', 'oignons fris', 'oignon fris', 'oignons croustillants', 'oignons crispy', 'oignons crispys', 'crispy onions', 'oignons rissoles'], 'oignons-frits'],
   [['oignon au vinaigre', 'oignons au vinaigre', 'oignon vinaigre', 'oignons vinaigre', 'oignon grelot', 'oignons grelots', 'petits oignons au vinaigre', 'petit oignon au vinaigre', 'petits oignons vinaigre', 'oignons blancs au vinaigre', 'pickles oignons'], 'oignons-vinaigre'],
