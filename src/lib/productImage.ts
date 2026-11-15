@@ -11,7 +11,7 @@ const RULES: [string[], string][] = [
   [['wasabi', 'pate de wasabi', 'raifort japonais'], 'wasabi'],
   [['oignon frit', 'oignons frits', 'oignons fris', 'oignon fris', 'oignons croustillants', 'oignons crispy', 'oignons crispys', 'crispy onions', 'oignons rissoles'], 'oignons-frits'],
   [['oignon au vinaigre', 'oignons au vinaigre', 'oignon vinaigre', 'oignons vinaigre', 'oignon grelot', 'oignons grelots', 'petits oignons au vinaigre', 'petit oignon au vinaigre', 'petits oignons vinaigre', 'oignons blancs au vinaigre', 'pickles oignons'], 'oignons-vinaigre'],
-  [['soupe en sachet', 'soupes en sachet', 'soupe sachet', 'sachet de soupe', 'sachets de soupe', 'soupe instantanee', 'soupe deshydratee', 'soupe minute'], 'soupe-sachet'],
+  [['supreme de tomate', 'supreme de potiron', 'supreme de legumes', 'supreme de champignons', 'supreme de poireaux', 'supreme de carottes', 'supreme de courgettes', 'cup a soup', 'soupe en sachet', 'soupes en sachet', 'soupe sachet', 'sachet de soupe', 'sachets de soupe', 'soupe instantanee', 'soupe deshydratee', 'soupe minute'], 'soupe-sachet'],
   [['soupe en brique', 'soupe brique', 'brique de soupe', 'briques de soupe', 'veloute en brique', 'veloute brique'], 'soupe-brique'],
   [['soupe en conserve', 'soupe en boite', 'soupe boite', 'soupe conserve', 'conserve de soupe', 'boite de soupe'], 'soupe-conserve'],
   [['parmesan rape', 'parmesan en poudre', 'parmigiano rape', 'grana padano rape', 'parmesan rapé'], 'parmesan-rape'],
