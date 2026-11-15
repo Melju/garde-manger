@@ -2763,3 +2763,8 @@ body.is-selecting .add-bar { display: none; }
 .ai-gen-btn { flex: 0 0 auto; display: inline-flex; align-items: center; justify-content: center; gap: 8px; min-height: 44px; padding: 0 22px; }
 .ai-gen-btn svg { width: 18px; height: 18px; }
 @media (max-width: 520px) { .ai-gen-btn { flex: 1 1 100%; } }
+
+/* Liste des accès : boutons alignés à droite quelle que soit la longueur de l'adresse */
+.access-row { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; gap: 12px; }
+.access-email { font-size: 14px; font-weight: 600; min-width: 0; overflow-wrap: anywhere; }
+.access-actions { display: flex; gap: 8px; }

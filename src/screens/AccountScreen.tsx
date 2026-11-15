@@ -382,10 +382,12 @@ export function AccountScreen({ onBack }: AccountScreenProps) {
             Seules ces adresses peuvent créer un compte. Ajoute une personne avant de lui donner le lien.
           </p>
           {allowed.map((e) => (
-            <div className="setting-row" key={e}>
-              <div className="setting-text"><div className="setting-title" style={{ fontSize: 14 }}>{e}</div></div>
-              <button className="btn-secondary store-edit-btn" onClick={() => shareInvite()}>Inviter</button>
-              <button className="btn-secondary btn-danger store-edit-btn" onClick={() => dropAllowed(e)}>Retirer</button>
+            <div className="setting-row access-row" key={e}>
+              <div className="access-email">{e}</div>
+              <div className="access-actions">
+                <button className="btn-secondary store-edit-btn" onClick={() => shareInvite()}>Inviter</button>
+                <button className="btn-secondary btn-danger store-edit-btn" onClick={() => dropAllowed(e)}>Retirer</button>
+              </div>
             </div>
           ))}
           <input
