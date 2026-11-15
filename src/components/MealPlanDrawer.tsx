@@ -1,3 +1,4 @@
+import { ClearButton } from './ClearButton'
 import { useMemo, useState } from 'react'
 import { useStore } from '../data/store'
 import { useToast } from './Toast'
@@ -136,6 +137,7 @@ export function MealPlanDrawer({ date, slot, onClose }: MealPlanDrawerProps) {
                   value={search}
                   onChange={(e) => setSearch(e.target.value)}
                 />
+                {search && <ClearButton onClick={() => setSearch('')} />}
               </div>
               {filtered.length === 0 ? (
                 <p style={{ color: 'var(--muted)', fontSize: 13 }}>

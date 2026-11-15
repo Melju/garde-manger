@@ -1,3 +1,4 @@
+import { ClearButton } from '../components/ClearButton'
 import { Select } from '../components/Select'
 import { useConfirm } from '../components/Confirm'
 import { useEffect, useMemo, useRef, useState } from 'react'
@@ -507,12 +508,16 @@ export function ProductFormScreen({ product, initial, onClose, onSaved }: Produc
         </div>
         {pickingIcon && (
           <div className="icon-picker">
-            <input
-              className="form-input"
-              placeholder="Chercher une icône (pâtes, lait, tomate…)"
-              value={iconQuery}
-              onChange={(e) => setIconQuery(e.target.value)}
-            />
+            <div style={{ position: 'relative' }}>
+              <input
+                className="form-input"
+                style={{ paddingRight: 44 }}
+                placeholder="Chercher une icône (pâtes, lait, tomate…)"
+                value={iconQuery}
+                onChange={(e) => setIconQuery(e.target.value)}
+              />
+              {iconQuery && <ClearButton className="abs" onClick={() => setIconQuery('')} />}
+            </div>
             {chosenIcon && (
               <button
                 type="button"

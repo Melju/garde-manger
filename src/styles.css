@@ -2625,3 +2625,8 @@ body.is-selecting .add-bar { display: none; }
 .scan-added-bar { display: flex; align-items: center; gap: 10px; width: 100%; height: 46px; background: none; border: none; padding: 0; font: inherit; font-size: 15px; font-weight: 600; color: var(--fg); text-align: left; cursor: pointer; }
 .scan-added-card.open .scan-added-bar { border-top: 1px solid rgba(0, 0, 0, 0.07); }
 .scan-added-chev { color: var(--muted); font-size: 14px; flex-shrink: 0; }
+
+/* Croix d'effacement des champs de recherche */
+.search-clear { flex: 0 0 auto; width: 26px; height: 26px; border-radius: 50%; border: none; background: var(--border); color: var(--muted); display: inline-flex; align-items: center; justify-content: center; padding: 0; cursor: pointer; }
+.search-clear svg, .search-input .search-clear svg { width: 13px; height: 13px; color: inherit; }
+.search-clear.abs { position: absolute; right: 10px; top: 50%; transform: translateY(-50%); }

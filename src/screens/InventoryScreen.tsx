@@ -1,3 +1,4 @@
+import { ClearButton } from '../components/ClearButton'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { useStore } from '../data/store'
 import { useToast } from '../components/Toast'
@@ -325,6 +326,7 @@ export function InventoryScreen({
               </div>
             )}
           </div>
+          {search && <ClearButton onClick={() => setSearch('')} />}
         </div>
       </div>
 
