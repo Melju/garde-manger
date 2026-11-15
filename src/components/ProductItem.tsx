@@ -23,6 +23,8 @@ import { SwipeWheel } from './SwipeWheel'
 
 interface ProductItemProps {
   product: Product
+  /** Fiche complète (tous les exemplaires) quand la ligne n'en représente qu'un seul. */
+  detail?: Product
   onSelect: (product: Product) => void
   onRemoveQty: (product: Product, qty: number | 'all') => void
   onWaste: (product: Product) => void
@@ -44,6 +46,7 @@ type Swipe = 'none' | 'left' | 'right'
  */
 export function ProductItem({
   product: rawProduct,
+  detail,
   onSelect,
   onRemoveQty,
   onWaste,
@@ -136,7 +139,7 @@ export function ProductItem({
       setSwipe('none')
       return
     }
-    onSelect(rawProduct)
+    onSelect(detail ?? rawProduct)
   }
 
   const weightLabel = stockLabel(product)
@@ -201,7 +204,7 @@ export function ProductItem({
       {opening &&
         createPortal(
           <OpenProductSheet
-            product={rawProduct}
+            product={detail ?? rawProduct}
             onClose={() => setOpening(false)}
             onDone={() => {
               setOpening(false)

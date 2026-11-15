@@ -6,7 +6,7 @@ import { Icon } from '../components/Icon'
 import { ProductItem } from '../components/ProductItem'
 import { CATEGORIES, type Category, type Product } from '../types'
 import { conservationOfLocation } from '../lib/location'
-import { remainingLabel, isBareWeightUnit, countPerPack, countLabel } from '../lib/contenance'
+import { remainingLabel, isBareWeightUnit, isWeightProduct, countPerPack, countLabel } from '../lib/contenance'
 import { urgentCount } from '../lib/expiry'
 import { budgetSummary } from '../lib/analytics'
 import { normalize } from '../lib/productIcon'
@@ -169,6 +169,18 @@ export function InventoryScreen({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [products, search, selecting])
 
+  // Liste : un produit au poids/volume en plusieurs paquets (2 × 200 g) s'affiche en une ligne par paquet,
+  // pour retirer des grammes sur l'un sans toucher l'autre. La fiche, elle, garde le total.
+  const rows = useMemo(
+    () =>
+      filtered.flatMap((p) =>
+        !selecting && p.quantity > 1 && isWeightProduct(p.size)
+          ? Array.from({ length: p.quantity }, (_, i) => ({ key: `${p.id}:${i}`, p: { ...p, quantity: 1 }, full: p as Product | undefined }))
+          : [{ key: p.id, p, full: undefined as Product | undefined }],
+      ),
+    [filtered, selecting],
+  )
+
   function togglePick(id: string) {
     setPicked((prev) => {
       const next = new Set(prev)
@@ -222,7 +234,9 @@ export function InventoryScreen({
   }
 
   async function handleWaste(product: Product) {
-    await wasteProduct(product.id)
+    // Ligne d'un seul paquet parmi plusieurs : on ne jette que celui-là.
+    const orig = products.find((p) => p.id === product.id)
+    await wasteProduct(product.id, orig && orig.quantity > 1 && product.quantity === 1 ? 1 : undefined)
     toast(`${product.name} marqué périmé`)
   }
 
@@ -253,6 +267,20 @@ export function InventoryScreen({
   }
 
   async function handleConsumePortion(product: Product, newSize: string | null) {
+    const orig = products.find((p) => p.id === product.id)
+    if (orig && orig.quantity > 1 && product.quantity === 1) {
+      // Un paquet parmi plusieurs : les autres restent pleins, celui-ci devient un lot à part.
+      if (newSize === null) {
+        await adjustQuantity(product.id, -1)
+        toast(`${product.name} terminé`)
+      } else {
+        const { id: _i, createdAt: _c, updatedAt: _u, ...rest } = orig
+        await updateProduct(product.id, { quantity: orig.quantity - 1 })
+        await addProduct({ ...rest, quantity: 1, size: newSize })
+        toast(`${product.name} : ${remainingLabel(newSize)} restant`)
+      }
+      return
+    }
     if (newSize === null) {
       // Contenance épuisée : on retire le produit du stock (consommé).
       await adjustQuantity(product.id, -Math.max(1, product.quantity))
@@ -347,7 +375,7 @@ export function InventoryScreen({
                 <button type="button" onClick={() => setPicked(new Set())}>Aucun</button>
               </div>
             ) : null}
-            {filtered.map((p, idx) =>
+            {rows.map(({ key, p, full }, idx) =>
               selecting ? (
                 <button
                   key={p.id}
@@ -369,8 +397,9 @@ export function InventoryScreen({
                 </button>
               ) : (
                 <ProductItem
-                  key={p.id}
+                  key={key}
                   product={p}
+                  detail={full}
                   onSelect={onEdit}
                   onRemoveQty={handleRemoveQty}
                   onWaste={handleWaste}

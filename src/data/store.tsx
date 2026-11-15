@@ -92,7 +92,8 @@ interface StoreValue {
   updateProduct(id: string, patch: Partial<ProductInput>): Promise<void>
   adjustQuantity(id: string, delta: number): Promise<void>
   removeProduct(id: string): Promise<void>
-  wasteProduct(id: string): Promise<void>
+  /** Marque périmé : tout le stock, ou seulement `qty` exemplaires si le produit en compte plusieurs. */
+  wasteProduct(id: string, qty?: number): Promise<void>
 
   // Courses
   addShoppingItem(input: ShoppingItemInput): Promise<void>
@@ -504,14 +505,16 @@ export function StoreProvider({ children }: { children: ReactNode }) {
         await repo.removeHistory(entry.id)
         setHistory(history.filter((h) => h.id !== entry.id))
       },
-      async wasteProduct(id) {
+      async wasteProduct(id, qty) {
         const before = products.find((p) => p.id === id)
-        await repo.removeProduct(id)
+        const partial = !!before && qty !== undefined && qty > 0 && qty < before.quantity
+        if (partial && before) await repo.updateProduct(id, { quantity: before.quantity - qty! })
+        else await repo.removeProduct(id)
         setProducts(await repo.listProducts())
         if (before)
           await logHistory('jete', `${before.name} jeté (périmé)`, undefined, {
             name: before.name,
-            qty: before.quantity,
+            qty: partial ? qty! : before.quantity,
             category: before.category,
             conservation: before.conservation,
           })
