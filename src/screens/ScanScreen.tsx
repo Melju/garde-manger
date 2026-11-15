@@ -172,7 +172,7 @@ export function ScanScreen({ mode = 'add', onResult, onConsume, findKnown, onAdd
           <Icon name={isConsume ? 'minus' : 'plus'} width={3} />
         </span>
         <span className="smb-text">
-          {isConsume ? 'Mode retrait · chaque scan enlève 1 du stock' : 'Mode ajout · scanne pour ajouter un produit'}
+          {isConsume ? 'Mode retrait · scanne puis choisis la quantité à retirer' : 'Mode ajout · scanne pour ajouter un produit'}
         </span>
       </div>
 
