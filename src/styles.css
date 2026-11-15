@@ -2646,3 +2646,9 @@ body.is-selecting .add-bar { display: none; }
 .date-actions .opened-note { margin: 0; align-self: center; }
 
 .list-sentinel { height: 1px; }
+
+/* Lignes identiques rassemblées : une seule carte avec un liseré, séparées par un trait fin */
+.swipe-wrapper.grp { margin-bottom: 0; border-left: 4px solid var(--brand); }
+.swipe-wrapper.grp-first { border-bottom-left-radius: 0; border-bottom-right-radius: 0; border-bottom-style: dashed; }
+.swipe-wrapper.grp-middle { border-radius: 0; border-top-width: 0; border-bottom-style: dashed; }
+.swipe-wrapper.grp-last { border-top-width: 0; border-top-left-radius: 0; border-top-right-radius: 0; margin-bottom: 8px; }

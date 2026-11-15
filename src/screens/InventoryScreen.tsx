@@ -172,15 +172,24 @@ export function InventoryScreen({
   // Liste : un produit au poids/volume en plusieurs paquets (2 × 200 g) s'affiche en une ligne par paquet,
   // pour retirer des grammes sur l'un sans toucher l'autre (4 paquets max, hors boissons : un lot de
   // 6 bouteilles reste sur une ligne avec « −1, −2 »). La fiche, elle, garde le total.
-  const rows = useMemo(
-    () =>
-      filtered.flatMap((p) =>
-        !selecting && p.quantity > 1 && p.quantity <= 4 && p.category !== 'boissons' && isWeightProduct(p.size)
-          ? Array.from({ length: p.quantity }, (_, i) => ({ key: `${p.id}:${i}`, p: { ...p, quantity: 1 }, full: p as Product | undefined }))
-          : [{ key: p.id, p, full: undefined as Product | undefined }],
-      ),
-    [filtered, selecting],
-  )
+  const rows = useMemo(() => {
+    const list = filtered.flatMap((p) =>
+      !selecting && p.quantity > 1 && p.quantity <= 4 && p.category !== 'boissons' && isWeightProduct(p.size)
+        ? Array.from({ length: p.quantity }, (_, i) => ({ key: `${p.id}:${i}`, p: { ...p, quantity: 1 }, full: p as Product | undefined }))
+        : [{ key: p.id, p, full: undefined as Product | undefined }],
+    )
+    // Lignes identiques consécutives (même nom, marque et contenance) : on les rassemble visuellement.
+    const sig = (x: Product) => `${normalize(x.name)}|${normalize(x.brand ?? '')}|${x.size ?? ''}|${x.category}`
+    return list.map((r, i) => {
+      if (selecting) return { ...r, grp: undefined as 'first' | 'middle' | 'last' | undefined }
+      const same = (a?: (typeof list)[number]) => !!a && sig(a.p) === sig(r.p)
+      const prev = same(list[i - 1])
+      const next = same(list[i + 1])
+      const grp = prev && next ? 'middle' : next ? 'first' : prev ? 'last' : undefined
+      return { ...r, grp: grp as 'first' | 'middle' | 'last' | undefined }
+    })
+  }, [filtered, selecting])
+
 
   // Chargement progressif : on affiche 30 lignes puis 30 de plus à l'approche du bas de la liste.
   const PAGE = 30
@@ -394,7 +403,7 @@ export function InventoryScreen({
                 <button type="button" onClick={() => setPicked(new Set())}>Aucun</button>
               </div>
             ) : null}
-            {rows.slice(0, visible).map(({ key, p, full }, idx) =>
+            {rows.slice(0, visible).map(({ key, p, full, grp }, idx) =>
               selecting ? (
                 <button
                   key={p.id}
@@ -419,6 +428,7 @@ export function InventoryScreen({
                   key={key}
                   product={p}
                   detail={full}
+                  groupPos={grp}
                   onSelect={onEdit}
                   onRemoveQty={handleRemoveQty}
                   onWaste={handleWaste}

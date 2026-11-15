@@ -25,6 +25,8 @@ interface ProductItemProps {
   product: Product
   /** Fiche complète (tous les exemplaires) quand la ligne n'en représente qu'un seul. */
   detail?: Product
+  /** Position dans un groupe de lignes identiques (rassemblées visuellement). */
+  groupPos?: 'first' | 'middle' | 'last'
   onSelect: (product: Product) => void
   onRemoveQty: (product: Product, qty: number | 'all') => void
   onWaste: (product: Product) => void
@@ -47,6 +49,7 @@ type Swipe = 'none' | 'left' | 'right'
 export function ProductItem({
   product: rawProduct,
   detail,
+  groupPos,
   onSelect,
   onRemoveQty,
   onWaste,
@@ -150,7 +153,7 @@ export function ProductItem({
 
   return (
     <div
-      className={`swipe-wrapper${swipe === 'left' ? ' swiped-left' : swipe === 'right' ? ' swiped-right' : ''}`}
+      className={`swipe-wrapper${groupPos ? ` grp grp-${groupPos}` : ''}${swipe === 'left' ? ' swiped-left' : swipe === 'right' ? ' swiped-right' : ''}`}
       style={{ ['--open-right' as string]: `${OPEN_RIGHT}px` }}
     >
       {/* Action gauche révélée par un glissement vers la droite : périmé */}
