@@ -97,6 +97,6 @@ export function placeFor(name: string, category: Category): { loc: string; sourc
 export function defaultPlace(category: Category): string {
   if (category === 'surgeles') return 'Congélateur'
   if (['viandes', 'viandes-vg', 'poissons', 'laitiers', 'fruits', 'legumes'].includes(category)) return 'Réfrigérateur'
-  if (['epicerie', 'huiles', 'conserves', 'sucreries', 'apero', 'boissons'].includes(category)) return 'Placard'
+  if (['epicerie', 'huiles', 'conserves', 'sucreries', 'patisserie', 'apero', 'boissons'].includes(category)) return 'Placard'
   return ''
 }

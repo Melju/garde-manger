@@ -23,6 +23,7 @@ function guessCategory(tags: string[]): Category {
   const t = clean.join(' ')
   if (/(frozen|surgel|congel)/.test(t)) return 'surgeles'
   if (/(huile|\boils?\b)/.test(t)) return 'huiles'
+  if (/(baking|levure|yeast|chocolate-chips|pepites|vanill|cake-decorat|maizena|cornflour|fecule)/.test(t)) return 'patisserie'
   // Épicerie sèche détectée tôt (avant boissons) : pâtes, riz, céréales, légumes secs…
   if (/(pasta|p[aâ]tes|spaghetti|macaroni|rice|riz|cereal|c[eé]r[eé]al|flour|farine|semoule|couscous|quinoa|lentil|lentille|l[eé]gumineuse|pois-chiche|haricot|farines|sucre|sugar|sel|salt|huile|oil|vinaigre|sauce|epice|[eé]pice|condiment)/.test(t)) return 'epicerie'
   if (/(beverage|boisson|drink|juice|jus|soda|water|eau|wine|\bvin\b|biere|bi[eè]re|beer|coffee|caf[eé]|\bthe\b|th[eé]|tea)/.test(t)) return 'boissons'

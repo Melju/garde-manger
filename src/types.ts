@@ -12,6 +12,7 @@ export type Category =
   | 'huiles'
   | 'conserves'
   | 'sucreries'
+  | 'patisserie'
   | 'apero'
   | 'boissons'
   | 'surgeles'
@@ -29,6 +30,7 @@ export const CATEGORIES: { id: Category; label: string }[] = [
   { id: 'huiles', label: 'Huiles' },
   { id: 'conserves', label: 'Conserves' },
   { id: 'sucreries', label: 'Sucreries' },
+  { id: 'patisserie', label: 'Pâtisserie' },
   { id: 'apero', label: 'Apéro' },
   { id: 'boissons', label: 'Boissons' },
   { id: 'surgeles', label: 'Surgelés' },
