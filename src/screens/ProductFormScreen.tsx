@@ -612,10 +612,21 @@ export function ProductFormScreen({ product, initial, onClose, onSaved }: Produc
       <div className="form-section">
         <label className="form-label" htmlFor="expiry">Date de péremption</label>
         <DatePicker id="expiry" value={expiryDate} onChange={setExpiryDate} />
-        <button type="button" className="ai-complete-btn" onClick={() => setScanningDate(true)}>
-          <Icon name="scan" width={2.2} />
-          Scanner la date
-        </button>
+        <div className="date-actions">
+          <button type="button" className="ai-complete-btn" onClick={() => setScanningDate(true)}>
+            <Icon name="scan" width={2.2} />
+            Scanner la date
+          </button>
+  {isEdit && product && !nonFood && conservation !== 'congele' && (
+    product.openedAt ? (
+      <div className="opened-note">Ouvert le {formatLong(product.openedAt)}</div>
+    ) : (
+      <button type="button" className="ai-complete-btn" onClick={() => setOpening(true)}>
+        {product.quantity > 1 ? `J'ai ouvert 1 produit sur ${product.quantity}` : "J'ai ouvert ce produit"}
+      </button>
+    )
+  )}
+        </div>
         {scanningDate && <DateScanner onResult={onDateScanned} onClose={() => setScanningDate(false)} />}
         {quantity > 1 && (
           <div className="scan-known-exp-actions" style={{ marginTop: 10 }}>
@@ -650,15 +661,6 @@ export function ProductFormScreen({ product, initial, onClose, onSaved }: Produc
             onResult={(r) => { setExtraAt(extraScan, r.date); setExtraScan(null) }}
             onClose={() => setExtraScan(null)}
           />
-        )}
-        {isEdit && product && !nonFood && conservation !== 'congele' && (
-          product.openedAt ? (
-            <div className="opened-note">Ouvert le {formatLong(product.openedAt)}</div>
-          ) : (
-            <button type="button" className="ai-complete-btn open-btn" onClick={() => setOpening(true)}>
-              {product.quantity > 1 ? `J'ai ouvert 1 produit sur ${product.quantity}` : "J'ai ouvert ce produit"}
-            </button>
-          )
         )}
         {opening && product && (
           <OpenProductSheet product={product} onClose={() => setOpening(false)} onDone={onClose} />
