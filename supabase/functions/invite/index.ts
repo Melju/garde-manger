@@ -47,13 +47,42 @@ function emailHtml(inviter: string, to: string): string {
 </html>`
 }
 
+function householdHtml(inviter: string, household: string, code: string, to: string): string {
+  return `<!DOCTYPE html>
+<html lang="fr">
+<body style="margin:0;background:#eef2f1;font-family:-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;color:#1b2733;">
+  <div style="max-width:460px;margin:0 auto;padding:32px 24px;">
+    <img src="${APP_URL}/logo.png" alt="Miam miam" width="150" style="display:block;width:150px;height:auto;margin:0 0 16px;" />
+    <h1 style="font-size:20px;margin:0 0 14px;">${esc(inviter)} t'invite dans son garde-manger</h1>
+    <p style="font-size:15px;line-height:1.55;margin:0 0 14px;color:#48596b;">
+      Rejoins le foyer <strong>${esc(household)}</strong> sur Miam miam pour partager le même stock,
+      les dates de péremption, les recettes et la liste de courses.
+    </p>
+    <a href="${APP_URL}" style="display:inline-block;background:#0c8fa0;color:#fff;text-decoration:none;font-weight:700;font-size:15px;padding:14px 26px;border-radius:12px;">Rejoindre le garde-manger</a>
+    <ol style="font-size:14px;line-height:1.6;margin:24px 0 0;padding-left:20px;color:#48596b;">
+      <li>Ouvre l'appli et saisis l'adresse <strong>${esc(to)}</strong>.</li>
+      <li>Entre le code à 6 chiffres que tu reçois ensuite par e-mail.</li>
+      <li>Tu arrives directement dans le garde-manger « ${esc(household)} ».</li>
+    </ol>
+    <p style="font-size:14px;line-height:1.55;margin:22px 0 0;color:#48596b;">
+      Si l'appli te demande un code de foyer, le voici :
+    </p>
+    <div style="font-size:26px;font-weight:800;letter-spacing:6px;background:#fff;border-radius:14px;padding:14px 0;margin:8px 0 0;text-align:center;color:#0c8fa0;">${esc(code)}</div>
+    <p style="font-size:13px;line-height:1.5;margin:22px 0 0;color:#7a8a99;">
+      Si tu ne t'attendais pas à cette invitation, ignore simplement cet e-mail.
+    </p>
+  </div>
+</body>
+</html>`
+}
+
 Deno.serve(async (req) => {
   if (req.method !== 'POST') return json({ error: 'Méthode non autorisée' }, 405)
   const h = req.headers.get('authorization') ?? ''
   const token = h.toLowerCase().startsWith('bearer ') ? h.slice(7).trim() : ''
   if (!token) return json({ error: 'Connexion requise' }, 401)
 
-  let body: { email?: unknown } = {}
+  let body: { email?: unknown; household?: unknown } = {}
   try {
     body = await req.json()
   } catch {
@@ -72,14 +101,35 @@ Deno.serve(async (req) => {
       headers: { apikey: ANON, authorization: `Bearer ${token}`, 'content-type': 'application/json' },
       body: JSON.stringify(args),
     })
-  const adm = await rpc('is_admin', {})
-  if (!adm.ok || (await adm.json()) !== true) return json({ error: "Réservé à l'administrateur" }, 403)
-
-  // Autorise l'adresse (idempotent)
-  const allow = await rpc('admin_allow_email', { p_email: email })
-  if (!allow.ok) {
-    const t = await allow.text()
-    return json({ error: `Autorisation impossible : ${t.slice(0, 200)}` }, 500)
+  let subject: string
+  let html: string
+  let text: string
+  const inviter = (user?.email as string) ?? 'Quelqu’un'
+  if (body.household === true) {
+    // Tout membre d'un foyer peut inviter quelqu'un à le rejoindre.
+    const r = await rpc('invite_to_household', { p_email: email })
+    if (!r.ok) {
+      const t = await r.json().catch(() => ({}))
+      return json({ error: t?.message ?? 'Invitation impossible' }, 400)
+    }
+    const info = await r.json()
+    const who = info?.inviter || inviter
+    const hname = info?.household || 'Mon foyer'
+    const code = info?.code || ''
+    subject = `${who} t'invite dans son garde-manger Miam miam`
+    html = householdHtml(who, hname, code, email)
+    text = `${who} t'invite à rejoindre son garde-manger « ${hname} » sur Miam miam.\n\n1) Ouvre ${APP_URL} et saisis ${email}.\n2) Entre le code à 6 chiffres reçu par e-mail.\n3) Tu arrives directement dans le garde-manger.\n\nCode du foyer si besoin : ${code}`
+  } else {
+    const adm = await rpc('is_admin', {})
+    if (!adm.ok || (await adm.json()) !== true) return json({ error: "Réservé à l'administrateur" }, 403)
+    const allow = await rpc('admin_allow_email', { p_email: email })
+    if (!allow.ok) {
+      const t = await allow.text()
+      return json({ error: `Autorisation impossible : ${t.slice(0, 200)}` }, 500)
+    }
+    subject = 'Tu es invité(e) sur Miam miam'
+    html = emailHtml(inviter, email)
+    text = `${inviter} t'invite sur Miam miam, l'appli pour gérer ton garde-manger.\n\n1) Ouvre ${APP_URL} et saisis ${email}.\n2) Entre le code à 6 chiffres reçu par e-mail.\n3) Choisis « Créer mon foyer ».`
   }
 
   // Clé Resend depuis la table privée
@@ -90,7 +140,6 @@ Deno.serve(async (req) => {
   const key = rows?.[0]?.value
   if (!key) return json({ error: "Envoi d'e-mail non configuré sur le serveur" }, 500)
 
-  const inviter = (user?.email as string) ?? 'Quelqu’un'
   const send = await fetch('https://api.resend.com/emails', {
     method: 'POST',
     headers: { authorization: `Bearer ${key}`, 'content-type': 'application/json' },
@@ -98,9 +147,9 @@ Deno.serve(async (req) => {
       from: FROM,
       to: [email],
       reply_to: inviter,
-      subject: 'Tu es invité(e) sur Miam miam',
-      html: emailHtml(inviter, email),
-      text: `${inviter} t'invite sur Miam miam, l'appli pour gérer ton garde-manger.\n\n1) Ouvre ${APP_URL} et saisis ${email}.\n2) Entre le code à 6 chiffres reçu par e-mail.\n3) Choisis « Créer mon foyer ».`,
+      subject,
+      html,
+      text,
     }),
   })
   if (!send.ok) {

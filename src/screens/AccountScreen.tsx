@@ -30,6 +30,23 @@ export function AccountScreen({ onBack }: AccountScreenProps) {
   const [allowed, setAllowed] = useState<string[]>([])
   const [signups, setSignups] = useState<Record<string, string | null>>({})
   const [sending, setSending] = useState<string | null>(null)
+  const [memberEmail, setMemberEmail] = useState('')
+  const [memberBusy, setMemberBusy] = useState(false)
+
+  async function inviteMember() {
+    const email = memberEmail.trim().toLowerCase()
+    setMemberBusy(true)
+    try {
+      const { error } = await invokeFn('invite', { email, household: true })
+      if (error) throw error
+      setMemberEmail('')
+      toast(`Invitation envoyée à ${email}`)
+    } catch (e) {
+      toast(e instanceof Error ? e.message : "L'invitation n'a pas pu partir")
+    } finally {
+      setMemberBusy(false)
+    }
+  }
   const [newEmail, setNewEmail] = useState('')
 
   useEffect(() => {
@@ -368,20 +385,30 @@ export function AccountScreen({ onBack }: AccountScreenProps) {
       </div>
 
       <div className="form-section">
-        <label className="form-label">Code d'invitation du foyer</label>
-        <div className="setting-row" style={{ marginBottom: 12 }}>
-          <div className="setting-text">
-            <div className="setting-title" style={{ letterSpacing: 2, fontSize: 20 }}>
-              {auth.inviteCode ?? '—'}
-            </div>
-            <div className="setting-desc">
-              Partage ce code avec ta famille pour qu'ils rejoignent ce garde-manger.
-            </div>
-          </div>
-        </div>
-        <div className="btn-row">
+        <label className="form-label">Inviter quelqu'un dans ce foyer</label>
+        <p className="setting-desc" style={{ marginBottom: 10 }}>
+          La personne reçoit un e-mail. À sa première connexion, elle arrive directement dans ce garde-manger.
+        </p>
+        <input
+          className="form-input"
+          type="email"
+          inputMode="email"
+          autoCapitalize="none"
+          placeholder="adresse@exemple.com"
+          value={memberEmail}
+          onChange={(e) => setMemberEmail(e.target.value)}
+        />
+        <button
+          className="btn-primary"
+          style={{ marginTop: 8 }}
+          disabled={memberBusy || !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(memberEmail.trim())}
+          onClick={inviteMember}
+        >
+          {memberBusy ? 'Envoi…' : "Envoyer l'invitation"}
+        </button>
+        <div className="household-code">
+          <span>Code du foyer : <strong>{auth.inviteCode ?? '—'}</strong></span>
           <button
-            className="btn-secondary"
             onClick={() => {
               if (auth.inviteCode) navigator.clipboard?.writeText(auth.inviteCode)
               toast('Code copié')
@@ -389,7 +416,6 @@ export function AccountScreen({ onBack }: AccountScreenProps) {
           >
             Copier
           </button>
-          <button className="btn-primary" onClick={shareInvite}>Partager</button>
         </div>
       </div>
 

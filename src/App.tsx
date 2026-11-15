@@ -29,6 +29,7 @@ import { SharedRecipeScreen } from './screens/SharedRecipeScreen'
 import { InstallPrompt } from './components/InstallPrompt'
 import { lookupBarcode } from './lib/openfoodfacts'
 import { recallProduct } from './lib/productMemory'
+import { supabase } from './data/supabaseClient'
 import { splitSize, consumeFraction, remainingLabel } from './lib/contenance'
 import { ScanConsumeSheet, type ConsumeChoice } from './components/ScanConsumeSheet'
 import type { FamilyMember, Product, ProductInput, Recipe } from './types'
@@ -212,6 +213,49 @@ export function App() {
       /* ignore */
     }
   }, [auth.ready, auth.householdId, loading])
+
+  // Invitation à rejoindre un autre foyer (envoyée par un membre) : on propose de la rejoindre.
+  useEffect(() => {
+    if (!auth.ready || !auth.user || !supabase) return
+    let stop = false
+    const skipKey = 'miamm.inviteLater'
+    void (async () => {
+      const { data } = await supabase!.rpc('pending_household_invite')
+      const inv = data as { household_id: string; household: string; inviter: string } | null
+      if (stop || !inv?.household_id) return
+      try {
+        if (sessionStorage.getItem(skipKey) === inv.household_id) return
+      } catch {
+        /* ignore */
+      }
+      const ok = await askConfirm({
+        title: `Rejoindre le garde-manger « ${inv.household} » ?`,
+        message: `${inv.inviter || 'Un membre'} t'invite dans son foyer pour partager le même stock et les mêmes courses.${
+          auth.householdId ? " Tu quitteras ton foyer actuel (ses données y restent, tu n'y auras plus accès)." : ''
+        }`,
+        confirmLabel: 'Rejoindre',
+        cancelLabel: 'Plus tard',
+      })
+      if (ok) {
+        const { error } = await supabase!.rpc('answer_household_invite', { p_household: inv.household_id, p_accept: true })
+        if (error) toast(error.message)
+        else {
+          await auth.refreshHousehold()
+          toast(`Bienvenue dans « ${inv.household} »`)
+        }
+      } else {
+        try {
+          sessionStorage.setItem(skipKey, inv.household_id)
+        } catch {
+          /* ignore */
+        }
+      }
+    })()
+    return () => {
+      stop = true
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [auth.ready, auth.user?.id, auth.householdId])
 
   // On attend que l'auth soit résolue (évite d'afficher « local » un bref instant
   // avant la bascule en cloud) et que les données soient chargées.

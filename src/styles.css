@@ -2799,3 +2799,6 @@ body.is-selecting .add-bar { display: none; }
 .scs-fracs { display: grid; grid-template-columns: 1fr; gap: 8px; }
 .scs-fracs .btn-secondary { min-height: 48px; font-size: 15px; }
 .scs-cancel { border: none; background: none; color: var(--muted); font: inherit; font-weight: 600; padding: 8px; cursor: pointer; }
+.household-code { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-top: 14px; padding: 10px 12px; border: 1px dashed var(--border); border-radius: 12px; font-size: 13px; color: var(--muted); }
+.household-code strong { color: var(--fg); letter-spacing: 2px; font-size: 15px; }
+.household-code button { border: none; background: none; color: var(--brand); font: inherit; font-weight: 700; cursor: pointer; }
