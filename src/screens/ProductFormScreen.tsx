@@ -617,15 +617,15 @@ export function ProductFormScreen({ product, initial, onClose, onSaved }: Produc
             <Icon name="scan" width={2.2} />
             Scanner la date
           </button>
-  {isEdit && product && !nonFood && conservation !== 'congele' && (
-    product.openedAt ? (
-      <div className="opened-note">Ouvert le {formatLong(product.openedAt)}</div>
-    ) : (
-      <button type="button" className="ai-complete-btn" onClick={() => setOpening(true)}>
-        {product.quantity > 1 ? `J'ai ouvert 1 produit sur ${product.quantity}` : "J'ai ouvert ce produit"}
-      </button>
-    )
-  )}
+        {isEdit && product && !nonFood && conservation !== 'congele' && (
+          product.openedAt ? (
+            <div className="opened-note">Ouvert le {formatLong(product.openedAt)}</div>
+          ) : (
+            <button type="button" className="ai-complete-btn" onClick={() => setOpening(true)}>
+              {product.quantity > 1 ? `J'ai ouvert 1 produit sur ${product.quantity}` : "J'ai ouvert ce produit"}
+            </button>
+          )
+        )}
         </div>
         {scanningDate && <DateScanner onResult={onDateScanned} onClose={() => setScanningDate(false)} />}
         {quantity > 1 && (
