@@ -253,10 +253,11 @@ export function App() {
             <button onClick={() => push({ name: 'account' })}>Se connecter</button>
           </div>
         )}
-        {top ? (
-          renderRoute(top)
-        ) : (
-          <>
+        {top && renderRoute(top)}
+        {/* La page d'onglet reste montée (masquée) sous une sous-page : on garde sa recherche,
+            ses filtres, la pagination déjà chargée et donc la position de défilement au retour. */}
+        {(
+          <div className="tab-host" hidden={Boolean(top)}>
             {tab === 'inventory' && (
               <InventoryScreen
                 onEdit={(product) => push({ name: 'product-form', product })}
@@ -290,7 +291,7 @@ export function App() {
                 onAccount={() => push({ name: 'account' })}
               />
             )}
-          </>
+          </div>
         )}
       </main>
 
