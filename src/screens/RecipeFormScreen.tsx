@@ -64,6 +64,7 @@ export function RecipeFormScreen({ recipe, onClose, onSaved }: RecipeFormScreenP
   )
   const [steps, setSteps] = useState((recipe?.steps ?? []).join('\n'))
   const [servings, setServings] = useState(recipe?.servings ? String(recipe.servings) : '')
+  const [servingsUnit, setServingsUnit] = useState(recipe?.servingsUnit ?? '')
   const [notes, setNotes] = useState(recipe?.notes ?? '')
   const [busy, setBusy] = useState(false)
   const fileRef = useRef<HTMLInputElement>(null)
@@ -120,6 +121,7 @@ export function RecipeFormScreen({ recipe, onClose, onSaved }: RecipeFormScreenP
           .filter((i) => i.name),
         steps: steps.split('\n').map((s) => s.trim()).filter(Boolean),
         servings: Number(servings) > 0 ? Math.round(Number(servings)) : undefined,
+        servingsUnit: Number(servings) > 0 && servingsUnit.trim() && servingsUnit.trim().toLowerCase() !== 'personnes' ? servingsUnit.trim() : undefined,
         notes: notes.trim() || undefined,
       }
       if (isEdit && recipe) {
@@ -198,16 +200,35 @@ export function RecipeFormScreen({ recipe, onClose, onSaved }: RecipeFormScreenP
             />
           </div>
           <div>
-            <label className="form-label" htmlFor="rserv">Pour combien de personnes</label>
-            <input
-              id="rserv"
-              type="number"
-              inputMode="numeric"
-              className="form-input"
-              placeholder="Ex : 4"
-              value={servings}
-              onChange={(e) => setServings(e.target.value)}
-            />
+            <label className="form-label" htmlFor="rserv">Quantité de base</label>
+            <div style={{ display: 'flex', gap: 8 }}>
+              <input
+                id="rserv"
+                type="number"
+                inputMode="numeric"
+                className="form-input"
+                style={{ width: 80, flex: 'none' }}
+                placeholder="4"
+                value={servings}
+                onChange={(e) => setServings(e.target.value)}
+              />
+              <input
+                className="form-input"
+                list="serv-units"
+                placeholder="personnes"
+                aria-label="Unité (personnes, crêpes, portions…)"
+                value={servingsUnit}
+                onChange={(e) => setServingsUnit(e.target.value)}
+              />
+              <datalist id="serv-units">
+                <option value="personnes" />
+                <option value="crêpes" />
+                <option value="portions" />
+                <option value="gaufres" />
+                <option value="pièces" />
+                <option value="biscuits" />
+              </datalist>
+            </div>
           </div>
         </div>
       </div>

@@ -530,6 +530,7 @@ alter table family_members add column if not exists avatar text;
 
 -- Recettes : nombre de personnes et notes (conservation, astuces)
 alter table recipes add column if not exists servings int;
+alter table recipes add column if not exists servings_unit text;
 alter table recipes add column if not exists notes text;
 -- Partage de recettes entre foyers : un lien contient un instantané de la recette,
 -- que le destinataire (connecté) copie dans son propre foyer.

@@ -350,10 +350,28 @@ export function InventoryScreen({
 
   const syncLabel = offline ? 'Hors-ligne' : cloudMode ? 'Synchronisé' : 'Local (non synchronisé)'
 
+  const statsBoxes = (
+          <>
+        <div className="stat-box" onClick={onOpenStats}>
+          <div className="value">{products.length}</div>
+          <div className="label">Produits</div>
+        </div>
+        <div className={`stat-box${urgent > 0 ? ' alert' : ''}`} onClick={onOpenNotifications}>
+          <div className="value">{urgent}</div>
+          <div className="label">Urgent</div>
+        </div>
+        <div className="stat-box" onClick={onOpenBudget}>
+          <div className="value">{spent}€</div>
+          <div className="label">Ce mois</div>
+        </div>
+      </>
+  )
+
   return (
     <div className="screen-fade">
       <header className="header">
         <div className="header-left">
+          <div className="stats-strip stats-desktop">{statsBoxes}</div>
           <h1 className="logo"><img src={`${import.meta.env.BASE_URL}logo.webp`} alt="Miamm" /></h1>
         </div>
         <div className="header-actions">
@@ -385,20 +403,7 @@ export function InventoryScreen({
         </div>
       </header>
 
-      <div className="stats-strip">
-        <div className="stat-box" onClick={onOpenStats}>
-          <div className="value">{products.length}</div>
-          <div className="label">Produits</div>
-        </div>
-        <div className={`stat-box${urgent > 0 ? ' alert' : ''}`} onClick={onOpenNotifications}>
-          <div className="value">{urgent}</div>
-          <div className="label">Urgent</div>
-        </div>
-        <div className="stat-box" onClick={onOpenBudget}>
-          <div className="value">{spent}€</div>
-          <div className="label">Ce mois</div>
-        </div>
-      </div>
+      <div className="stats-strip stats-mobile">{statsBoxes}</div>
 
       <div className="search-row">
         <div className="search-input">

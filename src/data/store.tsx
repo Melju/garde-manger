@@ -687,6 +687,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
           ingredients: recipe.ingredients.map((i) => ({ name: i.name, qty: i.qty ?? '' })),
           steps: recipe.steps ?? [],
           servings: recipe.servings ?? null,
+          servingsUnit: recipe.servingsUnit ?? null,
           notes: recipe.notes ?? null,
         }
         const { data, error } = await supabase.rpc('share_recipe', { p_recipe: payload })
@@ -710,6 +711,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
           ingredients: d.ingredients.map((i: any) => ({ name: String(i.name ?? ''), qty: i.qty || undefined })),
           steps: Array.isArray(d.steps) ? d.steps : [],
           servings: d.servings ?? undefined,
+          servingsUnit: d.servingsUnit ?? undefined,
           notes: d.notes ?? undefined,
         }
       },

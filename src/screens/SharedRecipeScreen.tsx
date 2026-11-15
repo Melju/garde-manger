@@ -51,7 +51,7 @@ export function SharedRecipeScreen({
   }
 
   const meta = recipe
-    ? [recipe.timeMin ? `${recipe.timeMin} min` : '', recipe.servings ? `${recipe.servings} pers.` : '']
+    ? [recipe.timeMin ? `${recipe.timeMin} min` : '', recipe.servings ? `${recipe.servings} ${recipe.servingsUnit || "pers."}` : '']
         .filter(Boolean)
         .join(' · ')
     : ''

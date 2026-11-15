@@ -2668,9 +2668,6 @@ body.is-selecting .add-bar { display: none; }
 @media (min-width: 760px) {
   .app.wide { max-width: none; margin: 0; min-width: 0; }
   .app.wide .header, .app.wide .stats-strip, .app.wide .search-row, .app.wide .product-list { padding-left: 32px; padding-right: 32px; }
-  .app.wide .stats-strip { max-width: 760px; }
-  .app.wide .search-row { max-width: 760px; }
-  .app.wide .product-list:not(.tiles) { max-width: 980px; }
 
   .product-list.tiles { display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 14px; align-items: start; }
   .product-list.tiles > .swipe-hint,
@@ -2695,3 +2692,15 @@ body.is-selecting .add-bar { display: none; }
 .servings-stepper { display: flex; align-items: center; justify-content: center; gap: 10px; margin: 4px 20px 6px; font-size: 15px; color: var(--muted); flex-wrap: wrap; }
 .servings-stepper strong { min-width: 28px; text-align: center; font-size: 20px; color: var(--text, inherit); }
 .servings-reset { border: 0; background: none; color: var(--brand); font-size: 13px; font-weight: 600; cursor: pointer; padding: 4px 6px; }
+.servings-input { width: 64px; text-align: center; font-size: 20px; font-weight: 700; border: 1px solid var(--border, #ddd); border-radius: 10px; padding: 6px 4px; background: transparent; color: inherit; }
+
+/* Stats dans l'en-tête sur PC, liste sur toute la largeur */
+.stats-desktop { display: none; }
+@media (min-width: 760px) {
+  .stats-mobile { display: none !important; }
+  .app.wide .stats-desktop { display: flex; padding: 0; margin: 0; gap: 12px; }
+  .app.wide .stats-desktop .stat-box { min-width: 150px; }
+  .shell .header { justify-content: space-between; }
+  .app.wide .header-left { display: flex; align-items: center; }
+  .app.wide .search-row { max-width: none; }
+}

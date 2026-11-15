@@ -22,6 +22,9 @@ export function RecipeDetailScreen({ recipe, onBack, onGoShopping, onEdit }: Rec
   const [sharing, setSharing] = useState(false)
   const base = recipe.servings ?? 0
   const [people, setPeople] = useState(base || 4)
+  const unit = recipe.servingsUnit?.trim() || 'personnes'
+  const unitLabel = unit === 'personnes' && people <= 1 ? 'personne' : unit
+  const step = base >= 20 ? 5 : 1
 
   async function handleShare() {
     if (sharing) return
@@ -107,14 +110,25 @@ export function RecipeDetailScreen({ recipe, onBack, onGoShopping, onEdit }: Rec
       {base > 0 && (
         <div className="servings-stepper">
           <span>Pour</span>
-          <button type="button" className="icon-btn" onClick={() => setPeople((n) => Math.max(1, n - 1))} aria-label="Moins de personnes" disabled={people <= 1}>
+          <button type="button" className="icon-btn" onClick={() => setPeople((n) => Math.max(1, n - step))} aria-label="Moins de personnes" disabled={people <= 1}>
             <Icon name="minus" width={2.4} />
           </button>
-          <strong>{people}</strong>
-          <button type="button" className="icon-btn" onClick={() => setPeople((n) => Math.min(50, n + 1))} aria-label="Plus de personnes">
+          <input
+            className="servings-input"
+            type="number"
+            inputMode="numeric"
+            min={1}
+            value={people}
+            aria-label="Quantité souhaitée"
+            onChange={(e) => {
+              const v = Math.round(Number(e.target.value))
+              if (v >= 1) setPeople(Math.min(999, v))
+            }}
+          />
+          <button type="button" className="icon-btn" onClick={() => setPeople((n) => Math.min(999, n + step))} aria-label="Plus de personnes">
             <Icon name="plus" width={2.4} />
           </button>
-          <span>personne{people > 1 ? 's' : ''}</span>
+          <span>{unitLabel}</span>
           {people !== base && (
             <button type="button" className="servings-reset" onClick={() => setPeople(base)}>
               Initial : {base}

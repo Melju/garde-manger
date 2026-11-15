@@ -185,6 +185,8 @@ export interface Recipe {
   steps?: string[]
   /** Nombre de personnes pour lesquelles les quantités sont données. */
   servings?: number
+  /** Unité de la quantité de base : « personnes » par défaut, ou « crêpes », « portions »… */
+  servingsUnit?: string
   /** Notes libres : conservation, astuces, variantes. */
   notes?: string
 }

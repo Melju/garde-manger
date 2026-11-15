@@ -68,6 +68,7 @@ function toRecipe(r: any): Recipe {
     ingredients: r.ingredients ?? [],
     steps: r.steps ?? [],
     servings: r.servings ?? undefined,
+    servingsUnit: r.servings_unit ?? undefined,
     notes: r.notes ?? undefined,
   }
 }
@@ -268,6 +269,7 @@ export class SupabaseRepository implements Repository {
         ingredients: r.ingredients,
         steps: r.steps ?? [],
         servings: r.servings ?? null,
+        servings_unit: r.servingsUnit ?? null,
         notes: r.notes ?? null,
       })),
     )
