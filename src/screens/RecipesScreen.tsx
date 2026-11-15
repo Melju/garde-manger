@@ -1,3 +1,4 @@
+import { RecipeIcon } from '../components/RecipeIcon'
 import { Select } from '../components/Select'
 import { useMemo, useState } from 'react'
 import { useStore } from '../data/store'
@@ -154,6 +155,7 @@ export function RecipesScreen({ onOpenRecipe, onOpenFamily }: RecipesScreenProps
           return (
             <div className="recipe-card" key={recipe.id} onClick={() => onOpenRecipe(recipe)}>
               <div className="recipe-header">
+                <RecipeIcon recipe={recipe} />
                 <div className="recipe-info">
                   <div className="recipe-title">{recipe.title}</div>
                   <div className="recipe-meta">

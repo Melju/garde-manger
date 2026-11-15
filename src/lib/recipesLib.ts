@@ -1,4 +1,5 @@
 import type { FamilyMember, Product, Recipe, RecipeIngredient } from '../types'
+import { productImageSlug } from './productImage'
 
 /** Normalise une chaîne pour comparaison : minuscules, sans accents, sans pluriel simple. */
 function norm(s: string): string {
@@ -145,4 +146,15 @@ export function scaleQty(qty: string | undefined, from: number, to: number): str
   const a = fmtNum(parseNum(m[2]) * k)
   const b = m[4] ? fmtNum(parseNum(m[4]) * k) : ''
   return `${m[1]}${a}${m[3] ?? ''}${b}${qty.slice(m[0].length)}`
+}
+
+/** Icône d'une recette : devinée depuis le titre, sinon depuis son premier ingrédient reconnu. */
+export function recipeIconSlug(recipe: Recipe): string | null {
+  const fromTitle = productImageSlug(recipe.title)
+  if (fromTitle) return fromTitle
+  for (const ing of recipe.ingredients) {
+    const s = productImageSlug(ing.name)
+    if (s) return s
+  }
+  return null
 }

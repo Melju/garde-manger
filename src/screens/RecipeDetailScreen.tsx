@@ -4,6 +4,7 @@ import { useStore } from '../data/store'
 import { useToast } from '../components/Toast'
 import { PageHeader } from '../components/PageHeader'
 import { Icon } from '../components/Icon'
+import { RecipeIcon } from '../components/RecipeIcon'
 import { ShareLinkSheet } from '../components/ShareLinkSheet'
 import { useState } from 'react'
 import { linkedProduct, recipeStock, adaptationFor, scaleQty } from '../lib/recipesLib'
@@ -96,6 +97,9 @@ export function RecipeDetailScreen({ recipe, onBack, onGoShopping, onEdit }: Rec
       />
 
       <div className="form-section" style={{ textAlign: 'center', paddingTop: 10 }}>
+        <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 10 }}>
+          <RecipeIcon recipe={recipe} size={88} />
+        </div>
         <h2 style={{ fontSize: 22, fontWeight: 700, marginBottom: 4 }}>{recipe.title}</h2>
         <p style={{ color: 'var(--muted)', fontSize: 14 }}>
           {[
