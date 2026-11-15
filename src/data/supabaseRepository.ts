@@ -66,6 +66,8 @@ function toRecipe(r: any): Recipe {
     favorite: r.favorite,
     ingredients: r.ingredients ?? [],
     steps: r.steps ?? [],
+    servings: r.servings ?? undefined,
+    notes: r.notes ?? undefined,
   }
 }
 
@@ -262,6 +264,8 @@ export class SupabaseRepository implements Repository {
         favorite: r.favorite,
         ingredients: r.ingredients,
         steps: r.steps ?? [],
+        servings: r.servings ?? null,
+        notes: r.notes ?? null,
       })),
     )
   }

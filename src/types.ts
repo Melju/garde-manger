@@ -177,6 +177,10 @@ export interface Recipe {
   ingredients: RecipeIngredient[]
   /** Étapes de préparation, optionnel. */
   steps?: string[]
+  /** Nombre de personnes pour lesquelles les quantités sont données. */
+  servings?: number
+  /** Notes libres : conservation, astuces, variantes. */
+  notes?: string
 }
 
 export type RecipeInput = Omit<Recipe, 'id'>

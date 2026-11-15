@@ -40,10 +40,11 @@ Donne :
 - servings : nombre de personnes (nombre) ou null
 - ingredients : liste de {"name": nom de l'ingrédient seul, au singulier ou pluriel naturel, sans quantité ; "qty": quantité telle qu'écrite (« 400 g », « 3 gousses », « 1 c. à soupe »), ou "" si absente}
 - steps : étapes de préparation, une phrase claire par étape, dans l'ordre, sans numérotation
+- notes : conseils de conservation, astuces, variantes ou remarques écrits sur la recette (ex : « se garde 3 jours au frigo »), une idée par ligne, "" si absent
 
 Réponds STRICTEMENT en JSON valide, sans texte autour :
-{"title":string,"course":string,"timeMin":number,"servings":number|null,"ingredients":[{"name":string,"qty":string}],"steps":[string]}
-Si l'image ne contient aucune recette lisible, renvoie {"title":"","course":"plat principal","timeMin":0,"servings":null,"ingredients":[],"steps":[]}.`
+{"title":string,"course":string,"timeMin":number,"servings":number|null,"ingredients":[{"name":string,"qty":string}],"steps":[string],"notes":string}
+Si l'image ne contient aucune recette lisible, renvoie {"title":"","course":"plat principal","timeMin":0,"servings":null,"ingredients":[],"steps":[],"notes":""}.`
 
   const res = await callClaude({ apiKey: gate.apiKey, prompt, tier: 'smart', maxTokens: 3000, images })
   if (!res.ok) return json({ error: res.detail }, res.status)
@@ -68,5 +69,6 @@ Si l'image ne contient aucune recette lisible, renvoie {"title":"","course":"pla
     servings: p.servings != null && !isNaN(Number(p.servings)) ? Number(p.servings) : null,
     ingredients,
     steps,
+    notes: typeof p.notes === 'string' ? p.notes.slice(0, 1200).trim() : '',
   })
 })

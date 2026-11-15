@@ -52,6 +52,7 @@ export interface ScannedRecipe {
   servings: number | null
   ingredients: { name: string; qty: string }[]
   steps: string[]
+  notes?: string
 }
 
 interface StoreValue {

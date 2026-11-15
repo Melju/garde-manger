@@ -527,3 +527,7 @@ grant execute on function admin_set_quota(uuid, int) to authenticated;
 
 -- Avatar illustré du membre (ex : animal-07)
 alter table family_members add column if not exists avatar text;
+
+-- Recettes : nombre de personnes et notes (conservation, astuces)
+alter table recipes add column if not exists servings int;
+alter table recipes add column if not exists notes text;

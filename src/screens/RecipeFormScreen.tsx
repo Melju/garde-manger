@@ -63,6 +63,8 @@ export function RecipeFormScreen({ recipe, onClose, onSaved }: RecipeFormScreenP
     recipe?.ingredients.length ? recipe.ingredients : [{ name: '', qty: '' }],
   )
   const [steps, setSteps] = useState((recipe?.steps ?? []).join('\n'))
+  const [servings, setServings] = useState(recipe?.servings ? String(recipe.servings) : '')
+  const [notes, setNotes] = useState(recipe?.notes ?? '')
   const [busy, setBusy] = useState(false)
   const fileRef = useRef<HTMLInputElement>(null)
   const [reading, setReading] = useState(false)
@@ -84,6 +86,8 @@ export function RecipeFormScreen({ recipe, onClose, onSaved }: RecipeFormScreenP
       if (r.timeMin) setTimeMin(String(r.timeMin))
       if (r.ingredients.length) setIngredients(r.ingredients.map((i) => ({ name: i.name, qty: i.qty })))
       if (r.steps.length) setSteps(r.steps.join('\n'))
+      if (r.servings) setServings(String(r.servings))
+      if (r.notes) setNotes(r.notes)
       toast('Recette lue : relis-la avant d’enregistrer')
     } catch (err) {
       toast(err instanceof Error ? err.message : 'Lecture impossible')
@@ -115,6 +119,8 @@ export function RecipeFormScreen({ recipe, onClose, onSaved }: RecipeFormScreenP
           .map((i) => ({ name: i.name.trim(), qty: i.qty?.trim() || undefined, productId: i.productId }))
           .filter((i) => i.name),
         steps: steps.split('\n').map((s) => s.trim()).filter(Boolean),
+        servings: Number(servings) > 0 ? Math.round(Number(servings)) : undefined,
+        notes: notes.trim() || undefined,
       }
       if (isEdit && recipe) {
         await updateRecipe(recipe.id, input)
@@ -178,16 +184,32 @@ export function RecipeFormScreen({ recipe, onClose, onSaved }: RecipeFormScreenP
       </div>
 
       <div className="form-section">
-        <label className="form-label" htmlFor="rtime">Temps de préparation (min, optionnel)</label>
-        <input
-          id="rtime"
-          type="number"
-          inputMode="numeric"
-          className="form-input"
-          placeholder="Ex : 30"
-          value={timeMin}
-          onChange={(e) => setTimeMin(e.target.value)}
-        />
+        <div className="two-fields">
+          <div>
+            <label className="form-label" htmlFor="rtime">Temps (min)</label>
+            <input
+              id="rtime"
+              type="number"
+              inputMode="numeric"
+              className="form-input"
+              placeholder="Ex : 30"
+              value={timeMin}
+              onChange={(e) => setTimeMin(e.target.value)}
+            />
+          </div>
+          <div>
+            <label className="form-label" htmlFor="rserv">Pour combien de personnes</label>
+            <input
+              id="rserv"
+              type="number"
+              inputMode="numeric"
+              className="form-input"
+              placeholder="Ex : 4"
+              value={servings}
+              onChange={(e) => setServings(e.target.value)}
+            />
+          </div>
+        </div>
       </div>
       </div>
 
@@ -312,6 +334,21 @@ export function RecipeFormScreen({ recipe, onClose, onSaved }: RecipeFormScreenP
           onChange={(e) => setSteps(e.target.value)}
         />
       </div>
+      </div>
+
+      <div className="form-group">
+        <div className="form-group-title">Notes</div>
+        <div className="form-section">
+          <label className="form-label" htmlFor="rnotes">Conservation, astuces, variantes (optionnel)</label>
+          <textarea
+            id="rnotes"
+            className="form-input"
+            style={{ minHeight: 90, resize: 'vertical', lineHeight: 1.5 }}
+            placeholder={'Se garde 3 jours au frigo\nSe congèle très bien…'}
+            value={notes}
+            onChange={(e) => setNotes(e.target.value)}
+          />
+        </div>
       </div>
 
       <FormFooter

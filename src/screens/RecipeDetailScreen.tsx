@@ -62,7 +62,13 @@ export function RecipeDetailScreen({ recipe, onBack, onGoShopping, onEdit }: Rec
       <div className="form-section" style={{ textAlign: 'center', paddingTop: 10 }}>
         <h2 style={{ fontSize: 22, fontWeight: 700, marginBottom: 4 }}>{recipe.title}</h2>
         <p style={{ color: 'var(--muted)', fontSize: 14 }}>
-          {recipe.timeMin} min{recipe.cuisine ? ` · ${recipe.cuisine}` : ''}
+          {[
+            recipe.timeMin ? `${recipe.timeMin} min` : '',
+            recipe.servings ? `${recipe.servings} pers.` : '',
+            recipe.cuisine ?? '',
+          ]
+            .filter(Boolean)
+            .join(' · ')}
         </p>
       </div>
 
@@ -101,6 +107,13 @@ export function RecipeDetailScreen({ recipe, onBack, onGoShopping, onEdit }: Rec
               </div>
             ))}
           </div>
+        </div>
+      )}
+
+      {recipe.notes && (
+        <div className="form-section">
+          <label className="form-label">Notes</label>
+          <div className="recipe-notes">{recipe.notes}</div>
         </div>
       )}
 
