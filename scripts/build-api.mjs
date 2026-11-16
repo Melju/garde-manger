@@ -1,8 +1,8 @@
-// Empaquette server/push-digest.ts (+ la logique partagée de src/) en api/push-digest.js pour Vercel.
+// Empaquette server/*.ts (+ la logique partagée de src/) en api/push-digest.js pour Vercel.
 import { build } from 'esbuild'
-await build({
-  entryPoints: ['server/push-digest.ts'],
-  outfile: 'api/push-digest.js',
+for (const name of ['push-digest', 'push-shopping']) await build({
+  entryPoints: [`server/${name}.ts`],
+  outfile: `api/${name}.js`,
   bundle: true,
   platform: 'node',
   format: 'esm',

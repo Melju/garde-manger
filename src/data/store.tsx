@@ -1,3 +1,4 @@
+import { notifyShoppingAdded } from '../lib/shoppingNotify'
 import { seedFromProducts } from '../lib/learnedShelf'
 import { seedProductMemory } from '../lib/productMemory'
 import { seedPlaces } from '../lib/learnedPlace'
@@ -550,6 +551,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
 
       async addShoppingItem(input) {
         await repo.addShoppingItem(input)
+        notifyShoppingAdded([input.name])
         setShopping(await repo.listShopping())
       },
       async updateShoppingItem(id, patch) {
@@ -559,6 +561,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       async addManyShopping(inputs) {
         for (const input of inputs) await repo.addShoppingItem(input)
         setShopping(await repo.listShopping())
+        notifyShoppingAdded(inputs.map((i) => i.name))
         return inputs.length
       },
       async toggleShoppingItem(id) {
@@ -569,6 +572,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
         const ids: string[] = []
         for (const input of inputs) ids.push((await repo.addShoppingItem(input)).id)
         setShopping(await repo.listShopping())
+        notifyShoppingAdded(inputs.map((i) => i.name))
         return ids
       },
       async removeShoppingItems(ids) {

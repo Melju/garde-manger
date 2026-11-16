@@ -6,7 +6,7 @@ import { PageHeader } from '../components/PageHeader'
 import { addBrand, getCustomBrands, removeCustomBrand, renameCustomBrand } from '../lib/brands'
 import { normalize } from '../lib/productIcon'
 import { addStore, getStores, removeStore, renameStore } from '../lib/stores'
-import { pushState, enablePush, disablePush, testPush, type PushState } from '../lib/push'
+import { pushState, enablePush, disablePush, testPush, shoppingNotifEnabled, setShoppingNotif, type PushState } from '../lib/push'
 
 interface SettingsScreenProps {
   onBack: () => void
@@ -68,19 +68,33 @@ export function SettingsScreen({ onBack }: SettingsScreenProps) {
     setEditing(null)
     reloadStores()
   }
+  const [shopNotif, setShopNotif] = useState(true)
   useEffect(() => {
     pushState().then(setPush).catch(() => setPush('unsupported'))
   }, [])
+  useEffect(() => {
+    if (push === 'on') shoppingNotifEnabled().then(setShopNotif).catch(() => {})
+  }, [push])
+
+  async function toggleShopNotif(on: boolean) {
+    setShopNotif(on)
+    try {
+      await setShoppingNotif(on)
+    } catch (e) {
+      setShopNotif(!on)
+      toast(e instanceof Error ? e.message : 'Échec')
+    }
+  }
 
   async function togglePush(on: boolean) {
     setPushBusy(true)
     try {
       if (on) {
         await enablePush()
-        toast('Alerte quotidienne activée')
+        toast('Notifications activées')
       } else {
         await disablePush()
-        toast('Alerte quotidienne désactivée')
+        toast('Notifications désactivées')
       }
     } catch (e) {
       toast(e instanceof Error ? e.message : 'Échec')
@@ -133,7 +147,7 @@ export function SettingsScreen({ onBack }: SettingsScreenProps) {
         <label className="form-label">Sur ce téléphone</label>
         <div className="setting-row">
           <div className="setting-text">
-            <div className="setting-title">Alerte chaque matin</div>
+            <div className="setting-title">Notifications sur ce téléphone</div>
             <div className="setting-desc">
               {push === 'needs-install'
                 ? "Ajoute d'abord Miam miam à l'écran d'accueil (Partager, puis Sur l'écran d'accueil)"
@@ -141,7 +155,7 @@ export function SettingsScreen({ onBack }: SettingsScreenProps) {
                   ? "Bloquées : autorise les notifications dans les réglages du téléphone"
                   : push === 'unsupported'
                     ? 'Indisponible sur cet appareil ou hors compte'
-                    : 'Un résumé des produits à consommer vite, une fois par jour'}
+                    : 'Résumé du matin des produits à consommer vite, et ajouts aux courses'}
             </div>
           </div>
           <Toggle
@@ -149,6 +163,15 @@ export function SettingsScreen({ onBack }: SettingsScreenProps) {
             onChange={(v) => !pushBusy && (push === 'on' || push === 'off') && togglePush(v)}
           />
         </div>
+        {push === 'on' && (
+          <div className="setting-row">
+            <div className="setting-text">
+              <div className="setting-title">Ajouts à la liste de courses</div>
+              <div className="setting-desc">Quand un autre membre du foyer ajoute un article</div>
+            </div>
+            <Toggle checked={shopNotif} onChange={(v) => void toggleShopNotif(v)} />
+          </div>
+        )}
         {push === 'on' && (
           <button className="btn-secondary" onClick={() => testPush().catch(() => toast('Test impossible'))} style={{ marginTop: 10 }}>
             Envoyer une notification test

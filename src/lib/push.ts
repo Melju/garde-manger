@@ -67,3 +67,20 @@ export async function testPush(): Promise<void> {
   const reg = await registration()
   await reg?.showNotification('Miam miam', { body: 'Les notifications fonctionnent sur cet appareil.', icon: './icon-192.png', tag: 'miamm-test' })
 }
+
+/** Préférence de cet appareil pour les notifications d'ajout à la liste de courses. */
+export async function shoppingNotifEnabled(): Promise<boolean> {
+  const reg = await navigator.serviceWorker.getRegistration()
+  const sub = await reg?.pushManager.getSubscription()
+  if (!sub || !supabase) return false
+  const { data } = await supabase.from('push_subscriptions').select('notify_shopping').eq('endpoint', sub.endpoint).maybeSingle()
+  return (data as { notify_shopping?: boolean } | null)?.notify_shopping ?? true
+}
+
+export async function setShoppingNotif(on: boolean): Promise<void> {
+  const reg = await navigator.serviceWorker.getRegistration()
+  const sub = await reg?.pushManager.getSubscription()
+  if (!sub || !supabase) throw new Error('Active d’abord les notifications sur ce téléphone')
+  const { error } = await supabase.from('push_subscriptions').update({ notify_shopping: on }).eq('endpoint', sub.endpoint)
+  if (error) throw new Error(error.message)
+}
