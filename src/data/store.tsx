@@ -101,6 +101,9 @@ interface StoreValue {
   addShoppingItem(input: ShoppingItemInput): Promise<void>
   updateShoppingItem(id: string, patch: Partial<ShoppingItemInput>): Promise<void>
   addManyShopping(inputs: ShoppingItemInput[]): Promise<number>
+  /** Ajoute plusieurs articles et renvoie leurs ids (pour pouvoir annuler). */
+  addShoppingBatch(inputs: ShoppingItemInput[]): Promise<string[]>
+  removeShoppingItems(ids: string[]): Promise<void>
   toggleShoppingItem(id: string): Promise<void>
   removeShoppingItem(id: string): Promise<void>
   clearCheckedShopping(): Promise<void>
@@ -560,6 +563,16 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       },
       async toggleShoppingItem(id) {
         await repo.toggleShoppingItem(id)
+        setShopping(await repo.listShopping())
+      },
+      async addShoppingBatch(inputs) {
+        const ids: string[] = []
+        for (const input of inputs) ids.push((await repo.addShoppingItem(input)).id)
+        setShopping(await repo.listShopping())
+        return ids
+      },
+      async removeShoppingItems(ids) {
+        for (const id of ids) await repo.removeShoppingItem(id)
         setShopping(await repo.listShopping())
       },
       async removeShoppingItem(id) {

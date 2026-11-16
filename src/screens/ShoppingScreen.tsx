@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { useStore } from '../data/store'
 import { detectNearbyStores, type NearbyStore } from '../lib/geoStore'
 import { addStore, getCurrentStore, getStores, habitsFor, isUsualAt, recordPurchases, setCurrentStore } from '../lib/stores'
+import { LowStockSheet, lowStockCandidates, type LowCandidate } from '../components/LowStockSheet'
 import { useToast } from '../components/Toast'
 import { Icon } from '../components/Icon'
 import { QuantityWheel } from '../components/QuantityWheel'
@@ -36,7 +37,11 @@ export function ShoppingScreen({ addOpen, onCloseAdd }: ShoppingScreenProps) {
     toggleShoppingItem,
     removeShoppingItem,
     clearCheckedShopping,
+    addShoppingBatch,
+    removeShoppingItems,
+    settings,
   } = useStore()
+  const [lowPick, setLowPick] = useState<LowCandidate[] | null>(null)
   const toast = useToast()
 
   const [name, setName] = useState('')
@@ -251,17 +256,27 @@ export function ShoppingScreen({ addOpen, onCloseAdd }: ShoppingScreenProps) {
     toast(`${checked.length} article${checked.length > 1 ? 's' : ''} rangé${checked.length > 1 ? 's' : ''} dans le stock`)
   }
 
-  async function handleGenerate() {
-    const existing = new Set(shopping.map((it) => it.name.toLowerCase()))
-    const low = products.filter((p) => p.quantity <= 1 && !existing.has(p.name.toLowerCase()))
-    if (low.length === 0) {
+  function handleGenerate() {
+    const existing = new Set(shopping.map((it) => it.name.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().trim()))
+    const cands = lowStockCandidates(products, existing, settings.lowStockThreshold, shopCatalog)
+    if (cands.length === 0) {
       toast('Aucun stock faible à ajouter')
       return
     }
-    for (const p of low) {
-      await addShoppingItem({ name: p.name, category: p.category, quantity: 1, source: 'auto' })
-    }
-    toast(`${low.length} article${low.length > 1 ? 's' : ''} ajouté${low.length > 1 ? 's' : ''}`)
+    setLowPick(cands)
+  }
+
+  async function addPicked(picked: LowCandidate[]) {
+    setLowPick(null)
+    const ids = await addShoppingBatch(
+      picked.map((c) => ({ name: c.name, category: c.category, quantity: 1, source: 'auto' as const })),
+    )
+    toast(`${ids.length} article${ids.length > 1 ? 's' : ''} ajouté${ids.length > 1 ? 's' : ''}`, {
+      label: 'Annuler',
+      onClick: () => {
+        void removeShoppingItems(ids).then(() => toast('Ajout annulé'))
+      },
+    })
   }
 
   return (
@@ -294,6 +309,7 @@ export function ShoppingScreen({ addOpen, onCloseAdd }: ShoppingScreenProps) {
 
       </div>
 
+      {lowPick && <LowStockSheet candidates={lowPick} onConfirm={addPicked} onCancel={() => setLowPick(null)} />}
       <button className="generate-list-btn" onClick={handleGenerate}>
         <Icon name="sparkles" />
         Générer depuis les stocks faibles

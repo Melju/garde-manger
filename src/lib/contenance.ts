@@ -257,3 +257,17 @@ export function countPerPack(size?: string): { per: number; unit: string } | nul
 export function sachetsPerBox(size?: string): number | null {
   return countPerPack(size)?.per ?? null
 }
+
+/** Part restante d'un paquet entamé (« 150 g / 500 g » → 0,3), ou null si on ne peut pas la calculer. */
+export function remainingRatio(size?: string): number | null {
+  const { current, full } = splitSize(size)
+  if (!full) return null
+  const c = parseContenance(current)
+  const f = parseContenance(full)
+  if (!c || !f || !f.value) return null
+  const cu = countUnit(c.unit)
+  const fu = countUnit(f.unit)
+  if (cu || fu) return cu && cu === fu ? c.value / f.value : null
+  if (isWeightUnit(c.unit) !== isWeightUnit(f.unit)) return null
+  return toBase(c.value, c.unit) / toBase(f.value, f.unit)
+}
