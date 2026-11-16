@@ -31,6 +31,7 @@ import { lookupBarcode } from './lib/openfoodfacts'
 import { recallProduct } from './lib/productMemory'
 import { supabase } from './data/supabaseClient'
 import { splitSize, consumeFraction, remainingLabel } from './lib/contenance'
+import { UpdateBanner } from './components/UpdateBanner'
 import { ScanConsumeSheet, type ConsumeChoice } from './components/ScanConsumeSheet'
 import type { FamilyMember, Product, ProductInput, Recipe } from './types'
 
@@ -319,6 +320,7 @@ export function App() {
         )}
       </aside>
 
+      <UpdateBanner />
       <main className={`app${!top && add ? ' with-fab' : ''} wide`}>
         {!top && <InstallPrompt />}
         {/* Cloud configuré mais aucune session : l'app tourne sur le stockage local de cet appareil. */}
