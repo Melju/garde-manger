@@ -1,6 +1,7 @@
 import { ClearButton } from '../components/ClearButton'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { useStore } from '../data/store'
+import { kioskEnabled, KIOSK_IDLE } from '../lib/kiosk'
 import { useToast } from '../components/Toast'
 import { Icon } from '../components/Icon'
 import { ProductItem } from '../components/ProductItem'
@@ -206,12 +207,26 @@ export function InventoryScreen({
 
   // Chargement progressif : on affiche 30 lignes puis 30 de plus à l'approche du bas de la liste.
   const [view, setView] = useState<'list' | 'tiles'>(() => {
+    if (kioskEnabled()) return 'tiles'
     try {
       return localStorage.getItem('miamm.inventory.view') === 'tiles' ? 'tiles' : 'list'
     } catch {
       return 'list'
     }
   })
+  useEffect(() => {
+    const onKiosk = () => kioskEnabled() && setView('tiles')
+    const onIdle = () => {
+      setSearch('')
+      setOpenGroups(new Set())
+    }
+    window.addEventListener('miamm-kiosk', onKiosk)
+    window.addEventListener(KIOSK_IDLE, onIdle)
+    return () => {
+      window.removeEventListener('miamm-kiosk', onKiosk)
+      window.removeEventListener(KIOSK_IDLE, onIdle)
+    }
+  }, [])
   function toggleView() {
     const next = view === 'tiles' ? 'list' : 'tiles'
     setView(next)

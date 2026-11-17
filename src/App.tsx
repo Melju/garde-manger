@@ -1,5 +1,5 @@
 import { useConfirm } from './components/Confirm'
-import { lazy, Suspense, useEffect, useLayoutEffect, useRef, useState } from 'react'
+import { lazy, Suspense, useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { InventoryScreen } from './screens/InventoryScreen'
 import { ShoppingScreen } from './screens/ShoppingScreen'
 import { ProductFormScreen } from './screens/ProductFormScreen'
@@ -32,6 +32,7 @@ import { recallProduct } from './lib/productMemory'
 import { supabase } from './data/supabaseClient'
 import { splitSize, consumeFraction, remainingLabel } from './lib/contenance'
 import { UpdateBanner } from './components/UpdateBanner'
+import { KioskMode } from './components/KioskMode'
 import { ScanConsumeSheet, type ConsumeChoice } from './components/ScanConsumeSheet'
 import type { FamilyMember, Product, ProductInput, Recipe } from './types'
 
@@ -274,6 +275,12 @@ export function App() {
     setStack((s) => [...s, r])
   }
   const back = () => setStack((s) => s.slice(0, -1))
+  // Mode tablette : après inactivité, retour au stock sans sous-page ouverte.
+  const kioskIdle = useCallback(() => {
+    setStack([])
+    setTab('inventory')
+  }, [])
+
   const goTab = (t: Tab) => {
     scrollSaved.current = []
     setTab(t)
@@ -321,6 +328,7 @@ export function App() {
       </aside>
 
       <UpdateBanner />
+      <KioskMode onIdle={kioskIdle} />
       <main className={`app${!top && add ? ' with-fab' : ''} wide`}>
         {!top && <InstallPrompt />}
         {/* Cloud configuré mais aucune session : l'app tourne sur le stockage local de cet appareil. */}

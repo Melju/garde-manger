@@ -2853,3 +2853,7 @@ body.is-selecting .add-bar { display: none; }
   .product-list.tiles { grid-template-columns: repeat(auto-fill, minmax(255px, 1fr)); }
 }
 .product-list.tiles .pi-act { flex: 1 1 auto; text-overflow: clip; padding: 6px 6px; }
+
+/* Mode tablette : cibles tactiles plus grandes */
+html.kiosk .product-list.tiles .pi-act { padding: 10px 6px; font-size: 14px; }
+html.kiosk .product-list.tiles .product-name { font-size: 16px; }

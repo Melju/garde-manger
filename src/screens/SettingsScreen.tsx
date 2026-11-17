@@ -6,6 +6,7 @@ import { PageHeader } from '../components/PageHeader'
 import { addBrand, getCustomBrands, removeCustomBrand, renameCustomBrand } from '../lib/brands'
 import { normalize } from '../lib/productIcon'
 import { addStore, getStores, removeStore, renameStore } from '../lib/stores'
+import { kioskEnabled, setKiosk } from '../lib/kiosk'
 import { pushState, enablePush, disablePush, testPush, shoppingNotifEnabled, setShoppingNotif, type PushState } from '../lib/push'
 
 interface SettingsScreenProps {
@@ -69,6 +70,7 @@ export function SettingsScreen({ onBack }: SettingsScreenProps) {
     reloadStores()
   }
   const [shopNotif, setShopNotif] = useState(true)
+  const [kiosk, setKioskState] = useState(kioskEnabled)
   useEffect(() => {
     pushState().then(setPush).catch(() => setPush('unsupported'))
   }, [])
@@ -161,6 +163,23 @@ export function SettingsScreen({ onBack }: SettingsScreenProps) {
           <Toggle
             checked={push === 'on'}
             onChange={(v) => !pushBusy && (push === 'on' || push === 'off') && togglePush(v)}
+          />
+        </div>
+        <div className="setting-row">
+          <div className="setting-text">
+            <div className="setting-title">Mode tablette</div>
+            <div className="setting-desc">
+              Pour une tablette posée dans la cuisine : écran toujours allumé, stock en tuiles avec les boutons
+              Consommé / Ouvert / Périmé, retour au stock après 2 min sans toucher l'écran
+            </div>
+          </div>
+          <Toggle
+            checked={kiosk}
+            onChange={(v) => {
+              setKiosk(v)
+              setKioskState(v)
+              toast(v ? 'Mode tablette activé sur cet appareil' : 'Mode tablette désactivé')
+            }}
           />
         </div>
         {push === 'on' && (

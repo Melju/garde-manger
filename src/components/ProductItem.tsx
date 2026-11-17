@@ -74,7 +74,8 @@ export function ProductItem({
 }: ProductItemProps) {
   // « kg » seul (ancienne saisie) est lu comme « 1 kg ».
   const product = normalizeBareUnit(rawProduct)
-  const mouse = finePointer
+  // Boutons d'action : à la souris, ou en tuiles (tablette tactile comprise).
+  const mouse = finePointer || Boolean(noSwipe)
   const swipeOff = noSwipe || mouse
   const [consuming, setConsuming] = useState(false)
   const [swipe, setSwipe] = useState<Swipe>('none')
