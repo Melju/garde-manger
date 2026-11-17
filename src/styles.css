@@ -3061,3 +3061,8 @@ html.kiosk .product-list.tiles .product-icon > svg { width: 38%; height: 38%; }
 .dup-count { font-size: 12.5px; color: var(--muted); }
 .dup-actions { display: flex; gap: 8px; margin-top: 12px; flex-wrap: wrap; }
 .dup-actions > * { flex: 1 1 180px; }
+
+/* Produit périmé : bordure rouge (liste et tuiles). */
+.swipe-wrapper.is-expired { border-color: var(--danger); box-shadow: 0 0 0 1px var(--danger); }
+.swipe-wrapper.grp.is-expired { border-left-color: var(--danger); }
+.product-list.tiles .swipe-wrapper.grp.is-expired { box-shadow: 0 0 0 2px var(--danger); }

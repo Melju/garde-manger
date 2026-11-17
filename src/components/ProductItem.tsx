@@ -177,7 +177,7 @@ export function ProductItem({
 
   return (
     <div
-      className={`swipe-wrapper${mouse ? ' mouse' : ''}${groupPos ? ` grp grp-${groupPos}` : ''}${dragX !== null || demo ? ' is-active' : ''}${swipe === 'left' ? ' swiped-left' : swipe === 'right' ? ' swiped-right' : ''}`}
+      className={`swipe-wrapper${status === 'expired' ? ' is-expired' : ''}${mouse ? ' mouse' : ''}${groupPos ? ` grp grp-${groupPos}` : ''}${dragX !== null || demo ? ' is-active' : ''}${swipe === 'left' ? ' swiped-left' : swipe === 'right' ? ' swiped-right' : ''}`}
       style={{ ['--open-right' as string]: `${OPEN_RIGHT}px` }}
     >
       {/* Action gauche révélée par un glissement vers la droite : périmé */}
