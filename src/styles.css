@@ -2906,3 +2906,8 @@ html.kiosk .product-list.tiles .product-name { font-size: 16px; }
   html.kiosk .product-list.tiles .pi-actions.two .pi-act.waste { grid-column: 1 / -1; }
 }
 @media (min-width: 600px) { html.kiosk .select-bar { left: 112px; } }
+
+/* Fenêtre ouverte : la page derrière ne défile plus */
+html.modal-open, html.modal-open body { overflow: hidden; overscroll-behavior: none; }
+html.modal-open body { position: fixed; left: 0; right: 0; width: 100%; }
+.cselect-sheet, .confirm-box, .drawer { overscroll-behavior: contain; }
