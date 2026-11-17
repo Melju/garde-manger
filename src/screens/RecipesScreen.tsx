@@ -1,4 +1,5 @@
 import { RecipeIcon } from '../components/RecipeIcon'
+import { ClearButton } from '../components/ClearButton'
 import { Select } from '../components/Select'
 import { useMemo, useState } from 'react'
 import { useStore } from '../data/store'
@@ -33,6 +34,8 @@ export function RecipesScreen({ onOpenRecipe, onOpenFamily }: RecipesScreenProps
   const [generating, setGenerating] = useState(false)
   const [constraint, setConstraint] = useState('')
   const [course, setCourse] = useState('')
+  const [aiOpen, setAiOpen] = useState(false)
+  const [q, setQ] = useState('')
 
   async function handleGenerate() {
     if (generating) return
@@ -65,7 +68,12 @@ export function RecipesScreen({ onOpenRecipe, onOpenFamily }: RecipesScreenProps
   ]
 
   const filtered = useMemo(() => {
+    const words = norm(q).split(/\s+/).filter(Boolean)
     return recipes.filter((r) => {
+      if (words.length) {
+        const hay = norm([r.title, r.cuisine ?? '', ...r.tags, ...r.ingredients.map((i) => i.name)].join(' '))
+        if (!words.every((w) => hay.includes(w))) return false
+      }
       const tags = r.tags.map(norm)
       if (filter === 'perso') return tags.includes('perso')
       if (filter === 'favoris') return r.favorite
@@ -78,7 +86,7 @@ export function RecipesScreen({ onOpenRecipe, onOpenFamily }: RecipesScreenProps
       if (filter === 'vegetarien') return tags.includes('vegetarien') || tags.includes('vegetalien')
       return true
     })
-  }, [recipes, filter])
+  }, [recipes, filter, q])
 
   return (
     <div className="screen-fade">
@@ -94,6 +102,20 @@ export function RecipesScreen({ onOpenRecipe, onOpenFamily }: RecipesScreenProps
           </button>
         </div>
       </header>
+
+      <div className="recipe-search">
+        <div className="search-input">
+          <Icon name="search" />
+          <input
+            type="text"
+            aria-label="Rechercher une recette"
+            placeholder="Recette, ingrédient…"
+            value={q}
+            onChange={(e) => setQ(e.target.value)}
+          />
+          {q && <ClearButton onClick={() => setQ('')} />}
+        </div>
+      </div>
 
       <div className="filter-tabs">
         {([
@@ -122,44 +144,67 @@ export function RecipesScreen({ onOpenRecipe, onOpenFamily }: RecipesScreenProps
 
       <div className="product-list">
         <div className="ai-block">
-          <div className={`ai-gen${generating ? ' busy' : ''}`}>
-            <div className="ai-gen-head">
-              <div className="ai-icon">
+          {!aiOpen ? (
+            <button type="button" className="ai-gen-toggle" onClick={() => setAiOpen(true)}>
+              <span className="ai-icon">
                 <Icon name="sparkles" />
+              </span>
+              <span className="ai-text">
+                <span className="ai-title">Générer une recette avec l’IA</span>
+                <span className="ai-desc">À partir de ton stock</span>
+              </span>
+              <Icon name="chevron" />
+            </button>
+          ) : (
+            <div className={`ai-gen${generating ? ' busy' : ''}`}>
+              <div className="ai-gen-head">
+                <div className="ai-icon">
+                  <Icon name="sparkles" />
+                </div>
+                <div className="ai-text">
+                  <div className="ai-title">Générer une recette avec l’IA</div>
+                  <div className="ai-desc">Créée à partir de ton stock · Claude</div>
+                </div>
+                <button type="button" className="ai-gen-close" aria-label="Replier" onClick={() => setAiOpen(false)}>
+                  <Icon name="close" />
+                </button>
               </div>
-              <div className="ai-text">
-                <div className="ai-title">Générer une recette avec l'IA</div>
-                <div className="ai-desc">Créée à partir de ton stock · Claude</div>
+              <div className="ai-gen-fields">
+                <label className="ai-field">
+                  <span>Type de plat</span>
+                  <Select
+                    className="ai-select"
+                    ariaLabel="Type de plat"
+                    value={course}
+                    onChange={setCourse}
+                    options={COURSES.map(([val, label]) => ({ value: val, label }))}
+                  />
+                </label>
+                <label className="ai-field">
+                  <span>Style</span>
+                  <Select
+                    className="ai-select"
+                    ariaLabel="Style de recette"
+                    value={constraint}
+                    onChange={setConstraint}
+                    options={CONSTRAINTS.map(([val, label]) => ({ value: val, label }))}
+                  />
+                </label>
+                <button className="btn-primary ai-gen-btn" disabled={generating} onClick={handleGenerate}>
+                  <Icon name="sparkles" />
+                  {generating ? 'Génération en cours…' : 'Générer'}
+                </button>
               </div>
             </div>
-            <div className="ai-gen-fields">
-              <label className="ai-field">
-                <span>Type de plat</span>
-                <Select
-                  className="ai-select"
-                  ariaLabel="Type de plat"
-                  value={course}
-                  onChange={setCourse}
-                  options={COURSES.map(([val, label]) => ({ value: val, label }))}
-                />
-              </label>
-              <label className="ai-field">
-                <span>Style</span>
-                <Select
-                  className="ai-select"
-                  ariaLabel="Style de recette"
-                  value={constraint}
-                  onChange={setConstraint}
-                  options={CONSTRAINTS.map(([val, label]) => ({ value: val, label }))}
-                />
-              </label>
-              <button className="btn-primary ai-gen-btn" disabled={generating} onClick={handleGenerate}>
-                <Icon name="sparkles" />
-                {generating ? 'Génération en cours…' : 'Générer'}
-              </button>
-            </div>
-          </div>
+          )}
         </div>
+
+        {filtered.length === 0 && (
+          <div className="empty-state">
+            <Icon name="book" />
+            <p>{q ? `Aucune recette pour « ${q} ».` : 'Aucune recette dans ce filtre.'}</p>
+          </div>
+        )}
 
         {filtered.map((recipe) => {
           const stock = recipeStock(recipe, products)

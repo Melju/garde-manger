@@ -398,7 +398,7 @@ export function App() {
       </main>
 
       {/* Action contextuelle mobile (barre du bas), selon la page. */}
-      {!top && add && <Fab label={add.label} onOpen={add.run} />}
+      {!top && add && <Fab label={add.label} onOpen={add.run} round={tab !== 'inventory'} />}
 
       {!top && (
         <nav className="bottom-nav">

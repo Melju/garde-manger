@@ -3239,3 +3239,110 @@ html.kiosk .arr-name { font-size: 24px; }
   .egg-feast-food { display: none; }
   .egg-chomp, .egg-avatar, .egg-wave, .egg-feast-logo, .egg-feast-glow, .egg-feast-text { animation: none !important; }
 }
+
+/* Courses : ajout éclair et lignes plus fines */
+.shop-quick { padding: 0 0 12px; position: relative; }
+.shop-quick .search-input input { flex: 1; min-width: 0; border: none; background: none; font: inherit; font-size: 15px; color: var(--fg); outline: none; }
+.shop-quick-go { flex: none; width: 34px; height: 34px; border-radius: 10px; border: none; background: var(--brand); color: #fff; display: grid; place-items: center; cursor: pointer; }
+.shop-quick-go svg { width: 18px; height: 18px; stroke: #fff; }
+.shop-quick-sugg { display: flex; gap: 6px; overflow-x: auto; padding-top: 8px; scrollbar-width: none; }
+.shop-quick-sugg::-webkit-scrollbar { display: none; }
+.shop-quick-sugg button { flex: none; border: 1px solid var(--border); background: var(--surface); color: var(--fg); border-radius: 999px; padding: 7px 12px; font: inherit; font-size: 13.5px; font-weight: 600; cursor: pointer; }
+.store-bar { flex-wrap: nowrap !important; overflow-x: auto; scrollbar-width: none; }
+.store-bar::-webkit-scrollbar { display: none; }
+.store-chip { flex: none; padding: 7px 12px !important; font-size: 13.5px; max-width: 60vw; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.store-chip svg { width: 16px !important; height: 16px !important; flex: none; }
+@media (max-width: 640px) {
+  .shopping-item { padding: 10px 12px; gap: 10px; margin-bottom: 6px; }
+  .shopping-category-title { margin-bottom: 6px; }
+  .shop-step button { width: 30px; height: 30px; }
+  .shop-step-val { min-width: 40px; }
+}
+
+/* Planning sur téléphone : toute la semaine en liste compacte (la tablette garde le carrousel) */
+.plan-short { display: none; }
+@media (max-width: 640px) {
+  html:not(.kiosk) .plan-actions { flex-wrap: nowrap; gap: 8px; margin-top: 14px; }
+  html:not(.kiosk) .plan-actions .generate-list-btn,
+  html:not(.kiosk) .plan-actions .plan-shop-btn { flex: 1 1 0; min-width: 0; padding: 10px 8px; font-size: 13px; gap: 6px; border-radius: 12px; }
+  html:not(.kiosk) .plan-actions .generate-list-btn { border-width: 1.5px; }
+  html:not(.kiosk) .plan-actions svg { width: 16px; height: 16px; flex: none; }
+  html:not(.kiosk) .plan-long { display: none; }
+  html:not(.kiosk) .plan-short { display: inline; }
+  html:not(.kiosk) .carousel-arrow { display: none; }
+  html:not(.kiosk) .week-board {
+    flex-direction: column; overflow: visible; padding: 0 16px 16px; gap: 8px;
+    -webkit-mask-image: none; mask-image: none; scroll-snap-type: none;
+  }
+  html:not(.kiosk) .week-board .plan-day {
+    flex: none; min-height: 0; padding: 8px; border-radius: 16px;
+    flex-direction: row; align-items: stretch; gap: 8px;
+  }
+  html:not(.kiosk) .week-board .plan-day-head {
+    flex: 0 0 46px; flex-direction: column; align-items: center; justify-content: center; gap: 0; padding: 0;
+  }
+  html:not(.kiosk) .week-board .plan-dow { font-size: 11px; }
+  html:not(.kiosk) .week-board .plan-num { font-size: 22px; }
+  html:not(.kiosk) .week-board .plan-month { display: none; }
+  html:not(.kiosk) .week-board .plan-today { display: none; }
+  html:not(.kiosk) .week-board .plan-day.today { background: color-mix(in srgb, var(--brand) 6%, var(--surface)); }
+  html:not(.kiosk) .week-board .plan-slots { flex: 1; min-width: 0; grid-template-columns: 1fr 1fr; grid-auto-rows: auto; gap: 6px; }
+  html:not(.kiosk) .week-board .plan-meal {
+    height: auto; min-height: 58px; padding: 18px 6px 6px; flex-direction: row; gap: 6px; justify-content: flex-start; text-align: left;
+  }
+  html:not(.kiosk) .week-board .plan-slot-label { top: 4px; left: 8px; font-size: 9.5px; }
+  html:not(.kiosk) .week-board .plan-meal-icon,
+  html:not(.kiosk) .week-board .plan-meal-icon img { width: 30px; height: 30px; flex: none; }
+  html:not(.kiosk) .week-board .plan-meal-icon svg { width: 18px; height: 18px; }
+  html:not(.kiosk) .week-board .plan-meal-name { font-size: 12.5px; }
+  html:not(.kiosk) .week-board .plan-missing { position: absolute; top: 3px; right: 5px; font-size: 9.5px; padding: 1px 5px; }
+  html:not(.kiosk) .week-board .plan-empty { font-size: 12px; margin: auto; }
+  html:not(.kiosk) .week-board .plan-empty svg { width: 14px; height: 14px; }
+}
+
+/* Bouton + rond (Recettes, Courses) : ne masque plus le contenu */
+.add-bar.round { left: auto; right: max(18px, calc(50% - 210px + 18px)); transform: none; width: auto; max-width: none; padding: 0; }
+.add-bar.round .add-btn { width: 58px; height: 58px; border-radius: 50%; padding: 0; }
+.add-bar.round .add-btn svg { width: 26px; height: 26px; }
+.add-bar.round .add-btn-label { display: none; }
+
+/* Recettes : recherche, générateur replié, cartes compactes */
+.recipe-search { padding: 0 0 10px; }
+.recipe-search .search-input input { flex: 1; min-width: 0; }
+.ai-gen-toggle {
+  width: 100%; display: flex; align-items: center; gap: 12px; text-align: left;
+  background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius);
+  padding: 10px 14px 10px 10px; font: inherit; color: var(--fg); cursor: pointer;
+}
+.ai-gen-toggle:hover { border-color: var(--brand); }
+.ai-gen-toggle .ai-icon { width: 40px; height: 40px; flex: none; }
+.ai-gen-toggle .ai-text { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+.ai-gen-toggle .ai-title { font-weight: 700; font-size: 14.5px; }
+.ai-gen-toggle .ai-desc { font-size: 12.5px; color: var(--muted); }
+.ai-gen-toggle > svg:last-child { width: 18px; height: 18px; color: var(--muted); flex: none; }
+.ai-gen-head { position: relative; }
+.ai-gen-close { margin-left: auto; width: 34px; height: 34px; border-radius: 10px; border: 1px solid var(--border); background: var(--surface); color: var(--muted); display: grid; place-items: center; cursor: pointer; flex: none; }
+.ai-gen-close svg { width: 16px; height: 16px; }
+@media (max-width: 640px) {
+  .recipe-card { padding: 12px; margin-bottom: 8px; }
+  .recipe-card .recipe-header { margin-bottom: 6px; }
+  .recipe-card .recipe-icon { width: 52px !important; height: 52px !important; border-radius: 14px; }
+  .recipe-card .recipe-icon img { width: 44px !important; height: 44px !important; }
+  .recipe-card .recipe-tags { margin-bottom: 0; padding-left: 64px; }
+  .recipe-card .recipe-adaptations { padding-left: 64px; margin-top: 6px; }
+  .recipe-card .recipe-tag { font-size: 11.5px; padding: 3px 8px; }
+}
+
+/* Page Plus : tuiles 2 par 2 */
+.more-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+.more-grid .menu-item {
+  position: relative; margin: 0; flex-direction: column; align-items: flex-start; gap: 10px;
+  padding: 14px; min-height: 118px;
+}
+.more-grid .menu-item .chevron { display: none; }
+.more-grid .menu-icon { width: 42px; height: 42px; }
+.more-grid .menu-info { min-width: 0; width: 100%; }
+.more-grid .menu-title { font-size: 15px; }
+.more-grid .menu-desc { font-size: 12.5px; line-height: 1.3; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+.more-grid .menu-badge { position: absolute; top: 12px; right: 12px; }
+@media (min-width: 900px) { .more-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); } }

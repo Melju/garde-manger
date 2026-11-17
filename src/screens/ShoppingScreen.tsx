@@ -66,6 +66,7 @@ export function ShoppingScreen({ addOpen, onCloseAdd }: ShoppingScreenProps) {
   const toast = useToast()
 
   const [name, setName] = useState('')
+  const [quick, setQuick] = useState('')
   const [qty, setQty] = useState(1)
   const [browseAll, setBrowseAll] = useState(false)
   const [store, setStore] = useState(getCurrentStore())
@@ -239,6 +240,31 @@ export function ShoppingScreen({ addOpen, onCloseAdd }: ShoppingScreenProps) {
     toast(`${trimmed} · ${qtyLabel(qty, scale.baseUnit || undefined)}`)
   }
 
+  // Ajout éclair depuis le champ en haut de liste : catégorie et unité devinées, quantité par défaut.
+  async function quickAdd(raw?: string) {
+    const trimmed = (raw ?? quick).trim()
+    if (!trimmed) return
+    const known = lookup.get(trimmed.toLowerCase())
+    const category: Category = known?.category ?? guessCategoryFromName(trimmed)
+    const unitRaw = category === 'conserves' ? '' : (known?.unit ?? guessUnitFromName(trimmed))
+    const sc = buyScale(unitRaw)
+    await addShoppingItem({
+      name: known?.name ?? trimmed,
+      category,
+      quantity: known?.qty ?? sc.defaultValue,
+      unit: sc.baseUnit || undefined,
+      source: 'manuel',
+    })
+    await recordShopItem(known?.name ?? trimmed, category, unitRaw, known?.qty ?? sc.defaultValue)
+    setQuick('')
+  }
+  const quickSuggestions = useMemo(() => {
+    const q = quick.trim().toLowerCase()
+    if (q.length < 2) return []
+    const inList = new Set(shopping.filter((it) => !it.checked).map((it) => it.name.toLowerCase()))
+    return catalog.filter((it) => it.name.toLowerCase().includes(q) && !inList.has(it.name.toLowerCase())).slice(0, 5)
+  }, [catalog, quick, shopping])
+
   // Toucher une suggestion remplit le champ : la roulette s'adapte, puis on
   // choisit la quantité et on valide avec « + ». (Pas d'ajout direct.)
   function pickItem(item: KnownItem) {
@@ -313,6 +339,37 @@ export function ShoppingScreen({ addOpen, onCloseAdd }: ShoppingScreenProps) {
         <div className="header-actions" />
       </header>
 
+      <div className="shop-quick">
+        <div className="search-input">
+          <Icon name="plus" />
+          <input
+            type="text"
+            aria-label="Ajouter un article"
+            placeholder="Ajouter un article…"
+            value={quick}
+            enterKeyHint="done"
+            onChange={(e) => setQuick(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter') void quickAdd()
+            }}
+          />
+          {quick.trim() && (
+            <button className="shop-quick-go" onClick={() => void quickAdd()} aria-label="Ajouter">
+              <Icon name="check" width={2.5} />
+            </button>
+          )}
+        </div>
+        {quickSuggestions.length > 0 && (
+          <div className="shop-quick-sugg">
+            {quickSuggestions.map((it) => (
+              <button key={it.name} type="button" onClick={() => void quickAdd(it.name)}>
+                {it.name}
+              </button>
+            ))}
+          </div>
+        )}
+      </div>
+
       {shopping.some((it) => it.checked) && (
         <div className="btn-row" style={{ margin: '0 0 14px' }}>
           <button
@@ -333,17 +390,16 @@ export function ShoppingScreen({ addOpen, onCloseAdd }: ShoppingScreenProps) {
       </div>
 
       {lowPick && <LowStockSheet candidates={lowPick} onConfirm={addPicked} onCancel={() => setLowPick(null)} />}
-      <button className="generate-list-btn" onClick={handleGenerate}>
-        <Icon name="sparkles" />
-        Générer depuis les stocks faibles
-      </button>
-
       <div className="store-bar">
+        <button type="button" className="store-chip" onClick={handleGenerate}>
+          <Icon name="sparkles" width={2} />
+          Stocks faibles
+        </button>
         <button type="button" className="store-chip" onClick={() => setPickingStore((v) => !v)}>
           <Icon name="cart" width={2} />
-          {store ? `Magasin : ${store}` : 'Choisir le magasin'}
+          {store || 'Magasin'}
         </button>
-        <button type="button" className="store-chip" onClick={() => locate(false)} disabled={locating}>
+        <button type="button" className="store-chip" onClick={() => locate(false)} disabled={locating} aria-label="Trouver le magasin où je suis">
           {locating ? 'Recherche…' : 'Où suis-je ?'}
         </button>
       </div>

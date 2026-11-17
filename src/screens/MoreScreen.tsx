@@ -73,9 +73,9 @@ export function MoreScreen(props: MoreScreenProps) {
         </div>
       </header>
 
-      <div className="product-list">
+      <div className="product-list more-grid">
         {items.map((it) => (
-          <div className="menu-item" key={it.title} onClick={it.onClick}>
+          <div className="menu-item" key={it.title} onClick={it.onClick} role="button" tabIndex={0}>
             <div className="menu-icon">
               <Icon name={it.icon} />
             </div>

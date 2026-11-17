@@ -112,11 +112,16 @@ export function PlanningScreen() {
       <div className="plan-actions">
         <button className="generate-list-btn" onClick={handleGenerateWeek} disabled={planning}>
           <Icon name="sparkles" />
-          {planning ? 'Génération du menu…' : 'Planifier ma semaine (IA)'}
+          {planning ? 'Génération du menu…' : (
+            <>
+              Planifier<span className="plan-long"> ma semaine</span> (IA)
+            </>
+          )}
         </button>
         <button className="plan-shop-btn" onClick={generateList}>
           <Icon name="cart" />
-          Ingrédients manquants vers les courses
+          <span className="plan-long">Ingrédients manquants vers les courses</span>
+          <span className="plan-short">Manquants → courses</span>
         </button>
       </div>
 
