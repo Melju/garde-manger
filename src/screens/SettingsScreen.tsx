@@ -7,7 +7,7 @@ import { addBrand, getCustomBrands, removeCustomBrand, renameCustomBrand } from 
 import { normalize } from '../lib/productIcon'
 import { addStore, getStores, removeStore, renameStore } from '../lib/stores'
 import { kioskEnabled, setKiosk, wakeEnabled, setWake } from '../lib/kiosk'
-import { VoskDiag, VoicePicker } from '../components/VoiceAssistant'
+import { WakeDiag, VoicePicker, VOICE_SUPPORTED } from '../components/VoiceAssistant'
 import { defaultSort, setDefaultSort, SORT_OPTIONS, type InventorySort } from '../lib/inventorySort'
 import { Select } from '../components/Select'
 import { pushState, enablePush, disablePush, testPush, shoppingNotifEnabled, setShoppingNotif, type PushState } from '../lib/push'
@@ -205,13 +205,13 @@ export function SettingsScreen({ onBack }: SettingsScreenProps) {
             }}
           />
         </div>
-        {kiosk && !!navigator.mediaDevices?.getUserMedia && (
+        {kiosk && VOICE_SUPPORTED && (
           <div className="setting-row" style={{ flexWrap: 'wrap' }}>
             <div className="setting-text">
               <div className="setting-title">Réveil vocal « Miam miam »</div>
               <div className="setting-desc">
-                Dis « Miam miam », attends le micro, puis ta demande. La reconnaissance se fait sur la tablette (pas de
-                bip, rien d’envoyé) ; le modèle vocal (40 Mo) se télécharge une fois à l’activation.
+                Dis « Miam miam », ou directement « Miam miam, ajoute du lait ». Le micro reste à l’écoute tant que
+                l’app est ouverte (reconnaissance vocale de Chrome). Masque le son système d’Android pour éviter le bip.
               </div>
             </div>
             <Toggle
@@ -222,7 +222,7 @@ export function SettingsScreen({ onBack }: SettingsScreenProps) {
                 toast(v ? 'Dis « Miam miam » pour me parler' : 'Réveil vocal désactivé')
               }}
             />
-            {wake && <VoskDiag />}
+            {wake && <WakeDiag />}
           </div>
         )}
         <div className="setting-row" style={{ flexWrap: 'wrap', gap: 10 }}>

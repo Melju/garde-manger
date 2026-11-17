@@ -8,7 +8,7 @@ import { defaultConservation, type Category, type Product } from '../types'
 import { useToast } from './Toast'
 import { Icon } from './Icon'
 import { kioskEnabled, wakeEnabled } from '../lib/kiosk'
-import { startVosk, stopVosk, onVosk, voskActive, listenCommand, cancelCommand, setVoskPaused, voskStatus, handOffToBrowser, takeBackFromBrowser } from '../lib/voskEngine'
+import { startWake, stopWake, onWake, wakeRunning, setWakePaused, wakeStatus, handOffToBrowser, takeBackFromBrowser } from '../lib/wakeEngine'
 
 // ----- Types renvoyés par la fonction « voice » -----
 type Act =
@@ -65,8 +65,8 @@ export function speak(text: string) {
   const t = text.trim()
   if (!t) return
   // Le micro local se met en pause le temps de la phrase (sinon Miam miam s'entend lui-même).
-  setVoskPaused(true)
-  setTimeout(() => setVoskPaused(false), 1200 + t.length * 75)
+  setWakePaused(true)
+  setTimeout(() => setWakePaused(false), 1200 + t.length * 75)
   try {
     const fully = (window as any).fully
     if (fully?.textToSpeech) {
@@ -151,7 +151,7 @@ if (typeof window !== 'undefined' && window.speechSynthesis) {
 }
 
 const chromeOk = () => VOICE_SUPPORTED && !voiceBroken
-const canListen = () => voskActive() || chromeOk()
+const canListen = () => chromeOk()
 
 const toBase = (v: number, u: string) => {
   const l = u.toLowerCase()
@@ -183,7 +183,6 @@ export function VoiceAssistant() {
   const inputRef = useRef<HTMLTextAreaElement>(null)
 
   const stopRec = () => {
-    if (voskActive()) cancelCommand()
     const r = recRef.current
     recRef.current = null
     setListening(false)
@@ -213,14 +212,8 @@ export function VoiceAssistant() {
   const listenRef = useRef<() => void>(() => {})
   const listen = () => {
     setError('')
-    if (voskActive() && !chromeOk()) {
-      // Fully Kiosk : seul le moteur local peut écouter.
-      setText('')
-      if (listenCommand()) setListening(true)
-      return
-    }
-    // Chrome écoute la commande (rapide et précis) ; le moteur local lui laisse le micro.
-    if (voskActive()) handOffToBrowser()
+    // Une seule reconnaissance à la fois dans Chrome : l'écoute de réveil s'efface.
+    if (wakeRunning()) handOffToBrowser()
     if (!VOICE_SUPPORTED || voiceBroken) {
       inputRef.current?.focus()
       return
@@ -292,27 +285,10 @@ export function VoiceAssistant() {
     }
     window.addEventListener('miamm-voice', on)
     // Moteur local (tablette) : texte en direct, fin de phrase, mot de réveil.
-    const off = onVosk((e) => {
-      if (e.type === 'partial') setText(e.text ?? '')
-      else if (e.type === 'final') {
-        setListening(false)
-        if (e.text) void understandRef.current(e.text)
-        else setError('Je n’ai rien entendu. Touche le micro et réessaie.')
-      } else if (e.type === 'wake') {
-        setOpen(true)
-        setPhase('listen')
-        setText('')
-        setRows([])
-        setUnknown([])
-        setError('')
-        setReply('')
-        setListening(true)
-        if (chromeOk()) {
-          cancelCommand()
-          handOffToBrowser()
-          setTimeout(() => listenRef.current(), 150)
-        }
-      }
+    // « Miam miam » entendu : on ouvre à l'écoute, ou on envoie directement la commande qui suivait.
+    const off = onWake((e) => {
+      if (e.type !== 'wake') return
+      openVoice({ autoListen: true, text: e.text ?? '' })
     })
     return () => {
       window.removeEventListener('miamm-voice', on)
@@ -667,8 +643,7 @@ export function VoiceAssistant() {
 
 /**
  * Mot de réveil « Miam miam » (tablette en mode cuisine, option à activer).
- * Reconnaissance entièrement locale (Vosk) : pas de bip Android, rien d'envoyé tant qu'on ne parle pas
- * à Miam miam. Fonctionne aussi dans Fully Kiosk si l'accès au micro y est autorisé.
+ * Reconnaissance de Chrome en continu (voir lib/wakeEngine).
  */
 export function WakeWord() {
   const [on, setOn] = useState(() => kioskEnabled() && wakeEnabled())
@@ -683,51 +658,40 @@ export function WakeWord() {
   }, [])
 
   useEffect(() => {
-    if (!on || !navigator.mediaDevices?.getUserMedia) return
-    void startVosk()
-    return () => stopVosk()
+    if (!on || !VOICE_SUPPORTED) return
+    startWake()
+    return () => stopWake()
   }, [on])
 
   return null
 }
 
-/** Petit panneau de diagnostic du réveil vocal (Paramètres) : état, niveau du micro, ce qui est entendu. */
-export function VoskDiag() {
-  const [st, setSt] = useState(voskStatus())
-  const [level, setLevel] = useState(0)
+/** Petit panneau de diagnostic du réveil vocal (Paramètres) : état et ce qui est entendu. */
+export function WakeDiag() {
+  const [st, setSt] = useState(wakeStatus())
   const [heard, setHeard] = useState('')
   useEffect(() => {
-    const off = onVosk((e) => {
-      if (e.type === 'level') setLevel(e.level ?? 0)
-      else if (e.type === 'heard') setHeard(e.text ?? '')
-      setSt(voskStatus())
+    const off = onWake((e) => {
+      if (e.type === 'heard') setHeard(e.text ?? '')
+      setSt(wakeStatus())
     })
-    const t = setInterval(() => setSt(voskStatus()), 1000)
+    const t = setInterval(() => setSt(wakeStatus()), 1000)
     return () => {
       off()
       clearInterval(t)
     }
   }, [])
   const label =
-    st.status === 'loading'
-      ? 'Téléchargement du modèle vocal…'
-      : st.status === 'mic'
-        ? 'Ouverture du micro…'
-        : st.status === 'suspended' || st.audio === 'suspended'
-          ? 'Touche l’écran pour activer le micro'
-          : st.status === 'ready'
-            ? 'À l’écoute de « Miam miam »'
-            : st.status === 'error'
-              ? `Erreur : ${st.error}`
-              : 'Arrêté'
+    st.status === 'ready' || st.status === 'woke'
+      ? 'À l’écoute de « Miam miam »'
+      : st.status === 'error'
+        ? `Erreur : ${st.error}`
+        : 'En attente'
   return (
     <div className="vosk-diag">
       <div className="vosk-diag-row">
-        <span className={`vosk-dot s-${st.status}`} />
+        <span className={`vosk-dot s-${st.status === 'woke' ? 'ready' : st.status}`} />
         {label}
-      </div>
-      <div className="vosk-meter">
-        <span style={{ width: `${Math.min(100, Math.round(level * 900))}%` }} />
       </div>
       <div className="vosk-heard">Entendu : {heard || '…'}</div>
     </div>
