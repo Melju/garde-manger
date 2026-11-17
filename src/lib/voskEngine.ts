@@ -32,6 +32,8 @@ let paused = false
 let silenceTimer: ReturnType<typeof setTimeout> | undefined
 let cmdTimeout: ReturnType<typeof setTimeout> | undefined
 let lastPartial = ''
+let finalAsked = false
+let finalWait: ReturnType<typeof setTimeout> | undefined
 let status = 'off'
 let lastError = ''
 let lastLevelAt = 0
@@ -83,6 +85,8 @@ function downsample(input: Float32Array, rate: number): Float32Array {
 function finishCommand(text: string) {
   clearTimeout(silenceTimer)
   clearTimeout(cmdTimeout)
+  clearTimeout(finalWait)
+  finalAsked = false
   if (mode !== 'command') return
   mode = 'wake'
   lastPartial = ''
@@ -133,13 +137,14 @@ export async function startVosk(): Promise<boolean> {
         emit({ type: 'partial', text: p })
         // Fin de phrase : 1,4 s sans nouveau mot.
         clearTimeout(silenceTimer)
-        silenceTimer = setTimeout(() => cmdRec?.retrieveFinalResult(), 1100)
+        silenceTimer = setTimeout(askFinal, 1100)
       }
     })
     cmdRec.on('result', (m: any) => {
       if (mode !== 'command') return
-      const t = (m.result?.text ?? '').trim()
+      const t = ((m.result?.text ?? '') as string).trim() || lastPartial
       if (t) finishCommand(t)
+      else if (finalAsked) finishCommand('')
     })
 
     const src = ctx.createMediaStreamSource(stream)
@@ -188,14 +193,22 @@ export async function startVosk(): Promise<boolean> {
   }
 }
 
+/** Demande le résultat final ; la tablette peut avoir du retard à traiter le son, on lui laisse 3 s. */
+function askFinal() {
+  if (mode !== 'command' || finalAsked) return
+  finalAsked = true
+  cmdRec?.retrieveFinalResult()
+  clearTimeout(finalWait)
+  finalWait = setTimeout(() => finishCommand(lastPartial), 3000)
+}
+
 function armCommandTimeout() {
   lastPartial = ''
+  finalAsked = false
   clearTimeout(cmdTimeout)
-  // Personne ne parle après le réveil : on abandonne au bout de 7 s.
-  cmdTimeout = setTimeout(() => {
-    if (mode === 'command' && !lastPartial) finishCommand('')
-    else cmdRec?.retrieveFinalResult()
-  }, 7000)
+  clearTimeout(finalWait)
+  // Délai maximal pour une phrase.
+  cmdTimeout = setTimeout(askFinal, 10000)
 }
 
 /** Passe directement en écoute d'une commande (bouton micro). */
