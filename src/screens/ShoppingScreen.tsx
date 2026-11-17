@@ -4,6 +4,7 @@ import { detectNearbyStores, type NearbyStore } from '../lib/geoStore'
 import { addStore, getCurrentStore, getStores, habitsFor, isUsualAt, recordPurchases, setCurrentStore } from '../lib/stores'
 import { LowStockSheet, lowStockCandidates, type LowCandidate } from '../components/LowStockSheet'
 import { euros, pricesByStore, priceKey, usePriceObs } from '../lib/prices'
+import { kioskEnabled } from '../lib/kiosk'
 import { useToast } from '../components/Toast'
 import { Icon } from '../components/Icon'
 import { QuantityWheel } from '../components/QuantityWheel'
@@ -96,6 +97,8 @@ export function ShoppingScreen({ addOpen, onCloseAdd }: ShoppingScreenProps) {
   }
   // À l'ouverture de l'écran, on cherche le magasin tout seul (au plus une fois toutes les 10 minutes).
   useEffect(() => {
+    // Tablette fixe à la maison : pas de recherche du magasin (ni demande de localisation).
+    if (kioskEnabled()) return
     let last = 0
     try {
       last = Number(sessionStorage.getItem('miamm.geo.last') ?? 0)
