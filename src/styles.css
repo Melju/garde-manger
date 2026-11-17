@@ -2998,3 +2998,9 @@ html.modal-open body { position: fixed; left: 0; right: 0; width: 100%; }
 .week-board .plan-day { min-height: max(340px, calc(100dvh - 330px)); }
 .week-board .plan-slots { flex: 1; grid-auto-rows: 1fr; }
 .week-board .plan-meal { min-height: 0; height: 100%; }
+
+/* Carrousel du planning : fondu sur les bords */
+.week-board {
+  -webkit-mask-image: linear-gradient(to right, transparent 0, #000 56px, #000 calc(100% - 56px), transparent 100%);
+          mask-image: linear-gradient(to right, transparent 0, #000 56px, #000 calc(100% - 56px), transparent 100%);
+}
