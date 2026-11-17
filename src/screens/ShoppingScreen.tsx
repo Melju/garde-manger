@@ -493,6 +493,7 @@ export function ShoppingScreen({ addOpen, onCloseAdd }: ShoppingScreenProps) {
         </div>
       )}
 
+      <div className="shopping-groups">
       {grouped.length === 0 ? (
         <div className="empty-state">
           <Icon name="cart" />
@@ -553,6 +554,7 @@ export function ShoppingScreen({ addOpen, onCloseAdd }: ShoppingScreenProps) {
           </div>
         ))
       )}
+      </div>
 
       {/* Drawer d'ajout (déclenché par le bouton d'action de la page) */}
       {addOpen && (

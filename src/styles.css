@@ -3353,3 +3353,5 @@ html.kiosk .arr-name { font-size: 24px; }
 .recipe-search .search-input { flex: 1; min-width: 0; }
 .search-row .sort-select.active { border-color: var(--brand); color: var(--brand); }
 .search-row .sort-select.active svg { color: var(--brand); }
+.shopping-groups { padding-top: 4px; }
+html.kiosk .shopping-groups { padding-top: 20px; }
