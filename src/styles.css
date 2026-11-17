@@ -3030,3 +3030,14 @@ html.modal-open body { position: fixed; left: 0; right: 0; width: 100%; }
 
 /* Mode tablette : pas de choix du magasin dans les courses (la tablette reste à la maison) */
 html.kiosk .store-bar, html.kiosk .store-msg, html.kiosk .store-picker { display: none !important; }
+
+/* Tuiles : visuel en pleine largeur, comme une vignette de carte */
+.product-list.tiles .product-icon,
+html.kiosk .product-list.tiles .product-icon {
+  width: 100%; height: auto; aspect-ratio: 16 / 10; border-radius: 14px; display: grid; place-items: center; overflow: hidden;
+}
+.product-list.tiles .product-icon .product-img,
+html.kiosk .product-list.tiles .product-icon .product-img { width: auto; height: 78%; max-width: 70%; object-fit: contain; }
+.product-list.tiles .product-icon > svg,
+html.kiosk .product-list.tiles .product-icon > svg { width: 38%; height: 38%; }
+.product-list.tiles .product-icon .product-photo { width: 100%; height: 100%; object-fit: cover; }
