@@ -2952,3 +2952,7 @@ html.modal-open body { position: fixed; left: 0; right: 0; width: 100%; }
   .plan-slots { grid-template-columns: 1fr; flex: 1; }
   .plan-meal { min-height: 150px; }
 }
+/* Groupe déplié en tuiles : contour dessiné autour de la tuile (plus coupé par l'arrondi) */
+.product-list.tiles .swipe-wrapper.grp .product-item { box-shadow: none; }
+.product-list.tiles .swipe-wrapper.grp { box-shadow: 0 0 0 2px var(--brand); border-radius: var(--radius); }
+.product-list.tiles .swipe-wrapper.grp { border-color: var(--brand); }

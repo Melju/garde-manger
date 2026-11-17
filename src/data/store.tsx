@@ -344,6 +344,23 @@ export function StoreProvider({ children }: { children: ReactNode }) {
 
   const value = useMemo<StoreValue>(() => {
     // Ajoute une entrée d'historique et met à jour l'état + le stockage.
+    // Rafraîchissement en arrière-plan (regroupé) : l'interface change tout de suite,
+    // la base est relue ensuite pour récupérer les éventuelles modifications d'un autre appareil.
+    const refreshTimers: Record<string, number> = {}
+    function bgRefresh(which: 'products' | 'shopping') {
+      window.clearTimeout(refreshTimers[which])
+      refreshTimers[which] = window.setTimeout(() => {
+        if (which === 'products') repo.listProducts().then(setProducts).catch(() => {})
+        else repo.listShopping().then(setShopping).catch(() => {})
+      }, 600)
+    }
+    /** Exécute des écritures par petits paquets en parallèle (au lieu d'une par une). */
+    async function inChunks<T, R>(items: T[], fn: (t: T) => Promise<R>, size = 8): Promise<R[]> {
+      const out: R[] = []
+      for (let i = 0; i < items.length; i += size) out.push(...(await Promise.all(items.slice(i, i + size).map(fn))))
+      return out
+    }
+
     async function logHistory(
       kind: HistoryKind,
       label: string,
@@ -480,16 +497,26 @@ export function StoreProvider({ children }: { children: ReactNode }) {
         }
       },
       async updateProduct(id, patch) {
-        await repo.updateProduct(id, patch)
-        setProducts(await repo.listProducts())
+        setProducts((prev) => prev.map((p) => (p.id === id ? { ...p, ...patch } : p)))
+        try {
+          await repo.updateProduct(id, patch)
+        } finally {
+          bgRefresh('products')
+        }
       },
       async adjustQuantity(id, delta) {
         const before = products.find((p) => p.id === id)
-        await repo.adjustQuantity(id, delta)
-        setProducts(await repo.listProducts())
+        setProducts((prev) =>
+          prev.flatMap((p) => (p.id !== id ? [p] : p.quantity + delta <= 0 ? [] : [{ ...p, quantity: p.quantity + delta }])),
+        )
+        try {
+          await repo.adjustQuantity(id, delta)
+        } finally {
+          bgRefresh('products')
+        }
         if (delta < 0 && before) {
           const qty = Math.min(-delta, before.quantity)
-          await logHistory(
+          void logHistory(
             'consomme',
             `${before.name} consommé (×${qty})`,
             before.price ? before.price * qty : undefined,
@@ -498,8 +525,12 @@ export function StoreProvider({ children }: { children: ReactNode }) {
         }
       },
       async removeProduct(id) {
-        await repo.removeProduct(id)
-        setProducts(await repo.listProducts())
+        setProducts((prev) => prev.filter((p) => p.id !== id))
+        try {
+          await repo.removeProduct(id)
+        } finally {
+          bgRefresh('products')
+        }
       },
       async undoHistory(entry) {
         const m = entry.meta
@@ -537,11 +568,19 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       async wasteProduct(id, qty) {
         const before = products.find((p) => p.id === id)
         const partial = !!before && qty !== undefined && qty > 0 && qty < before.quantity
-        if (partial && before) await repo.updateProduct(id, { quantity: before.quantity - qty! })
-        else await repo.removeProduct(id)
-        setProducts(await repo.listProducts())
+        setProducts((prev) =>
+          partial && before
+            ? prev.map((p) => (p.id === id ? { ...p, quantity: before.quantity - qty! } : p))
+            : prev.filter((p) => p.id !== id),
+        )
+        try {
+          if (partial && before) await repo.updateProduct(id, { quantity: before.quantity - qty! })
+          else await repo.removeProduct(id)
+        } finally {
+          bgRefresh('products')
+        }
         if (before)
-          await logHistory('jete', `${before.name} jeté (périmé)`, undefined, {
+          void logHistory('jete', `${before.name} jeté (périmé)`, undefined, {
             name: before.name,
             qty: partial ? qty! : before.quantity,
             category: before.category,
@@ -550,42 +589,65 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       },
 
       async addShoppingItem(input) {
-        await repo.addShoppingItem(input)
+        const item = await repo.addShoppingItem(input)
+        setShopping((prev) => [...prev, item])
         notifyShoppingAdded([input.name])
-        setShopping(await repo.listShopping())
+        bgRefresh('shopping')
       },
       async updateShoppingItem(id, patch) {
-        await repo.updateShoppingItem(id, patch)
-        setShopping(await repo.listShopping())
+        setShopping((prev) => prev.map((it) => (it.id === id ? { ...it, ...patch } : it)))
+        try {
+          await repo.updateShoppingItem(id, patch)
+        } finally {
+          bgRefresh('shopping')
+        }
       },
       async addManyShopping(inputs) {
-        for (const input of inputs) await repo.addShoppingItem(input)
-        setShopping(await repo.listShopping())
+        const items = await inChunks(inputs, (input) => repo.addShoppingItem(input))
+        setShopping((prev) => [...prev, ...items])
         notifyShoppingAdded(inputs.map((i) => i.name))
+        bgRefresh('shopping')
         return inputs.length
       },
       async toggleShoppingItem(id) {
-        await repo.toggleShoppingItem(id)
-        setShopping(await repo.listShopping())
+        setShopping((prev) => prev.map((it) => (it.id === id ? { ...it, checked: !it.checked } : it)))
+        try {
+          await repo.toggleShoppingItem(id)
+        } finally {
+          bgRefresh('shopping')
+        }
       },
       async addShoppingBatch(inputs) {
-        const ids: string[] = []
-        for (const input of inputs) ids.push((await repo.addShoppingItem(input)).id)
-        setShopping(await repo.listShopping())
+        const items = await inChunks(inputs, (input) => repo.addShoppingItem(input))
+        setShopping((prev) => [...prev, ...items])
         notifyShoppingAdded(inputs.map((i) => i.name))
-        return ids
+        bgRefresh('shopping')
+        return items.map((i) => i.id)
       },
       async removeShoppingItems(ids) {
-        for (const id of ids) await repo.removeShoppingItem(id)
-        setShopping(await repo.listShopping())
+        const set = new Set(ids)
+        setShopping((prev) => prev.filter((it) => !set.has(it.id)))
+        try {
+          await inChunks(ids, (id) => repo.removeShoppingItem(id))
+        } finally {
+          bgRefresh('shopping')
+        }
       },
       async removeShoppingItem(id) {
-        await repo.removeShoppingItem(id)
-        setShopping(await repo.listShopping())
+        setShopping((prev) => prev.filter((it) => it.id !== id))
+        try {
+          await repo.removeShoppingItem(id)
+        } finally {
+          bgRefresh('shopping')
+        }
       },
       async clearCheckedShopping() {
-        await repo.clearCheckedShopping()
-        setShopping(await repo.listShopping())
+        setShopping((prev) => prev.filter((it) => !it.checked))
+        try {
+          await repo.clearCheckedShopping()
+        } finally {
+          bgRefresh('shopping')
+        }
       },
 
       shopCatalog,
