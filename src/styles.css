@@ -3145,3 +3145,72 @@ html.kiosk .arr-name { font-size: 24px; }
 @media (prefers-reduced-motion: reduce) {
   .arr-overlay, .arr-card, .arr-hero, .arr-burst i, .arr-name, .arr-badge { animation: none !important; }
 }
+
+/* Œufs de Pâques (recherche du stock). */
+.egg-rain { position: fixed; inset: 0; z-index: 420; pointer-events: none; overflow: hidden; }
+.egg-rain img {
+  position: absolute; top: -90px; object-fit: contain;
+  filter: drop-shadow(0 4px 6px rgba(0, 0, 0, 0.18));
+  animation-name: egg-fall; animation-timing-function: cubic-bezier(0.45, 0, 0.8, 0.6); animation-fill-mode: both;
+}
+@keyframes egg-fall {
+  0% { transform: translateY(0) rotate(0); opacity: 1; }
+  78% { transform: translateY(calc(100vh + 10px)) rotate(var(--rot)); }
+  86% { transform: translateY(calc(100vh - 40px)) rotate(calc(var(--rot) * 1.1)); }
+  93% { transform: translateY(calc(100vh + 10px)) rotate(calc(var(--rot) * 1.15)); opacity: 1; }
+  100% { transform: translateY(calc(100vh + 10px)) rotate(calc(var(--rot) * 1.15)); opacity: 0; }
+}
+.egg-rain-title {
+  position: absolute; left: 50%; top: 38%;
+  transform: translate(-50%, -50%);
+  font-size: clamp(40px, 11vw, 84px); font-weight: 800; color: var(--brand);
+  text-shadow: 0 4px 0 #fff, 0 8px 24px rgba(0, 0, 0, 0.18);
+  animation: egg-title 4.6s cubic-bezier(0.2, 1.5, 0.4, 1) both;
+}
+@keyframes egg-title {
+  0% { opacity: 0; transform: translate(-50%, -50%) scale(0.3) rotate(-12deg); }
+  12% { opacity: 1; transform: translate(-50%, -50%) scale(1.1) rotate(4deg); }
+  20%, 80% { opacity: 1; transform: translate(-50%, -50%) scale(1) rotate(0); }
+  100% { opacity: 0; transform: translate(-50%, -50%) scale(0.9); }
+}
+.egg-overlay {
+  position: fixed; inset: 0; z-index: 410; display: grid; place-items: center;
+  background: rgba(15, 25, 35, 0.35); backdrop-filter: blur(3px); -webkit-backdrop-filter: blur(3px);
+  animation: arr-fade 0.3s ease both;
+}
+.egg-card {
+  width: min(330px, calc(100vw - 40px)); background: var(--surface); border-radius: 28px;
+  padding: 24px 22px 20px; text-align: center; box-shadow: 0 30px 70px rgba(15, 25, 35, 0.28);
+  animation: arr-card-in 0.6s cubic-bezier(0.2, 1.5, 0.4, 1) both;
+}
+.egg-chomp { height: 110px; width: auto; margin: 4px auto 8px; display: block; transform-origin: 50% 70%; animation: egg-chomp 0.32s ease-in-out 7; }
+.egg-chomp.done { animation: egg-happy 0.6s cubic-bezier(0.2, 1.6, 0.4, 1) both; height: 80px; }
+@keyframes egg-chomp {
+  0%, 100% { transform: scale(1, 1); }
+  50% { transform: scale(1.12, 0.82) rotate(-3deg); }
+}
+@keyframes egg-happy { 0% { transform: scale(0.8); } 60% { transform: scale(1.12) rotate(4deg); } 100% { transform: none; } }
+.egg-chew-text { font-size: 26px; font-weight: 800; color: var(--brand); }
+.egg-chew-text span { animation: egg-dot 0.9s infinite; }
+.egg-chew-text span:nth-child(2) { animation-delay: 0.15s; }
+.egg-chew-text span:nth-child(3) { animation-delay: 0.3s; }
+@keyframes egg-dot { 0%, 100% { opacity: 0.2; } 50% { opacity: 1; } }
+.egg-idea { animation: arr-name 0.4s ease both; }
+.egg-title { font-size: 20px; font-weight: 700; margin: 4px 0 6px; line-height: 1.25; }
+.egg-sub { font-size: 14px; color: var(--fg-2); }
+.egg-actions { display: flex; gap: 8px; margin-top: 16px; }
+.egg-actions button { flex: 1; }
+.egg-hello { position: relative; padding-top: 30px; }
+.egg-avatar {
+  width: 72px; height: 72px; margin: 0 auto 14px; border-radius: 50%;
+  display: grid; place-items: center; font-size: 32px; font-weight: 800; color: #fff;
+  background: linear-gradient(135deg, var(--brand), #f5b83d);
+  animation: egg-happy 0.7s 0.15s cubic-bezier(0.2, 1.6, 0.4, 1) both;
+}
+.egg-wave { position: absolute; top: 18px; right: calc(50% - 58px); font-size: 30px; transform-origin: 70% 80%; animation: egg-wave 1.4s 0.4s ease-in-out 2; }
+@keyframes egg-wave { 0%, 60%, 100% { transform: rotate(0); } 10%, 30% { transform: rotate(18deg); } 20%, 40% { transform: rotate(-10deg); } }
+.egg-msg { font-size: 17px; font-weight: 600; line-height: 1.4; }
+@media (prefers-reduced-motion: reduce) {
+  .egg-rain img { display: none; }
+  .egg-chomp, .egg-avatar, .egg-wave, .egg-rain-title { animation: none !important; }
+}

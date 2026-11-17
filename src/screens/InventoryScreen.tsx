@@ -1,4 +1,5 @@
 import { ClearButton } from '../components/ClearButton'
+import { useEasterEgg } from '../components/EasterEggs'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { useStore } from '../data/store'
 import { kioskEnabled, KIOSK_IDLE } from '../lib/kiosk'
@@ -43,6 +44,7 @@ export function InventoryScreen({
   const spent = useMemo(() => budgetSummary(expenses, budget).spent, [expenses, budget])
   const toast = useToast()
   const [search, setSearch] = useState('')
+  useEasterEgg(search)
   // Indice de glissement : animation jouée une seule fois, à la première visite.
   const [swipeHintSeen, setSwipeHintSeen] = useState(() => {
     try {

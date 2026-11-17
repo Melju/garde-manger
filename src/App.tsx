@@ -34,6 +34,7 @@ import { splitSize, consumeFraction, remainingLabel } from './lib/contenance'
 import { DuplicatesScreen } from './screens/DuplicatesScreen'
 import { UpdateBanner } from './components/UpdateBanner'
 import { ArrivalsPopup } from './components/ArrivalsPopup'
+import { EasterEggs } from './components/EasterEggs'
 import { KioskMode } from './components/KioskMode'
 import { ScanConsumeSheet, type ConsumeChoice } from './components/ScanConsumeSheet'
 import type { FamilyMember, Product, ProductInput, Recipe } from './types'
@@ -268,6 +269,13 @@ export function App() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [auth.ready, auth.user?.id, auth.householdId])
 
+  // Œuf de Pâques « j'ai faim » : ouvrir la recette proposée (hook avant tout retour anticipé).
+  useEffect(() => {
+    const on = (e: Event) => setStack((st) => [...st, { name: 'recipe-detail', recipe: (e as CustomEvent).detail }])
+    window.addEventListener('miamm-open-recipe', on)
+    return () => window.removeEventListener('miamm-open-recipe', on)
+  }, [])
+
   // On attend que l'auth soit résolue (évite d'afficher « local » un bref instant
   // avant la bascule en cloud) et que les données soient chargées.
   if (!auth.ready || loading)
@@ -332,6 +340,7 @@ export function App() {
 
       <UpdateBanner />
       <ArrivalsPopup />
+      <EasterEggs />
       <KioskMode onIdle={kioskIdle} />
       <main className={`app${!top && add ? ' with-fab' : ''} wide`}>
         {!top && <InstallPrompt />}
