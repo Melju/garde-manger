@@ -33,6 +33,7 @@ import { supabase } from './data/supabaseClient'
 import { splitSize, consumeFraction, remainingLabel } from './lib/contenance'
 import { DuplicatesScreen } from './screens/DuplicatesScreen'
 import { UpdateBanner } from './components/UpdateBanner'
+import { ArrivalsPopup } from './components/ArrivalsPopup'
 import { KioskMode } from './components/KioskMode'
 import { ScanConsumeSheet, type ConsumeChoice } from './components/ScanConsumeSheet'
 import type { FamilyMember, Product, ProductInput, Recipe } from './types'
@@ -330,6 +331,7 @@ export function App() {
       </aside>
 
       <UpdateBanner />
+      <ArrivalsPopup />
       <KioskMode onIdle={kioskIdle} />
       <main className={`app${!top && add ? ' with-fab' : ''} wide`}>
         {!top && <InstallPrompt />}

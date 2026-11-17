@@ -323,6 +323,23 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     for (const table of SYNC_TABLES) {
       channel.on('postgres_changes', { event: '*', schema: 'public', table }, refresh)
     }
+    // Ajouts au stock faits par un AUTRE membre : on les regroupe (un retour de courses = un lot)
+    // et on prévient l'écran (animation d'arrivée).
+    const me = auth.user?.id
+    let arrivals: { name: string; category: string; by: string }[] = []
+    let arrivalTimer: ReturnType<typeof setTimeout> | undefined
+    channel.on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'products' }, (payload) => {
+      const row = payload.new as { name?: string; category?: string; created_by?: string | null; household_id?: string }
+      if (!row?.name || !row.created_by || row.created_by === me) return
+      if (row.household_id && row.household_id !== auth.householdId) return
+      arrivals.push({ name: row.name, category: row.category ?? 'autre', by: row.created_by })
+      clearTimeout(arrivalTimer)
+      arrivalTimer = setTimeout(() => {
+        const batch = arrivals
+        arrivals = []
+        window.dispatchEvent(new CustomEvent('miamm-arrivals', { detail: batch }))
+      }, 1500)
+    })
     channel.subscribe()
     // Filet de sécurité : mobile en veille ou réseau coupé = WebSocket perdu, on rattrape au retour.
     const onVisible = () => {
@@ -332,11 +349,12 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     window.addEventListener('online', refresh)
     return () => {
       clearTimeout(timer)
+      clearTimeout(arrivalTimer)
       document.removeEventListener('visibilitychange', onVisible)
       window.removeEventListener('online', refresh)
       sb.removeChannel(channel)
     }
-  }, [cloud, auth.householdId, loadAll])
+  }, [cloud, auth.householdId, auth.user?.id, loadAll])
 
   const allNotifications = useMemo(
     () =>

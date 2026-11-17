@@ -3067,3 +3067,67 @@ html.kiosk .product-list.tiles .product-icon > svg { width: 38%; height: 38%; }
 .swipe-wrapper.grp.is-expired { border-left-color: color-mix(in srgb, var(--danger) 45%, var(--border)); }
 .product-list.tiles .swipe-wrapper.grp.is-expired { box-shadow: 0 0 0 2px color-mix(in srgb, var(--danger) 45%, var(--border)); }
 .swipe-wrapper.is-expired .product-item { background: color-mix(in srgb, var(--danger) 7%, var(--surface)); }
+
+/* Popup « X vient d'ajouter » (ajouts d'un autre membre, en direct). */
+.arrivals {
+  position: fixed;
+  top: calc(env(safe-area-inset-top, 0px) + 12px);
+  left: 50%;
+  width: min(380px, calc(100vw - 24px));
+  transform: translateX(-50%);
+  z-index: 320;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 18px;
+  box-shadow: 0 18px 40px rgba(20, 30, 40, 0.18), 0 2px 6px rgba(20, 30, 40, 0.08);
+  padding: 14px 14px 10px;
+  cursor: pointer;
+  animation: arrivals-in 0.5s cubic-bezier(0.22, 1.25, 0.36, 1) both;
+}
+.arrivals.leaving { animation: arrivals-out 0.35s ease-in both; }
+@keyframes arrivals-in {
+  from { opacity: 0; transform: translate(-50%, -40px) scale(0.92); }
+  to { opacity: 1; transform: translate(-50%, 0) scale(1); }
+}
+@keyframes arrivals-out {
+  to { opacity: 0; transform: translate(-50%, -30px) scale(0.96); }
+}
+.arrivals-head { display: flex; align-items: center; gap: 12px; margin-bottom: 8px; }
+.arrivals-head strong { display: block; font-size: 15px; }
+.arrivals-head span { font-size: 13px; color: var(--fg-2); }
+.arrivals-bag {
+  width: 40px; height: 40px; flex: none;
+  display: grid; place-items: center;
+  border-radius: 12px;
+  background: var(--brand); color: #fff;
+  animation: arrivals-bag 0.9s 0.3s ease-in-out both;
+}
+.arrivals-bag svg { width: 22px; height: 22px; }
+@keyframes arrivals-bag {
+  0%, 100% { transform: rotate(0); }
+  25% { transform: rotate(-12deg) scale(1.08); }
+  50% { transform: rotate(9deg) scale(1.08); }
+  75% { transform: rotate(-4deg); }
+}
+.arrivals-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 2px; }
+.arrivals-list li {
+  display: flex; align-items: center; gap: 10px;
+  padding: 5px 2px;
+  font-size: 14px;
+  animation: arrivals-item 0.4s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+@keyframes arrivals-item {
+  from { opacity: 0; transform: translateY(-8px); }
+  to { opacity: 1; transform: none; }
+}
+.arrivals-ic { width: 28px; height: 28px; flex: none; display: grid; place-items: center; border-radius: 8px; }
+.arrivals-ic svg { width: 16px; height: 16px; }
+.arrivals-name { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.arrivals-count { font-weight: 600; color: var(--fg-2); font-size: 13px; }
+.arrivals-more { color: var(--fg-2); font-size: 13px; padding-left: 40px !important; }
+html.kiosk .arrivals { width: min(460px, calc(100vw - 48px)); top: 24px; }
+html.kiosk .arrivals-head strong { font-size: 18px; }
+html.kiosk .arrivals-list li { font-size: 16px; }
+@media (prefers-reduced-motion: reduce) {
+  .arrivals, .arrivals.leaving, .arrivals-bag, .arrivals-list li { animation-duration: 0.01ms; animation-delay: 0ms; }
+}
