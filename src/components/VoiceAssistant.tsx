@@ -48,6 +48,8 @@ const IS_IOS =
   typeof navigator !== 'undefined' &&
   (/iP(hone|ad|od)/.test(navigator.userAgent) || (navigator.userAgent.includes('Mac') && 'ontouchend' in document))
 export const VOICE_SUPPORTED = !!SR && !IS_IOS
+/** Passe à true si le navigateur refuse la dictée (service indisponible) : on bascule sur la saisie. */
+let voiceBroken = false
 
 const toBase = (v: number, u: string) => {
   const l = u.toLowerCase()
@@ -95,7 +97,8 @@ export function VoiceAssistant() {
   }
 
   const listen = () => {
-    if (!VOICE_SUPPORTED) {
+    setError('')
+    if (!VOICE_SUPPORTED || voiceBroken) {
       inputRef.current?.focus()
       return
     }
@@ -109,20 +112,39 @@ export function VoiceAssistant() {
       for (let i = 0; i < e.results.length; i++) t += e.results[i][0].transcript
       setText(t)
     }
-    rec.onerror = () => setListening(false)
+    rec.onerror = (e: any) => {
+      setListening(false)
+      const code = e?.error ?? ''
+      setError(
+        code === 'not-allowed'
+          ? 'Accès au micro refusé : autorise le micro pour ce site dans les réglages du navigateur.'
+          : code === 'no-speech'
+            ? 'Je n’ai rien entendu. Touche le micro et réessaie.'
+            : code === 'audio-capture'
+              ? 'Aucun micro détecté sur cet appareil.'
+              : code === 'network'
+                ? 'La reconnaissance vocale ne répond pas (réseau). Écris ta phrase à la place.'
+                : code === 'aborted'
+                  ? ''
+                  : 'La dictée n’est pas disponible ici : écris ta phrase ou utilise le micro du clavier.',
+      )
+      if (code === 'service-not-allowed' || code === 'language-not-supported') voiceBroken = true
+      if (code && code !== 'aborted' && code !== 'no-speech') setTimeout(() => inputRef.current?.focus(), 50)
+    }
     // Fin de phrase (silence) : on envoie directement.
     rec.onend = () => {
       setListening(false)
       recRef.current = null
-      if (textRef.current.trim()) void understand(textRef.current)
+      if (textRef.current.trim()) void understandRef.current(textRef.current)
     }
     recRef.current = rec
     setText('')
     try {
       rec.start()
       setListening(true)
-    } catch {
+    } catch (e) {
       setListening(false)
+      setError('Impossible de démarrer le micro : ' + (e instanceof Error ? e.message : 'erreur inconnue'))
     }
   }
 
@@ -135,7 +157,7 @@ export function VoiceAssistant() {
       setRows([])
       setUnknown([])
       setError('')
-      if (auto && VOICE_SUPPORTED) setTimeout(listen, 120)
+      if (auto && VOICE_SUPPORTED && !voiceBroken) listen()
       else setTimeout(() => inputRef.current?.focus(), 150)
     }
     window.addEventListener('miamm-voice', on)
@@ -143,6 +165,8 @@ export function VoiceAssistant() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
+  const understandRef = useRef<(said: string) => Promise<void>>(async () => {})
+  understandRef.current = (said: string) => understand(said)
   async function understand(said: string) {
     stopRec()
     const phrase = said.trim()
@@ -308,7 +332,7 @@ export function VoiceAssistant() {
                 ? 'Je regarde ton stock…'
                 : listening
                   ? 'Je t’écoute…'
-                  : VOICE_SUPPORTED
+                  : VOICE_SUPPORTED && !voiceBroken
                     ? 'Touche le micro et parle'
                     : 'Écris ou dicte avec le micro du clavier'}
             </div>
