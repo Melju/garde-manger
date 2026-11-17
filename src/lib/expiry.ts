@@ -1,4 +1,5 @@
 import type { Product } from '../types'
+import { isDryStaple } from './dryStaple'
 import { normalize } from './productIcon'
 
 /** Statut de péremption d'un produit. */
@@ -68,6 +69,8 @@ export function expiryStatus(product: Product, now: Date = new Date()): ExpirySt
     if (days <= 14) return 'soon'
     return 'ok'
   }
+  // Épicerie sèche / conserves : une DDM dépassée ne compte plus (on ne suit pas ces dates).
+  if (product.dateType !== 'dlc' && days < 0 && isDryStaple(product.name, product.category)) return 'none'
   // DDM (« à consommer de préférence ») : pas de danger une fois la date passée.
   if (product.dateType === 'ddm') {
     if (days < 0) return 'still-good'
@@ -85,6 +88,7 @@ export function expiryStatus(product: Product, now: Date = new Date()): ExpirySt
 export function expiryLabel(product: Product, now: Date = new Date()): string {
   const days = daysUntilExpiry(product, now)
   if (days === null) return '—'
+  if (product.dateType !== 'dlc' && days < 0 && isDryStaple(product.name, product.category)) return '—'
   if (isFrozen(product) && days < 0) {
     return days >= -frozenGraceDays(product) ? `Encore bon (${Math.abs(days)}j)` : `Périmé (${Math.abs(days)}j)`
   }

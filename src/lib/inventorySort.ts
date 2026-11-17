@@ -38,8 +38,8 @@ export function sortProducts(list: Product[], sort: InventorySort): Product[] {
   const arr = [...list]
   switch (sort) {
     case 'expiry': {
-      // Périmés d'abord, puis « encore bon » (DDM ou congelé dépassé), puis le reste par date ; sans date à la fin.
-      const rank: Record<ExpiryStatus, number> = { expired: 0, 'still-good': 1, urgent: 2, soon: 2, ok: 2, none: 3 }
+      // Périmés d'abord, puis le reste par date, puis les « encore bon » ; sans date à la fin.
+      const rank: Record<ExpiryStatus, number> = { expired: 0, urgent: 1, soon: 1, ok: 1, 'still-good': 2, none: 3 }
       const st = new Map(arr.map((p) => [p.id, expiryStatus(p)]))
       return arr.sort(
         (a, b) =>

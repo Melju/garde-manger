@@ -3,6 +3,63 @@
 // server/push-digest.ts
 import webpush from "web-push";
 
+// src/lib/dryStaple.ts
+var WORDS = [
+  "pates",
+  "pate seche",
+  "spaghetti",
+  "spaghettis",
+  "fusilli",
+  "penne",
+  "macaroni",
+  "macaronis",
+  "tagliatelle",
+  "tagliatelles",
+  "farfalle",
+  "coquillettes",
+  "linguine",
+  "capellini",
+  "torsades",
+  "coquillages",
+  "vermicelle",
+  "vermicelles",
+  "lasagne seche",
+  "nouilles",
+  "noodles",
+  "ramen",
+  "udon",
+  "soba",
+  "riz",
+  "semoule",
+  "couscous",
+  "quinoa",
+  "boulgour",
+  "ebly",
+  "polenta",
+  "lentilles",
+  "pois casses",
+  "haricots secs",
+  "farine",
+  "sucre",
+  "cassonade",
+  "sel",
+  "gros sel",
+  "flocons d avoine",
+  "avoine",
+  "maizena",
+  "fecule",
+  "chapelure",
+  "tapioca"
+];
+var norm = (s) => " " + s.normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase().replace(/[^a-z0-9]+/g, " ").trim() + " ";
+function isDryStaple(name, category) {
+  if (category === "conserves") return true;
+  if (category && category !== "epicerie") return false;
+  const n = norm(name);
+  if (/ (feuillet|bris|sabl|pizza|a tartiner|fraiche)/.test(n)) return false;
+  return WORDS.some((w) => n.includes(` ${w} `));
+}
+
 // src/lib/productIcon.ts
 function normalize(s) {
   return s.toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "").replace(/œ/g, "oe").replace(/[^a-z0-9]+/g, " ").trim();
@@ -49,6 +106,7 @@ function expiryStatus(product, now = /* @__PURE__ */ new Date()) {
     if (days <= 14) return "soon";
     return "ok";
   }
+  if (product.dateType !== "dlc" && days < 0 && isDryStaple(product.name, product.category)) return "none";
   if (product.dateType === "ddm") {
     if (days < 0) return "still-good";
     if (days <= 3) return "soon";

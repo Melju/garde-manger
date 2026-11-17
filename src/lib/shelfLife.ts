@@ -1,4 +1,5 @@
 import type { Category, Conservation } from '../types'
+import { isDryStaple } from './dryStaple'
 import { addDays, toISODate } from './dates'
 import { learnedFor } from './learnedShelf'
 import type { DateType } from '../types'
@@ -187,6 +188,8 @@ export function estimatedExpiryISO(
   conservation: Conservation = 'frais',
   category?: Category,
 ): string | null {
+  // Épicerie sèche / conserves : pas de date estimée (on ne suit pas leur DDM).
+  if (conservation !== 'congele' && isDryStaple(name, category)) return null
   const est = estimateShelfLife(name, conservation, category)
   if (!est) return null
   return toISODate(addDays(new Date(), est.days))
