@@ -3346,3 +3346,6 @@ html.kiosk .arr-name { font-size: 24px; }
 .more-grid .menu-desc { font-size: 12.5px; line-height: 1.3; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
 .more-grid .menu-badge { position: absolute; top: 12px; right: 12px; }
 @media (min-width: 900px) { .more-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+
+/* Courses : de l'air sous la zone collante */
+.store-bar { margin-top: 16px !important; }
