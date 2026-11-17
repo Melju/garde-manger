@@ -2,7 +2,7 @@ import { ClearButton } from '../components/ClearButton'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { useStore } from '../data/store'
 import { kioskEnabled, KIOSK_IDLE } from '../lib/kiosk'
-import { defaultSort, setDefaultSort, sortProducts, SORT_OPTIONS, type InventorySort } from '../lib/inventorySort'
+import { defaultSort, sortProducts, SORT_OPTIONS, type InventorySort } from '../lib/inventorySort'
 import { Select } from '../components/Select'
 import { useToast } from '../components/Toast'
 import { Icon } from '../components/Icon'
@@ -160,8 +160,7 @@ export function InventoryScreen({
   const urgent = useMemo(() => urgentCount(products), [products])
 
   // Recherche unique : nom, marque, catégorie ou magasin (tous les mots saisis doivent correspondre quelque part).
-  const [defSort, setDefSort] = useState<InventorySort>(defaultSort)
-  const [sort, setSort] = useState<InventorySort>(defSort)
+  const [sort, setSort] = useState<InventorySort>(defaultSort)
   const filtered = useMemo(() => {
     const words = normalize(search).split(/\s+/).filter(Boolean)
     if (!words.length) return sortProducts(products, sort)
@@ -454,11 +453,6 @@ export function InventoryScreen({
           options={SORT_OPTIONS.map((o) => ({ value: o.value, label: o.label }))}
         />
       </div>
-      {sort !== defSort && (
-        <button className="sort-default-link" onClick={() => (setDefaultSort(sort), setDefSort(sort), toast('Tri par défaut enregistré'))}>
-          Garder « {SORT_OPTIONS.find((o) => o.value === sort)?.label} » comme tri par défaut
-        </button>
-      )}
 
       </div>
 
