@@ -266,11 +266,22 @@ export function ShoppingScreen({ addOpen, onCloseAdd }: ShoppingScreenProps) {
     const inList = new Set(shopping.filter((it) => !it.checked).map((it) => it.name.toLowerCase()))
     if (!q) {
       if (!quickFocus) return []
-      return catalog.filter((it) => it.count > 0 && !inList.has(it.name.toLowerCase())).slice(0, 12)
+      // Fréquence = achats appris (liste de courses) + passages dans l'historique du stock.
+      const hist = new Map<string, number>()
+      for (const h of history) {
+        const m = h.label.match(/^(.*?)\s(ajouté|consommé)/)
+        if (m) hist.set(m[1].trim().toLowerCase(), (hist.get(m[1].trim().toLowerCase()) ?? 0) + 1)
+      }
+      return catalog
+        .map((it) => ({ it, score: it.count * 3 + (hist.get(it.name.toLowerCase()) ?? 0) }))
+        .filter((x) => x.score > 0 && !inList.has(x.it.name.toLowerCase()))
+        .sort((a, b) => b.score - a.score)
+        .slice(0, 12)
+        .map((x) => x.it)
     }
     if (q.length < 2) return []
     return catalog.filter((it) => it.name.toLowerCase().includes(q) && !inList.has(it.name.toLowerCase())).slice(0, 8)
-  }, [catalog, quick, shopping, quickFocus])
+  }, [catalog, quick, shopping, quickFocus, history])
 
   // Toucher une suggestion remplit le champ : la roulette s'adapte, puis on
   // choisit la quantité et on valide avec « + ». (Pas d'ajout direct.)
