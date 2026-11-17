@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useState, type ReactNode } from 'react'
 import { createPortal } from 'react-dom'
 
 export interface SelectOption {
@@ -16,10 +16,12 @@ interface SelectProps {
   title?: string
   className?: string
   ariaLabel?: string
+  /** Contenu du bouton à la place du libellé (ex. icône + libellé masquable). */
+  renderTrigger?: (label: string) => ReactNode
 }
 
 /** Liste déroulante maison (feuille de choix en bas d'écran) : remplace le <select> natif. */
-export function Select({ value, onChange, options, placeholder, title, className, ariaLabel }: SelectProps) {
+export function Select({ value, onChange, options, placeholder, title, className, ariaLabel, renderTrigger }: SelectProps) {
   const [open, setOpen] = useState(false)
   const current = options.find((o) => o.value === value)
 
@@ -40,7 +42,7 @@ export function Select({ value, onChange, options, placeholder, title, className
         aria-expanded={open}
         onClick={() => setOpen(true)}
       >
-        {current?.label ?? placeholder ?? value}
+        {renderTrigger ? renderTrigger(current?.label ?? placeholder ?? value) : (current?.label ?? placeholder ?? value)}
       </button>
       {open && createPortal(
         <div className="cselect-overlay" onClick={() => setOpen(false)}>

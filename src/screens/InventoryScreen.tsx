@@ -453,6 +453,12 @@ export function InventoryScreen({
           value={sort}
           onChange={(v) => setSort(v as InventorySort)}
           options={SORT_OPTIONS.map((o) => ({ value: o.value, label: o.label }))}
+          renderTrigger={(label) => (
+            <>
+              <Icon name="sliders" />
+              <span className="sort-label">{label}</span>
+            </>
+          )}
         />
       </div>
 

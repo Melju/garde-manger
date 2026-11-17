@@ -3026,7 +3026,14 @@ html.modal-open body { position: fixed; left: 0; right: 0; width: 100%; }
 .sort-default-link { display: block; margin: -8px 20px 10px auto; border: none; background: none; color: var(--brand); font: inherit; font-size: 12.5px; font-weight: 700; cursor: pointer; text-align: right; }
 .settings-select { flex: 0 0 auto; max-width: 52%; }
 .search-row .sort-select, .settings-select { border: 1px solid var(--border); background: var(--surface); color: var(--fg); font-weight: 600; min-height: 46px; padding: 0 14px; border-radius: 14px; }
-.search-row .sort-select::before { content: '⇅ '; color: var(--muted); }
+.search-row .sort-select { display: inline-flex; align-items: center; gap: 7px; }
+.search-row .sort-select svg { width: 18px; height: 18px; flex: none; color: var(--muted); stroke: currentColor; }
+.search-row .sort-select .sort-label { overflow: hidden; text-overflow: ellipsis; }
+@media (max-width: 640px) {
+  .search-row .sort-select { width: 46px; padding: 0; justify-content: center; }
+  .search-row .sort-select .sort-label { display: none; }
+  .search-row .sort-select svg { width: 20px; height: 20px; color: var(--fg); }
+}
 
 /* Mode tablette : pas de choix du magasin dans les courses (la tablette reste à la maison) */
 html.kiosk .store-bar, html.kiosk .store-msg, html.kiosk .store-picker { display: none !important; }
