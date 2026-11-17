@@ -1,5 +1,6 @@
 import type { Product } from '../types'
 import { CATEGORIES } from '../types'
+import { expiryStatus, type ExpiryStatus } from './expiry'
 
 export type InventorySort = 'expiry' | 'category' | 'added' | 'name'
 
@@ -36,12 +37,17 @@ const catIndex = new Map(CATEGORIES.map((c, i) => [c.id, i]))
 export function sortProducts(list: Product[], sort: InventorySort): Product[] {
   const arr = [...list]
   switch (sort) {
-    case 'expiry':
-      // Les plus urgents d'abord ; sans date, en fin de liste.
-      return arr.sort((a, b) => {
-        if (!a.expiryDate !== !b.expiryDate) return a.expiryDate ? -1 : 1
-        return (a.expiryDate ?? '').localeCompare(b.expiryDate ?? '') || byName(a, b)
-      })
+    case 'expiry': {
+      // Périmés d'abord, puis « encore bon » (DDM ou congelé dépassé), puis le reste par date ; sans date à la fin.
+      const rank: Record<ExpiryStatus, number> = { expired: 0, 'still-good': 1, urgent: 2, soon: 2, ok: 2, none: 3 }
+      const st = new Map(arr.map((p) => [p.id, expiryStatus(p)]))
+      return arr.sort(
+        (a, b) =>
+          rank[st.get(a.id)!] - rank[st.get(b.id)!] ||
+          (a.expiryDate ?? '').localeCompare(b.expiryDate ?? '') ||
+          byName(a, b),
+      )
+    }
     case 'category':
       return arr.sort((a, b) => (catIndex.get(a.category) ?? 99) - (catIndex.get(b.category) ?? 99) || byName(a, b))
     case 'name':
