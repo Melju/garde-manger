@@ -62,6 +62,23 @@ export function voskActive() {
 }
 
 const isWake = (t: string) => /\bmiam\b/.test(t.toLowerCase())
+let ignoreWakeUntil = 0
+
+/** Ramène le son à 16 kHz : 3 fois moins de calcul pour le moteur (le modèle est entraîné en 16 kHz). */
+const TARGET = 16000
+function downsample(input: Float32Array, rate: number): Float32Array {
+  if (rate === TARGET) return input
+  const ratio = rate / TARGET
+  const out = new Float32Array(Math.floor(input.length / ratio))
+  for (let i = 0; i < out.length; i++) {
+    const start = Math.floor(i * ratio)
+    const end = Math.min(input.length, Math.floor((i + 1) * ratio))
+    let sum = 0
+    for (let j = start; j < end; j++) sum += input[j]
+    out[i] = sum / Math.max(1, end - start)
+  }
+  return out
+}
 
 function finishCommand(text: string) {
   clearTimeout(silenceTimer)
@@ -84,21 +101,28 @@ export async function startVosk(): Promise<boolean> {
       audio: { echoCancellation: true, noiseSuppression: true, channelCount: 1 },
     })
     ctx = new AudioContext()
-    const rate = ctx.sampleRate
+    const rate = TARGET
 
     wakeRec = new model.KaldiRecognizer(rate, JSON.stringify(['miam miam', 'miam', '[unk]']))
+    const triggerWake = () => {
+      if (mode !== 'wake' || paused || Date.now() < ignoreWakeUntil) return
+      mode = 'command'
+      // On vide le reconnaisseur de réveil pour ne pas redéclencher sur le même « miam ».
+      ignoreWakeUntil = Date.now() + 1500
+      wakeRec?.retrieveFinalResult()
+      emit({ type: 'wake' })
+      armCommandTimeout()
+    }
+    // Réveil dès le résultat partiel (sans attendre la fin de la phrase).
     wakeRec.on('partialresult', (m: any) => {
       const p = (m.result?.partial ?? '').trim()
       if (p) emit({ type: 'heard', text: p })
+      if (/\bmiam\b/.test(p)) triggerWake()
     })
     wakeRec.on('result', (m: any) => {
       const t = (m.result?.text ?? '').trim()
       if (t) emit({ type: 'heard', text: t })
-      if (mode === 'wake' && !paused && isWake(m.result?.text ?? '')) {
-        mode = 'command'
-        emit({ type: 'wake' })
-        armCommandTimeout()
-      }
+      if (isWake(t)) triggerWake()
     })
     cmdRec = new model.KaldiRecognizer(rate)
     cmdRec.on('partialresult', (m: any) => {
@@ -109,7 +133,7 @@ export async function startVosk(): Promise<boolean> {
         emit({ type: 'partial', text: p })
         // Fin de phrase : 1,4 s sans nouveau mot.
         clearTimeout(silenceTimer)
-        silenceTimer = setTimeout(() => cmdRec?.retrieveFinalResult(), 1400)
+        silenceTimer = setTimeout(() => cmdRec?.retrieveFinalResult(), 1100)
       }
     })
     cmdRec.on('result', (m: any) => {
@@ -119,7 +143,7 @@ export async function startVosk(): Promise<boolean> {
     })
 
     const src = ctx.createMediaStreamSource(stream)
-    node = ctx.createScriptProcessor(4096, 1, 1)
+    node = ctx.createScriptProcessor(2048, 1, 1)
     node.onaudioprocess = (ev) => {
       // Niveau du micro (diagnostic), 5 fois par seconde.
       const now = Date.now()
@@ -132,8 +156,9 @@ export async function startVosk(): Promise<boolean> {
       }
       if (paused) return
       try {
-        if (mode === 'wake') wakeRec?.acceptWaveform(ev.inputBuffer)
-        else if (mode === 'command') cmdRec?.acceptWaveform(ev.inputBuffer)
+        const pcm = downsample(ev.inputBuffer.getChannelData(0), ev.inputBuffer.sampleRate)
+        if (mode === 'wake') wakeRec?.acceptWaveformFloat(pcm, TARGET)
+        else if (mode === 'command') cmdRec?.acceptWaveformFloat(pcm, TARGET)
       } catch {
         /* tampon perdu */
       }
