@@ -3426,3 +3426,7 @@ html.kiosk .product-list.tiles .product-icon > svg { width: 32cqw !important; ma
 .voice-answer p { margin: 0; font-size: 17px; font-weight: 600; line-height: 1.45; }
 .voice-answer-ico { width: 34px; height: 34px; flex: none; border-radius: 10px; background: var(--brand); display: grid; place-items: center; }
 .voice-answer-ico svg { width: 18px; height: 18px; stroke: #fff; color: #fff; }
+.voice-replay { display: flex; gap: 8px; align-items: flex-start; width: 100%; text-align: left; border: none; background: none; font: inherit; color: var(--fg); cursor: pointer; padding: 0; }
+.voice-replay svg, .voice-replay-ico svg { width: 18px; height: 18px; flex: none; color: var(--brand); stroke: currentColor; margin-top: 2px; }
+.voice-replay-ico { flex: none; border: none; background: var(--surface); border-radius: 10px; width: 34px; height: 34px; display: grid; place-items: center; cursor: pointer; }
+.voice-answer p { flex: 1; }

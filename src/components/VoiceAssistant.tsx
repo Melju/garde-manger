@@ -55,7 +55,11 @@ export const VOICE_SUPPORTED = !!SR && !IS_IOS && !IS_WEBVIEW
 /** Passe à true si le navigateur refuse la dictée (service indisponible) : on bascule sur la saisie. */
 let voiceBroken = false
 
-/** Lit une phrase à voix haute : Fully Kiosk (sa propre synthèse) ou le navigateur. */
+/**
+ * Lit une phrase à voix haute : Fully Kiosk (sa propre synthèse) ou le navigateur.
+ * Chrome Android avale parfois une phrase lancée juste après cancel(), ou tant que les voix
+ * ne sont pas chargées : on attend un peu dans ces deux cas.
+ */
 export function speak(text: string) {
   const t = text.trim()
   if (!t) return
@@ -68,16 +72,49 @@ export function speak(text: string) {
     }
     const synth = window.speechSynthesis
     if (!synth) return
-    synth.cancel()
-    const u = new SpeechSynthesisUtterance(t)
-    u.lang = 'fr-FR'
-    const fr = synth.getVoices().find((v) => v.lang?.toLowerCase().startsWith('fr'))
-    if (fr) u.voice = fr
-    u.rate = 1.05
-    synth.speak(u)
+    const go = () => {
+      const u = new SpeechSynthesisUtterance(t)
+      u.lang = 'fr-FR'
+      const voices = synth.getVoices()
+      const fr =
+        voices.find((v) => v.lang?.toLowerCase().startsWith('fr') && v.localService) ??
+        voices.find((v) => v.lang?.toLowerCase().startsWith('fr'))
+      if (fr) u.voice = fr
+      u.rate = 1.05
+      synth.resume()
+      synth.speak(u)
+    }
+    const wasBusy = synth.speaking || synth.pending
+    if (wasBusy) synth.cancel()
+    if (!synth.getVoices().length) {
+      let done = false
+      const once = () => {
+        if (done) return
+        done = true
+        synth.removeEventListener?.('voiceschanged', once)
+        go()
+      }
+      synth.addEventListener?.('voiceschanged', once)
+      setTimeout(once, 600)
+    } else setTimeout(go, wasBusy ? 150 : 0)
   } catch {
     /* pas de voix disponible */
   }
+}
+
+/** Chrome n'autorise la voix qu'après un geste : on « amorce » la synthèse au premier toucher. */
+if (typeof window !== 'undefined' && window.speechSynthesis) {
+  const prime = () => {
+    try {
+      const u = new SpeechSynthesisUtterance(' ')
+      u.volume = 0
+      window.speechSynthesis.speak(u)
+    } catch {
+      /* rien */
+    }
+    window.removeEventListener('pointerdown', prime, true)
+  }
+  window.addEventListener('pointerdown', prime, true)
 }
 
 const toBase = (v: number, u: string) => {
@@ -394,6 +431,11 @@ export function VoiceAssistant() {
                 <Icon name="sparkles" />
               </span>
               <p>{reply || 'Je n’ai pas su répondre. Reformule ?'}</p>
+              {reply && (
+                <button type="button" className="voice-replay-ico" onClick={() => speak(reply)} aria-label="Réécouter">
+                  <Icon name="volume" />
+                </button>
+              )}
             </div>
             <div className="voice-actions">
               <button
@@ -418,7 +460,12 @@ export function VoiceAssistant() {
               <Icon name="check" width={3} />
             </div>
             <div className="voice-done-title">C’est fait</div>
-            {reply && <div className="voice-reply">{reply}</div>}
+            {reply && (
+              <button type="button" className="voice-reply voice-replay" onClick={() => speak(reply)} title="Réécouter">
+                <Icon name="volume" />
+                {reply}
+              </button>
+            )}
             <div className="voice-rows">
               {doneLabels.map((l, i) => (
                 <div className="voice-row done" key={i}>
