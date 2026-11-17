@@ -8,6 +8,7 @@ import { defaultConservation, type Category, type Product } from '../types'
 import { useToast } from './Toast'
 import { Icon } from './Icon'
 import { kioskEnabled, wakeEnabled } from '../lib/kiosk'
+import { startVosk, stopVosk, onVosk, voskActive, listenCommand, cancelCommand, setVoskPaused } from '../lib/voskEngine'
 
 // ----- Types renvoyés par la fonction « voice » -----
 type Act =
@@ -63,6 +64,9 @@ let voiceBroken = false
 export function speak(text: string) {
   const t = text.trim()
   if (!t) return
+  // Le micro local se met en pause le temps de la phrase (sinon Miam miam s'entend lui-même).
+  setVoskPaused(true)
+  setTimeout(() => setVoskPaused(false), 1200 + t.length * 75)
   try {
     const fully = (window as any).fully
     if (fully?.textToSpeech) {
@@ -117,6 +121,8 @@ if (typeof window !== 'undefined' && window.speechSynthesis) {
   window.addEventListener('pointerdown', prime, true)
 }
 
+const canListen = () => voskActive() || (VOICE_SUPPORTED && !voiceBroken)
+
 const toBase = (v: number, u: string) => {
   const l = u.toLowerCase()
   return l === 'kg' || l === 'l' ? v * 1000 : l === 'cl' ? v * 10 : v
@@ -147,6 +153,7 @@ export function VoiceAssistant() {
   const inputRef = useRef<HTMLTextAreaElement>(null)
 
   const stopRec = () => {
+    if (voskActive()) cancelCommand()
     const r = recRef.current
     recRef.current = null
     setListening(false)
@@ -174,6 +181,11 @@ export function VoiceAssistant() {
 
   const listen = () => {
     setError('')
+    if (voskActive()) {
+      setText('')
+      if (listenCommand()) setListening(true)
+      return
+    }
     if (!VOICE_SUPPORTED || voiceBroken) {
       inputRef.current?.focus()
       return
@@ -238,11 +250,32 @@ export function VoiceAssistant() {
       setReply('')
       // « Miam miam, ajoute du lait » dit d'une traite : la commande est déjà là, on l'envoie.
       if (given) setTimeout(() => void understandRef.current(given), 0)
-      else if (auto && VOICE_SUPPORTED && !voiceBroken) listen()
+      else if (auto && canListen()) listen()
       else setTimeout(() => inputRef.current?.focus(), 150)
     }
     window.addEventListener('miamm-voice', on)
-    return () => window.removeEventListener('miamm-voice', on)
+    // Moteur local (tablette) : texte en direct, fin de phrase, mot de réveil.
+    const off = onVosk((e) => {
+      if (e.type === 'partial') setText(e.text ?? '')
+      else if (e.type === 'final') {
+        setListening(false)
+        if (e.text) void understandRef.current(e.text)
+        else setError('Je n’ai rien entendu. Touche le micro et réessaie.')
+      } else if (e.type === 'wake') {
+        setOpen(true)
+        setPhase('listen')
+        setText('')
+        setRows([])
+        setUnknown([])
+        setError('')
+        setReply('')
+        setListening(true)
+      }
+    })
+    return () => {
+      window.removeEventListener('miamm-voice', on)
+      off()
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
@@ -444,7 +477,7 @@ export function VoiceAssistant() {
                   clearTimeout(doneTimer.current)
                   setPhase('listen')
                   setText('')
-                  if (VOICE_SUPPORTED && !voiceBroken) listen()
+                  if (canListen()) listen()
                 }}
               >
                 Autre question
@@ -499,7 +532,7 @@ export function VoiceAssistant() {
                 ? 'Je regarde ton stock…'
                 : listening
                   ? 'Je t’écoute…'
-                  : VOICE_SUPPORTED && !voiceBroken
+                  : canListen()
                     ? 'Touche le micro et parle'
                     : 'Dicte avec le micro du clavier, puis Envoyer'}
             </div>
@@ -573,7 +606,7 @@ export function VoiceAssistant() {
                 onClick={() => {
                   setPhase('listen')
                   setRows([])
-                  if (VOICE_SUPPORTED) listen()
+                  if (canListen()) listen()
                 }}
               >
                 Recommencer
@@ -592,11 +625,8 @@ export function VoiceAssistant() {
 
 /**
  * Mot de réveil « Miam miam » (tablette en mode cuisine, option à activer).
- *
- * Chrome Android bipe à chaque démarrage de la reconnaissance vocale : on ne la lance donc pas en boucle.
- * L'app écoute le NIVEAU SONORE du micro en local (rien n'est envoyé, aucun bip) et ne démarre la
- * reconnaissance que quand quelqu'un parle. Le tout début de la phrase peut être perdu : un seul « miam »
- * entendu suffit, et ce qui suit est pris comme commande (« Miam miam, ajoute du lait »).
+ * Reconnaissance entièrement locale (Vosk) : pas de bip Android, rien d'envoyé tant qu'on ne parle pas
+ * à Miam miam. Fonctionne aussi dans Fully Kiosk si l'accès au micro y est autorisé.
  */
 export function WakeWord() {
   const [on, setOn] = useState(() => kioskEnabled() && wakeEnabled())
@@ -611,142 +641,9 @@ export function WakeWord() {
   }, [])
 
   useEffect(() => {
-    if (!on || !VOICE_SUPPORTED || !navigator.mediaDevices?.getUserMedia) return
-    let stopped = false
-    let stream: MediaStream | null = null
-    let ctx: AudioContext | null = null
-    let poll: ReturnType<typeof setInterval> | undefined
-    let rearm: ReturnType<typeof setTimeout> | undefined
-    let rec: any = null
-    let floor = 0.01 // bruit de fond, ajusté en continu
-    let loudSince = 0
-    let lastRec = 0
-    const norm = (t: string) =>
-      t.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-z' ]/g, ' ')
-    const WAKE = /\b(miam|myam|niam|mjam)\b/
-
-    const busy = () =>
-      !!document.querySelector('.voice-overlay') ||
-      document.visibilityState !== 'visible' ||
-      !!window.speechSynthesis?.speaking
-
-    const releaseMic = () => {
-      clearInterval(poll)
-      stream?.getTracks().forEach((t) => t.stop())
-      stream = null
-      void ctx?.close().catch(() => {})
-      ctx = null
-    }
-
-    // Écoute du niveau sonore, sans reconnaissance.
-    const arm = async () => {
-      if (stopped || stream) return
-      if (busy()) {
-        rearm = setTimeout(arm, 1500)
-        return
-      }
-      try {
-        stream = await navigator.mediaDevices.getUserMedia({
-          audio: { echoCancellation: true, noiseSuppression: true, autoGainControl: true },
-        })
-      } catch {
-        stopped = true // micro refusé : on n'insiste pas
-        return
-      }
-      if (stopped) return releaseMic()
-      ctx = new AudioContext()
-      const src = ctx.createMediaStreamSource(stream)
-      const an = ctx.createAnalyser()
-      an.fftSize = 1024
-      src.connect(an)
-      const buf = new Float32Array(an.fftSize)
-      poll = setInterval(() => {
-        if (busy()) {
-          // L'assistant prend le micro (ou Miam miam parle) : on le libère et on se réarme plus tard.
-          loudSince = 0
-          releaseMic()
-          rearm = setTimeout(arm, 1500)
-          return
-        }
-        an.getFloatTimeDomainData(buf)
-        let sum = 0
-        for (let i = 0; i < buf.length; i++) sum += buf[i] * buf[i]
-        const rms = Math.sqrt(sum / buf.length)
-        const now = Date.now()
-        if (rms > Math.max(floor * 3, 0.02)) {
-          if (!loudSince) loudSince = now
-          // Une voix (pas un claquement) : ~120 ms au-dessus du bruit de fond.
-          if (now - loudSince > 120 && now - lastRec > 3000) recognize()
-        } else {
-          loudSince = 0
-          floor = floor * 0.97 + rms * 0.03
-        }
-      }, 50)
-    }
-
-    // Reconnaissance (un bip) uniquement quand quelqu'un parle.
-    const recognize = () => {
-      lastRec = Date.now()
-      loudSince = 0
-      releaseMic() // le micro est rendu au navigateur pour la reconnaissance
-      rec = new SR()
-      rec.lang = 'fr-FR'
-      rec.continuous = false
-      rec.interimResults = false
-      rec.maxAlternatives = 3
-      let heard = '' // toutes les variantes, pour repérer « miam »
-      let best = '' // la variante la plus probable, pour la commande qui suit
-      rec.onresult = (e: any) => {
-        heard = ''
-        best = ''
-        for (let i = 0; i < e.results.length; i++) {
-          best += ' ' + e.results[i][0].transcript
-          for (let j = 0; j < e.results[i].length; j++) heard += ' ' + e.results[i][j].transcript
-        }
-      }
-      rec.onerror = () => {}
-      rec.onend = () => {
-        rec = null
-        const t = norm(heard)
-        const m = t.match(WAKE)
-        if (m && !stopped) {
-          // Ce qui suit le dernier « miam » est déjà la commande.
-          const after = !WAKE.test(norm(best)) ? '' : best.trim().replace(/^.*?\b(?:miam|myam|niam|mjam)\b[\s,.!-]*(?:(?:miam|myam|niam|mjam)\b[\s,.!-]*)*/i, '').trim()
-          openVoice({ autoListen: true, text: after.length > 3 ? after : '' })
-          rearm = setTimeout(arm, 2500)
-          return
-        }
-        rearm = setTimeout(arm, 600)
-      }
-      try {
-        rec.start()
-      } catch {
-        rec = null
-        rearm = setTimeout(arm, 2000)
-      }
-    }
-
-    // L'assistant ou une réponse parlée en cours : on attend, puis on se réarme.
-    const onVis = () => {
-      if (document.visibilityState === 'visible') void arm()
-      else releaseMic()
-    }
-    document.addEventListener('visibilitychange', onVis)
-    void arm()
-    return () => {
-      stopped = true
-      clearTimeout(rearm)
-      releaseMic()
-      try {
-        if (rec) {
-          rec.onend = null
-          rec.abort()
-        }
-      } catch {
-        /* déjà arrêté */
-      }
-      document.removeEventListener('visibilitychange', onVis)
-    }
+    if (!on || !navigator.mediaDevices?.getUserMedia) return
+    void startVosk()
+    return () => stopVosk()
   }, [on])
 
   return null

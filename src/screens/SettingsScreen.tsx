@@ -7,7 +7,6 @@ import { addBrand, getCustomBrands, removeCustomBrand, renameCustomBrand } from 
 import { normalize } from '../lib/productIcon'
 import { addStore, getStores, removeStore, renameStore } from '../lib/stores'
 import { kioskEnabled, setKiosk, wakeEnabled, setWake } from '../lib/kiosk'
-import { VOICE_SUPPORTED } from '../components/VoiceAssistant'
 import { defaultSort, setDefaultSort, SORT_OPTIONS, type InventorySort } from '../lib/inventorySort'
 import { Select } from '../components/Select'
 import { pushState, enablePush, disablePush, testPush, shoppingNotifEnabled, setShoppingNotif, type PushState } from '../lib/push'
@@ -205,14 +204,13 @@ export function SettingsScreen({ onBack }: SettingsScreenProps) {
             }}
           />
         </div>
-        {kiosk && VOICE_SUPPORTED && (
+        {kiosk && !!navigator.mediaDevices?.getUserMedia && (
           <div className="setting-row">
             <div className="setting-text">
               <div className="setting-title">Réveil vocal « Miam miam »</div>
               <div className="setting-desc">
-                Dis « Miam miam » (ou « Miam miam, ajoute du lait ») sans toucher l’écran. L’app surveille seulement le
-                niveau sonore sur la tablette et ne lance la reconnaissance, qui passe par le service vocal du
-                navigateur, que quand quelqu’un parle.
+                Dis « Miam miam », attends le micro, puis ta demande. La reconnaissance se fait sur la tablette (pas de
+                bip, rien d’envoyé) ; le modèle vocal (40 Mo) se télécharge une fois à l’activation.
               </div>
             </div>
             <Toggle
