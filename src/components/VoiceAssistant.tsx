@@ -47,7 +47,9 @@ const SR: any =
 const IS_IOS =
   typeof navigator !== 'undefined' &&
   (/iP(hone|ad|od)/.test(navigator.userAgent) || (navigator.userAgent.includes('Mac') && 'ontouchend' in document))
-export const VOICE_SUPPORTED = !!SR && !IS_IOS
+// Navigateurs intégrés Android (WebView : Fully Kiosk, applis) : l'API existe parfois mais ne reconnaît rien.
+const IS_WEBVIEW = typeof navigator !== 'undefined' && (/; wv\)/.test(navigator.userAgent) || /FullyKiosk|Fully Kiosk/i.test(navigator.userAgent) || 'fully' in window)
+export const VOICE_SUPPORTED = !!SR && !IS_IOS && !IS_WEBVIEW
 /** Passe à true si le navigateur refuse la dictée (service indisponible) : on bascule sur la saisie. */
 let voiceBroken = false
 
@@ -334,7 +336,7 @@ export function VoiceAssistant() {
                   ? 'Je t’écoute…'
                   : VOICE_SUPPORTED && !voiceBroken
                     ? 'Touche le micro et parle'
-                    : 'Écris ou dicte avec le micro du clavier'}
+                    : 'Dicte avec le micro du clavier, puis Envoyer'}
             </div>
             <textarea
               ref={inputRef}
