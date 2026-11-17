@@ -484,7 +484,7 @@ export function InventoryScreen({
                   onWaste={handleWaste}
                   onConsumePortion={handleConsumePortion}
                   onConsumeSachets={handleConsumeSachets}
-                  demo={!swipeHintSeen && idx === 0}
+                  demo={!swipeHintSeen && idx === 0 && !window.matchMedia?.('(hover: hover) and (pointer: fine)').matches}
                   onDemoDone={doneSwipeHint}
                 />
               ),

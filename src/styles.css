@@ -2819,3 +2819,26 @@ body.is-selecting .add-bar { display: none; }
 .lss-reason { font-size: 12.5px; color: var(--muted); }
 .lss-go { width: 100%; min-height: 50px; }
 .update-banner { position: fixed; left: 50%; top: calc(env(safe-area-inset-top, 0px) + 10px); transform: translateX(-50%); z-index: 400; border: none; background: var(--brand); color: #fff; font: inherit; font-size: 14px; padding: 11px 18px; border-radius: 999px; box-shadow: 0 6px 20px rgba(0,0,0,.18); cursor: pointer; white-space: nowrap; }
+
+/* Navigation à la souris : boutons d'action au lieu des glissements */
+.swipe-wrapper.mouse .swipe-actions { display: none; }
+.swipe-wrapper.mouse .product-item { position: relative; }
+.pi-actions { display: flex; gap: 6px; }
+.pi-act { border: 1px solid var(--border); background: var(--surface); color: var(--fg-2); font: inherit; font-size: 12.5px; font-weight: 700; padding: 6px 10px; border-radius: 999px; cursor: pointer; white-space: nowrap; }
+.pi-act:hover { border-color: var(--brand); color: var(--fg); }
+.pi-act.consume { background: var(--accent-soft); border-color: transparent; color: var(--fg); }
+.pi-act.waste:hover { border-color: var(--danger); color: var(--danger); }
+/* Liste : actions au survol, posées sur la droite de la ligne */
+.product-list:not(.tiles) .pi-actions { position: absolute; right: 14px; top: 50%; transform: translateY(-50%); padding: 6px; border-radius: 999px; background: var(--surface); box-shadow: 0 2px 12px rgba(0,0,0,.08); opacity: 0; pointer-events: none; transition: opacity .12s; }
+.product-list:not(.tiles) .product-item:hover .pi-actions,
+.product-list:not(.tiles) .pi-actions:focus-within { opacity: 1; pointer-events: auto; }
+/* Tuiles : actions toujours visibles en bas */
+.product-list.tiles .pi-actions { width: 100%; padding-top: 10px; border-top: 1px solid var(--border); }
+.product-list.tiles .pi-act { flex: 1; text-align: center; }
+/* Curseur de portion */
+.cs-range { display: flex; flex-direction: column; gap: 8px; }
+.cs-range-value { text-align: center; font-size: 28px; font-weight: 800; }
+.cs-range input[type=range] { width: 100%; accent-color: var(--brand); cursor: pointer; }
+.cs-range-ends { display: flex; justify-content: space-between; align-items: center; font-size: 13px; color: var(--muted); }
+.cs-range-ends button { border: none; background: none; color: var(--brand); font: inherit; font-weight: 700; cursor: pointer; }
+.product-list.selecting .pi-actions { display: none; }

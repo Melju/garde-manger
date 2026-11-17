@@ -20,6 +20,10 @@ import { FoodIcon, hasFoodIcon } from './FoodIcon'
 import { productIconKey } from '../lib/productIcon'
 import { productImageSlug, chosenIconSlug, productImageUrl } from '../lib/productImage'
 import { SwipeWheel } from './SwipeWheel'
+import { ConsumeSheet } from './ConsumeSheet'
+
+/** Souris / pavé tactile : boutons d'action au lieu des glissements. */
+const finePointer = typeof window !== 'undefined' && window.matchMedia?.('(hover: hover) and (pointer: fine)').matches
 
 interface ProductItemProps {
   product: Product
@@ -70,6 +74,9 @@ export function ProductItem({
 }: ProductItemProps) {
   // « kg » seul (ancienne saisie) est lu comme « 1 kg ».
   const product = normalizeBareUnit(rawProduct)
+  const mouse = finePointer
+  const swipeOff = noSwipe || mouse
+  const [consuming, setConsuming] = useState(false)
   const [swipe, setSwipe] = useState<Swipe>('none')
   const startX = useRef<number | null>(null)
   const moved = useRef(false)
@@ -103,7 +110,7 @@ export function ProductItem({
     return v
   }
   function onPointerDown(e: React.PointerEvent) {
-    if (noSwipe) return
+    if (swipeOff) return
     if (demo) onDemoDone?.()
     startX.current = e.clientX
     startY.current = e.clientY
@@ -111,7 +118,7 @@ export function ProductItem({
     captured.current = false
   }
   function onPointerMove(e: React.PointerEvent) {
-    if (noSwipe) return
+    if (swipeOff) return
     if (startX.current === null) return
     const dx = e.clientX - startX.current
     const dy = e.clientY - startY.current
@@ -169,7 +176,7 @@ export function ProductItem({
 
   return (
     <div
-      className={`swipe-wrapper${groupPos ? ` grp grp-${groupPos}` : ''}${dragX !== null || demo ? ' is-active' : ''}${swipe === 'left' ? ' swiped-left' : swipe === 'right' ? ' swiped-right' : ''}`}
+      className={`swipe-wrapper${mouse ? ' mouse' : ''}${groupPos ? ` grp grp-${groupPos}` : ''}${dragX !== null || demo ? ' is-active' : ''}${swipe === 'left' ? ' swiped-left' : swipe === 'right' ? ' swiped-right' : ''}`}
       style={{ ['--open-right' as string]: `${OPEN_RIGHT}px` }}
     >
       {/* Action gauche révélée par un glissement vers la droite : périmé */}
@@ -235,7 +242,32 @@ export function ProductItem({
           <div className="product-qty">{qtyLabel}</div>
           <span className={`status-tag ${status}`}>{expiryLabel(product)}</span>
         </div>
+        {mouse && (
+          <div className="pi-actions" onClick={(e) => e.stopPropagation()} onPointerDown={(e) => e.stopPropagation()}>
+            <button className="pi-act consume" title="Indiquer une quantité consommée" onClick={() => setConsuming(true)}>
+              Consommé
+            </button>
+            {canOpen && (
+              <button className="pi-act" title="Marquer comme ouvert" onClick={() => setOpening(true)}>
+                Ouvert
+              </button>
+            )}
+            <button className="pi-act waste" title="Jeté car périmé" onClick={() => onWaste(rawProduct)}>
+              Périmé
+            </button>
+          </div>
+        )}
       </div>
+
+      {consuming && (
+        <ConsumeSheet
+          product={product}
+          onClose={() => setConsuming(false)}
+          onRemoveQty={(_, q) => onRemoveQty(rawProduct, q)}
+          onConsumePortion={(_, sz) => onConsumePortion(rawProduct, sz)}
+          onConsumeSachets={onConsumeSachets ? (_, k) => onConsumeSachets(rawProduct, k) : undefined}
+        />
+      )}
 
       {opening &&
         createPortal(
