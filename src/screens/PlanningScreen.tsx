@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { useStore } from '../data/store'
 import { useToast } from '../components/Toast'
 import { Icon } from '../components/Icon'
@@ -31,6 +31,34 @@ export function PlanningScreen() {
 
   const days = useMemo(() => weekDays(weekRef), [weekRef])
   const todayISO = toISODate(new Date())
+  const boardRef = useRef<HTMLDivElement>(null)
+
+  // Le jour actuel (ou le lundi pour une autre semaine) est centré à l'ouverture.
+  useEffect(() => {
+    const board = boardRef.current
+    if (!board) return
+    const target = board.querySelector<HTMLElement>('.plan-day.today') ?? board.querySelector<HTMLElement>('.plan-day')
+    if (target) board.scrollLeft = target.offsetLeft - (board.clientWidth - target.offsetWidth) / 2
+  }, [days])
+
+  function slide(dir: number) {
+    const board = boardRef.current
+    const card = board?.querySelector<HTMLElement>('.plan-day')
+    if (board && card) board.scrollBy({ left: dir * (card.offsetWidth + 14), behavior: 'smooth' })
+  }
+
+  // Molette de souris : défilement horizontal du tableau.
+  useEffect(() => {
+    const board = boardRef.current
+    if (!board) return
+    const onWheel = (e: WheelEvent) => {
+      if (Math.abs(e.deltaY) <= Math.abs(e.deltaX)) return
+      board.scrollLeft += e.deltaY
+      e.preventDefault()
+    }
+    board.addEventListener('wheel', onWheel, { passive: false })
+    return () => board.removeEventListener('wheel', onWheel)
+  }, [])
   const label = `Semaine du ${formatDayMonth(days[0])}`
 
   async function generateList() {
@@ -92,7 +120,14 @@ export function PlanningScreen() {
         </button>
       </div>
 
-      <div className="week-board">
+      <div className="week-carousel">
+      <button className="carousel-arrow prev" aria-label="Jour précédent" onClick={() => slide(-1)}>
+        <Icon name="back" />
+      </button>
+      <button className="carousel-arrow next" aria-label="Jour suivant" onClick={() => slide(1)}>
+        <Icon name="chevron" />
+      </button>
+      <div className="week-board" ref={boardRef}>
         {days.map((date) => {
           const d = fromISODate(date)
           const isToday = date === todayISO
@@ -140,6 +175,8 @@ export function PlanningScreen() {
             </section>
           )
         })}
+      </div>
+
       </div>
 
       {drawer && (
