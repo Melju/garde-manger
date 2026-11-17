@@ -14,7 +14,12 @@ import type { Model, KaldiRecognizer } from 'vosk-browser'
 const MODEL_URL = `${import.meta.env.BASE_URL}vosk/fr-small.tar.gz`
 
 type Mode = 'off' | 'wake' | 'command'
-type Listener = (e: { type: 'partial' | 'final' | 'wake' | 'state' | 'error'; text?: string; state?: string }) => void
+type Listener = (e: {
+  type: 'partial' | 'final' | 'wake' | 'state' | 'error' | 'level' | 'heard'
+  text?: string
+  state?: string
+  level?: number
+}) => void
 
 let model: Model | null = null
 let wakeRec: KaldiRecognizer | null = null
@@ -27,9 +32,23 @@ let paused = false
 let silenceTimer: ReturnType<typeof setTimeout> | undefined
 let cmdTimeout: ReturnType<typeof setTimeout> | undefined
 let lastPartial = ''
+let status = 'off'
+let lastError = ''
+let lastLevelAt = 0
+/** État lisible du moteur (affiché dans les Paramètres pour diagnostiquer). */
+export function voskStatus() {
+  return { status, error: lastError, audio: ctx?.state ?? 'none', rate: ctx?.sampleRate ?? 0 }
+}
 const listeners = new Set<Listener>()
 
-const emit: Listener = (e) => listeners.forEach((l) => l(e))
+const emit: Listener = (e) => {
+  if (e.type === 'state' && e.state) status = e.state
+  if (e.type === 'error') {
+    status = 'error'
+    lastError = e.text ?? ''
+  }
+  listeners.forEach((l) => l(e))
+}
 
 export function onVosk(l: Listener) {
   listeners.add(l)
@@ -60,6 +79,7 @@ export async function startVosk(): Promise<boolean> {
     emit({ type: 'state', state: 'loading' })
     const { createModel } = await import('vosk-browser')
     model = model ?? (await createModel(MODEL_URL, -1))
+    emit({ type: 'state', state: 'mic' })
     stream = await navigator.mediaDevices.getUserMedia({
       audio: { echoCancellation: true, noiseSuppression: true, channelCount: 1 },
     })
@@ -67,7 +87,13 @@ export async function startVosk(): Promise<boolean> {
     const rate = ctx.sampleRate
 
     wakeRec = new model.KaldiRecognizer(rate, JSON.stringify(['miam miam', 'miam', '[unk]']))
+    wakeRec.on('partialresult', (m: any) => {
+      const p = (m.result?.partial ?? '').trim()
+      if (p) emit({ type: 'heard', text: p })
+    })
     wakeRec.on('result', (m: any) => {
+      const t = (m.result?.text ?? '').trim()
+      if (t) emit({ type: 'heard', text: t })
       if (mode === 'wake' && !paused && isWake(m.result?.text ?? '')) {
         mode = 'command'
         emit({ type: 'wake' })
@@ -95,6 +121,15 @@ export async function startVosk(): Promise<boolean> {
     const src = ctx.createMediaStreamSource(stream)
     node = ctx.createScriptProcessor(4096, 1, 1)
     node.onaudioprocess = (ev) => {
+      // Niveau du micro (diagnostic), 5 fois par seconde.
+      const now = Date.now()
+      if (now - lastLevelAt > 200) {
+        lastLevelAt = now
+        const d = ev.inputBuffer.getChannelData(0)
+        let sum = 0
+        for (let i = 0; i < d.length; i += 4) sum += d[i] * d[i]
+        emit({ type: 'level', level: Math.sqrt(sum / (d.length / 4)) })
+      }
       if (paused) return
       try {
         if (mode === 'wake') wakeRec?.acceptWaveform(ev.inputBuffer)
@@ -111,15 +146,15 @@ export async function startVosk(): Promise<boolean> {
     mute.connect(ctx.destination)
     mode = 'wake'
     // Sans geste de l'utilisateur, le navigateur garde l'audio en veille : on le réveille au premier toucher.
-    if (ctx.state === 'suspended') {
-      const wake = () => {
-        void ctx?.resume()
-        window.removeEventListener('pointerdown', wake, true)
-      }
-      window.addEventListener('pointerdown', wake, true)
-      void ctx.resume().catch(() => {})
+    const wake = () => {
+      if (ctx && ctx.state !== 'running') void ctx.resume().then(() => emit({ type: 'state', state: 'ready' }))
     }
-    emit({ type: 'state', state: 'ready' })
+    for (const ev of ['pointerdown', 'touchstart', 'click', 'keydown'])
+      window.addEventListener(ev, wake, { capture: true, passive: true })
+    document.addEventListener('visibilitychange', wake)
+    void ctx.resume().catch(() => {})
+    if (ctx.state === 'suspended') emit({ type: 'state', state: 'suspended' })
+    if (ctx.state === 'running') emit({ type: 'state', state: 'ready' })
     return true
   } catch (e) {
     emit({ type: 'error', text: e instanceof Error ? e.message : 'Moteur vocal indisponible' })

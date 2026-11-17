@@ -7,6 +7,7 @@ import { addBrand, getCustomBrands, removeCustomBrand, renameCustomBrand } from 
 import { normalize } from '../lib/productIcon'
 import { addStore, getStores, removeStore, renameStore } from '../lib/stores'
 import { kioskEnabled, setKiosk, wakeEnabled, setWake } from '../lib/kiosk'
+import { VoskDiag } from '../components/VoiceAssistant'
 import { defaultSort, setDefaultSort, SORT_OPTIONS, type InventorySort } from '../lib/inventorySort'
 import { Select } from '../components/Select'
 import { pushState, enablePush, disablePush, testPush, shoppingNotifEnabled, setShoppingNotif, type PushState } from '../lib/push'
@@ -205,7 +206,7 @@ export function SettingsScreen({ onBack }: SettingsScreenProps) {
           />
         </div>
         {kiosk && !!navigator.mediaDevices?.getUserMedia && (
-          <div className="setting-row">
+          <div className="setting-row" style={{ flexWrap: 'wrap' }}>
             <div className="setting-text">
               <div className="setting-title">Réveil vocal « Miam miam »</div>
               <div className="setting-desc">
@@ -221,6 +222,7 @@ export function SettingsScreen({ onBack }: SettingsScreenProps) {
                 toast(v ? 'Dis « Miam miam » pour me parler' : 'Réveil vocal désactivé')
               }}
             />
+            {wake && <VoskDiag />}
           </div>
         )}
         {push === 'on' && (

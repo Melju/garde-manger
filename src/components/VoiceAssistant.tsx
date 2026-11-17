@@ -8,7 +8,7 @@ import { defaultConservation, type Category, type Product } from '../types'
 import { useToast } from './Toast'
 import { Icon } from './Icon'
 import { kioskEnabled, wakeEnabled } from '../lib/kiosk'
-import { startVosk, stopVosk, onVosk, voskActive, listenCommand, cancelCommand, setVoskPaused } from '../lib/voskEngine'
+import { startVosk, stopVosk, onVosk, voskActive, listenCommand, cancelCommand, setVoskPaused, voskStatus } from '../lib/voskEngine'
 
 // ----- Types renvoyés par la fonction « voice » -----
 type Act =
@@ -647,4 +647,47 @@ export function WakeWord() {
   }, [on])
 
   return null
+}
+
+/** Petit panneau de diagnostic du réveil vocal (Paramètres) : état, niveau du micro, ce qui est entendu. */
+export function VoskDiag() {
+  const [st, setSt] = useState(voskStatus())
+  const [level, setLevel] = useState(0)
+  const [heard, setHeard] = useState('')
+  useEffect(() => {
+    const off = onVosk((e) => {
+      if (e.type === 'level') setLevel(e.level ?? 0)
+      else if (e.type === 'heard') setHeard(e.text ?? '')
+      setSt(voskStatus())
+    })
+    const t = setInterval(() => setSt(voskStatus()), 1000)
+    return () => {
+      off()
+      clearInterval(t)
+    }
+  }, [])
+  const label =
+    st.status === 'loading'
+      ? 'Téléchargement du modèle vocal…'
+      : st.status === 'mic'
+        ? 'Ouverture du micro…'
+        : st.status === 'suspended' || st.audio === 'suspended'
+          ? 'Touche l’écran pour activer le micro'
+          : st.status === 'ready'
+            ? 'À l’écoute de « Miam miam »'
+            : st.status === 'error'
+              ? `Erreur : ${st.error}`
+              : 'Arrêté'
+  return (
+    <div className="vosk-diag">
+      <div className="vosk-diag-row">
+        <span className={`vosk-dot s-${st.status}`} />
+        {label}
+      </div>
+      <div className="vosk-meter">
+        <span style={{ width: `${Math.min(100, Math.round(level * 900))}%` }} />
+      </div>
+      <div className="vosk-heard">Entendu : {heard || '…'}</div>
+    </div>
+  )
 }

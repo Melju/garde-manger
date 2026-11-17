@@ -3430,3 +3430,12 @@ html.kiosk .product-list.tiles .product-icon > svg { width: 32cqw !important; ma
 .voice-replay svg, .voice-replay-ico svg { width: 18px; height: 18px; flex: none; color: var(--brand); stroke: currentColor; margin-top: 2px; }
 .voice-replay-ico { flex: none; border: none; background: var(--surface); border-radius: 10px; width: 34px; height: 34px; display: grid; place-items: center; cursor: pointer; }
 .voice-answer p { flex: 1; }
+.vosk-diag { flex-basis: 100%; margin-top: 10px; padding: 10px 12px; border-radius: 12px; background: var(--accent-soft); font-size: 13px; display: flex; flex-direction: column; gap: 6px; }
+.vosk-diag-row { display: flex; align-items: center; gap: 8px; font-weight: 600; }
+.vosk-dot { width: 9px; height: 9px; border-radius: 50%; background: var(--muted); }
+.vosk-dot.s-ready { background: #2f9e5b; }
+.vosk-dot.s-error { background: var(--danger); }
+.vosk-dot.s-loading, .vosk-dot.s-mic, .vosk-dot.s-suspended { background: #e0a020; }
+.vosk-meter { height: 6px; border-radius: 6px; background: rgba(0,0,0,.08); overflow: hidden; }
+.vosk-meter span { display: block; height: 100%; background: var(--brand); transition: width .15s; }
+.vosk-heard { color: var(--fg-2); }
