@@ -2909,7 +2909,7 @@ html.kiosk .product-list.tiles .product-name { font-size: 16px; }
 
 /* Fenêtre ouverte : la page derrière ne défile plus */
 html.modal-open, html.modal-open body { overflow: hidden; overscroll-behavior: none; }
-html.modal-open body { position: fixed; left: 0; right: 0; width: 100%; }
+.cselect-overlay, .confirm-overlay, .drawer-overlay, .fab-backdrop { overscroll-behavior: contain; }
 .cselect-sheet, .confirm-box, .drawer { overscroll-behavior: contain; }
 
 /* ---------- Planning : tableau de la semaine ---------- */
