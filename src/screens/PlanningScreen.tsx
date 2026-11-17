@@ -5,7 +5,8 @@ import { Icon } from '../components/Icon'
 import { MealPlanDrawer } from '../components/MealPlanDrawer'
 import { MEAL_SLOTS } from '../types'
 import { DAYS_FR, addDays, formatDayMonth, fromISODate, startOfWeek, toISODate, weekDays } from '../lib/dates'
-import { recipeStock } from '../lib/recipesLib'
+import { recipeStock, recipeIconSlug } from '../lib/recipesLib'
+import { productImageSlug, productImageUrl } from '../lib/productImage'
 
 export function PlanningScreen() {
   const { mealPlan, recipes, products, addManyShopping, generateWeekPlan } = useStore()
@@ -80,44 +81,66 @@ export function PlanningScreen() {
 
       </div>
 
-      <button className="generate-list-btn" onClick={handleGenerateWeek} disabled={planning}>
-        <Icon name="sparkles" />
-        {planning ? 'Génération du menu…' : 'Planifier ma semaine (IA)'}
-      </button>
-
-      <div className="btn-row" style={{ marginBottom: 14 }}>
-        <button className="btn-primary" onClick={generateList}>
-          Générer la liste de courses
+      <div className="plan-actions">
+        <button className="generate-list-btn" onClick={handleGenerateWeek} disabled={planning}>
+          <Icon name="sparkles" />
+          {planning ? 'Génération du menu…' : 'Planifier ma semaine (IA)'}
+        </button>
+        <button className="plan-shop-btn" onClick={generateList}>
+          <Icon name="cart" />
+          Ingrédients manquants vers les courses
         </button>
       </div>
 
-      {days.map((date) => {
-        const d = fromISODate(date)
-        return (
-          <div className={`day-card${date === todayISO ? ' today' : ''}`} key={date}>
-            <div className="day-header">
-              <span className="day-name">{DAYS_FR[d.getDay()]}</span>
-              <span className="day-date">{formatDayMonth(date)}</span>
-            </div>
-            <div className="day-meals">
-              {MEAL_SLOTS.map((slot) => {
-                const meal = mealPlan[`${date}_${slot.id}`]
-                return (
-                  <div className="meal-slot" key={slot.id}>
-                    <span className="meal-type">{slot.label}</span>
-                    <span className={`meal-content${meal ? '' : ' empty'}`}>
-                      {meal ?? 'Ajouter un repas'}
-                    </span>
-                    <button className="meal-add" onClick={() => setDrawer({ date, slot: slot.id })} aria-label="Modifier">
-                      <Icon name={meal ? 'pencil' : 'plus'} />
+      <div className="week-board">
+        {days.map((date) => {
+          const d = fromISODate(date)
+          const isToday = date === todayISO
+          const past = date < todayISO
+          return (
+            <section className={`plan-day${isToday ? ' today' : ''}${past ? ' past' : ''}`} key={date}>
+              <header className="plan-day-head">
+                <span className="plan-dow">{DAYS_FR[d.getDay()].slice(0, 3)}</span>
+                <span className="plan-num">{d.getDate()}</span>
+                <span className="plan-month">{formatDayMonth(date).split(' ').slice(1).join(' ')}</span>
+                {isToday && <span className="plan-today">Aujourd'hui</span>}
+              </header>
+              <div className="plan-slots">
+                {MEAL_SLOTS.map((slot) => {
+                  const meal = mealPlan[`${date}_${slot.id}`]
+                  const recipe = meal ? recipes.find((r) => r.title.toLowerCase() === meal.toLowerCase()) : undefined
+                  const slug = recipe ? recipeIconSlug(recipe) : meal ? productImageSlug(meal) : null
+                  const missing = recipe ? recipeStock(recipe, products).missingIngredients.length : 0
+                  return (
+                    <button
+                      type="button"
+                      className={`plan-meal${meal ? ' filled' : ''}`}
+                      key={slot.id}
+                      onClick={() => setDrawer({ date, slot: slot.id })}
+                    >
+                      <span className="plan-slot-label">{slot.label}</span>
+                      {meal ? (
+                        <>
+                          <span className="plan-meal-icon">
+                            {slug ? <img src={productImageUrl(slug)} alt="" loading="lazy" /> : <Icon name="book" />}
+                          </span>
+                          <span className="plan-meal-name">{meal}</span>
+                          {missing > 0 && <span className="plan-missing">{missing} manquant{missing > 1 ? 's' : ''}</span>}
+                        </>
+                      ) : (
+                        <span className="plan-empty">
+                          <Icon name="plus" />
+                          Ajouter
+                        </span>
+                      )}
                     </button>
-                  </div>
-                )
-              })}
-            </div>
-          </div>
-        )
-      })}
+                  )
+                })}
+              </div>
+            </section>
+          )
+        })}
+      </div>
 
       {drawer && (
         <MealPlanDrawer date={drawer.date} slot={drawer.slot} onClose={() => setDrawer(null)} />
