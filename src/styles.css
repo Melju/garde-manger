@@ -3063,7 +3063,7 @@ html.kiosk .product-list.tiles .product-icon > svg { width: 38%; height: 38%; }
 .dup-actions > * { flex: 1 1 180px; }
 
 /* Produit périmé : bordure rouge (liste et tuiles). */
-.swipe-wrapper.is-expired { border-color: color-mix(in oklch, var(--danger) 45%, var(--border)); }
-.swipe-wrapper.grp.is-expired { border-left-color: color-mix(in oklch, var(--danger) 45%, var(--border)); }
-.product-list.tiles .swipe-wrapper.grp.is-expired { box-shadow: 0 0 0 2px color-mix(in oklch, var(--danger) 45%, var(--border)); }
-.swipe-wrapper.is-expired .product-item { background: color-mix(in oklch, var(--danger) 6%, var(--surface)); }
+.swipe-wrapper.is-expired { border-color: color-mix(in srgb, var(--danger) 45%, var(--border)); }
+.swipe-wrapper.grp.is-expired { border-left-color: color-mix(in srgb, var(--danger) 45%, var(--border)); }
+.product-list.tiles .swipe-wrapper.grp.is-expired { box-shadow: 0 0 0 2px color-mix(in srgb, var(--danger) 45%, var(--border)); }
+.swipe-wrapper.is-expired .product-item { background: color-mix(in srgb, var(--danger) 7%, var(--surface)); }
