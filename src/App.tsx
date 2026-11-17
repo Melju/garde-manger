@@ -35,6 +35,7 @@ import { DuplicatesScreen } from './screens/DuplicatesScreen'
 import { UpdateBanner } from './components/UpdateBanner'
 import { ArrivalsPopup } from './components/ArrivalsPopup'
 import { EasterEggs } from './components/EasterEggs'
+import { VoiceAssistant, WakeWord } from './components/VoiceAssistant'
 import { KioskMode } from './components/KioskMode'
 import { ScanConsumeSheet, type ConsumeChoice } from './components/ScanConsumeSheet'
 import type { FamilyMember, Product, ProductInput, Recipe } from './types'
@@ -341,6 +342,8 @@ export function App() {
       <UpdateBanner />
       <ArrivalsPopup />
       <EasterEggs />
+      <VoiceAssistant />
+      <WakeWord />
       <KioskMode onIdle={kioskIdle} />
       <main className={`app${!top && add ? ' with-fab' : ''} wide`}>
         {!top && <InstallPrompt />}

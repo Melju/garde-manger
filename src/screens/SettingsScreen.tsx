@@ -6,7 +6,8 @@ import { PageHeader } from '../components/PageHeader'
 import { addBrand, getCustomBrands, removeCustomBrand, renameCustomBrand } from '../lib/brands'
 import { normalize } from '../lib/productIcon'
 import { addStore, getStores, removeStore, renameStore } from '../lib/stores'
-import { kioskEnabled, setKiosk } from '../lib/kiosk'
+import { kioskEnabled, setKiosk, wakeEnabled, setWake } from '../lib/kiosk'
+import { VOICE_SUPPORTED } from '../components/VoiceAssistant'
 import { defaultSort, setDefaultSort, SORT_OPTIONS, type InventorySort } from '../lib/inventorySort'
 import { Select } from '../components/Select'
 import { pushState, enablePush, disablePush, testPush, shoppingNotifEnabled, setShoppingNotif, type PushState } from '../lib/push'
@@ -73,6 +74,7 @@ export function SettingsScreen({ onBack }: SettingsScreenProps) {
   }
   const [shopNotif, setShopNotif] = useState(true)
   const [kiosk, setKioskState] = useState(kioskEnabled)
+  const [wake, setWakeState] = useState(wakeEnabled)
   const [defSort, setDefSortState] = useState<InventorySort>(defaultSort)
   useEffect(() => {
     pushState().then(setPush).catch(() => setPush('unsupported'))
@@ -203,6 +205,25 @@ export function SettingsScreen({ onBack }: SettingsScreenProps) {
             }}
           />
         </div>
+        {kiosk && VOICE_SUPPORTED && (
+          <div className="setting-row">
+            <div className="setting-text">
+              <div className="setting-title">Réveil vocal « Miam miam »</div>
+              <div className="setting-desc">
+                Dis « Miam miam » pour ouvrir la commande vocale sans toucher l’écran. Le micro reste à l’écoute tant
+                que l’app est ouverte ; la reconnaissance passe par le service vocal du navigateur.
+              </div>
+            </div>
+            <Toggle
+              checked={wake}
+              onChange={(v) => {
+                setWake(v)
+                setWakeState(v)
+                toast(v ? 'Dis « Miam miam » pour me parler' : 'Réveil vocal désactivé')
+              }}
+            />
+          </div>
+        )}
         {push === 'on' && (
           <div className="setting-row">
             <div className="setting-text">

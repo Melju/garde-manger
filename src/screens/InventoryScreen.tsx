@@ -1,4 +1,5 @@
 import { ClearButton } from '../components/ClearButton'
+import { VoiceButton } from '../components/VoiceAssistant'
 import { useEasterEgg } from '../components/EasterEggs'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { useStore } from '../data/store'
@@ -460,6 +461,7 @@ export function InventoryScreen({
             </>
           )}
         />
+        <VoiceButton />
       </div>
 
       </div>

@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
+import { openVoice } from '../components/VoiceAssistant'
 import { useStore } from '../data/store'
 import { detectNearbyStores, type NearbyStore } from '../lib/geoStore'
 import { addStore, getCurrentStore, getStores, habitsFor, isUsualAt, recordPurchases, setCurrentStore } from '../lib/stores'
@@ -373,9 +374,13 @@ export function ShoppingScreen({ addOpen, onCloseAdd }: ShoppingScreenProps) {
               if (e.key === 'Enter') void quickAdd()
             }}
           />
-          {quick.trim() && (
+          {quick.trim() ? (
             <button className="shop-quick-go" onClick={() => void quickAdd()} aria-label="Ajouter">
               <Icon name="check" width={2.5} />
+            </button>
+          ) : (
+            <button className="shop-quick-mic" onClick={() => openVoice()} aria-label="Commande vocale" title="Commande vocale">
+              <Icon name="mic" />
             </button>
           )}
         </div>
