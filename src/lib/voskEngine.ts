@@ -63,8 +63,8 @@ export function voskActive() {
   return mode !== 'off'
 }
 
-const isWake = (t: string) => /\bmiam\b/.test(t.toLowerCase())
 let ignoreWakeUntil = 0
+let wakeHits = 0
 
 /** Ramène le son à 16 kHz : 3 fois moins de calcul pour le moteur (le modèle est entraîné en 16 kHz). */
 const TARGET = 16000
@@ -107,7 +107,15 @@ export async function startVosk(): Promise<boolean> {
     ctx = new AudioContext()
     const rate = TARGET
 
-    wakeRec = new model.KaldiRecognizer(rate, JSON.stringify(['miam miam', 'miam', '[unk]']))
+    // Grammaire : « miam miam » noyé parmi des mots courants qui lui ressemblent, pour que les bruits et
+    // les conversations tombent ailleurs que sur « miam ».
+    const DECOYS = [
+      'mais', 'main', 'mien', 'mienne', 'miel', 'mine', 'mince', 'mia', 'ami', 'amie', 'amis', 'maman', 'mamie', 'manger',
+      'matin', 'maison', 'moi', 'mon', 'ma', 'mes', 'merci', 'oui', 'non', 'bien', 'alors', 'bon', 'bah', 'hein', 'ben',
+      'demain', 'mamma', 'miaou', 'mignon', 'médium', 'item', 'idem', 'madame', 'monsieur', 'minute', 'milieu',
+    ]
+    wakeRec = new model.KaldiRecognizer(rate, JSON.stringify(['miam miam', ...DECOYS, '[unk]']))
+    wakeRec.setWords(true)
     const triggerWake = () => {
       if (mode !== 'wake' || paused || Date.now() < ignoreWakeUntil) return
       mode = 'command'
@@ -121,12 +129,20 @@ export async function startVosk(): Promise<boolean> {
     wakeRec.on('partialresult', (m: any) => {
       const p = (m.result?.partial ?? '').trim()
       if (p) emit({ type: 'heard', text: p })
-      if (/\bmiam\b/.test(p)) triggerWake()
+      // Il faut « miam miam » (les deux mots), entendu deux fois de suite dans les résultats partiels.
+      if (/\bmiam miam\b/.test(p)) {
+        wakeHits++
+        if (wakeHits >= 2) triggerWake()
+      } else wakeHits = 0
     })
     wakeRec.on('result', (m: any) => {
       const t = (m.result?.text ?? '').trim()
       if (t) emit({ type: 'heard', text: t })
-      if (isWake(t)) triggerWake()
+      // Résultat final : les deux « miam » avec une confiance suffisante.
+      const words = (m.result?.result ?? []) as { word: string; conf: number }[]
+      const sure = words.filter((w) => w.word === 'miam' && w.conf >= 0.75).length >= 2
+      wakeHits = 0
+      if (/\bmiam miam\b/.test(t) && (sure || !words.length)) triggerWake()
     })
     cmdRec = new model.KaldiRecognizer(rate)
     cmdRec.on('partialresult', (m: any) => {
