@@ -3102,7 +3102,7 @@ html.kiosk .product-list.tiles .product-icon > svg { width: 38%; height: 38%; }
   background: var(--brand); color: #fff;
   animation: arrivals-bag 0.9s 0.3s ease-in-out both;
 }
-.arrivals-bag svg { width: 22px; height: 22px; }
+.arrivals-bag svg { width: 22px; height: 22px; stroke: #fff; color: #fff; }
 @keyframes arrivals-bag {
   0%, 100% { transform: rotate(0); }
   25% { transform: rotate(-12deg) scale(1.08); }
