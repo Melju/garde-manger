@@ -53,6 +53,31 @@ export const VOICE_SUPPORTED = !!SR && !IS_IOS && !IS_WEBVIEW
 /** Passe à true si le navigateur refuse la dictée (service indisponible) : on bascule sur la saisie. */
 let voiceBroken = false
 
+/** Lit une phrase à voix haute : Fully Kiosk (sa propre synthèse) ou le navigateur. */
+export function speak(text: string) {
+  const t = text.trim()
+  if (!t) return
+  try {
+    const fully = (window as any).fully
+    if (fully?.textToSpeech) {
+      fully.stopTextToSpeech?.()
+      fully.textToSpeech(t, 'fr_FR')
+      return
+    }
+    const synth = window.speechSynthesis
+    if (!synth) return
+    synth.cancel()
+    const u = new SpeechSynthesisUtterance(t)
+    u.lang = 'fr-FR'
+    const fr = synth.getVoices().find((v) => v.lang?.toLowerCase().startsWith('fr'))
+    if (fr) u.voice = fr
+    u.rate = 1.05
+    synth.speak(u)
+  } catch {
+    /* pas de voix disponible */
+  }
+}
+
 const toBase = (v: number, u: string) => {
   const l = u.toLowerCase()
   return l === 'kg' || l === 'l' ? v * 1000 : l === 'cl' ? v * 10 : v
@@ -66,8 +91,9 @@ export function VoiceAssistant() {
   const { products, shopping } = store
   const toast = useToast()
   const [open, setOpen] = useState(false)
-  const [phase, setPhase] = useState<'listen' | 'think' | 'review' | 'done'>('listen')
+  const [phase, setPhase] = useState<'listen' | 'think' | 'review' | 'done' | 'answer'>('listen')
   const [doneLabels, setDoneLabels] = useState<string[]>([])
+  const [reply, setReply] = useState('')
   const undoRef = useRef<(() => Promise<void>)[]>([])
   const doneTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined)
   const [text, setText] = useState('')
@@ -98,6 +124,11 @@ export function VoiceAssistant() {
 
   const close = () => {
     stopRec()
+    try {
+      window.speechSynthesis?.cancel()
+    } catch {
+      /* rien */
+    }
     clearTimeout(doneTimer.current)
     setOpen(false)
   }
@@ -163,6 +194,7 @@ export function VoiceAssistant() {
       setRows([])
       setUnknown([])
       setError('')
+      setReply('')
       if (auto && VOICE_SUPPORTED && !voiceBroken) listen()
       else setTimeout(() => inputRef.current?.focus(), 150)
     }
@@ -186,6 +218,8 @@ export function VoiceAssistant() {
       qty: p.quantity,
       size: p.size || undefined,
       opened: !!p.openedAt || undefined,
+      exp: p.expiryDate || undefined,
+      place: p.location || undefined,
     }))
     const list = shopping
       .filter((s) => !s.checked)
@@ -197,11 +231,21 @@ export function VoiceAssistant() {
       return
     }
     const acts = ((data as any)?.actions ?? []) as Act[]
+    const said2 = String((data as any)?.reply ?? '')
     setUnknown(((data as any)?.unknown ?? []) as string[])
+    setReply(said2)
     const next = acts.map((a) => ({ act: a, on: true }))
     setRows(next)
+    speak(said2)
+    if (!next.length) {
+      // Une question (« est-ce que j'ai encore du beurre ? ») : juste la réponse.
+      setPhase('answer')
+      clearTimeout(doneTimer.current)
+      doneTimer.current = setTimeout(close, Math.min(15000, 6000 + said2.length * 60))
+      return
+    }
     // Rien d'ambigu : on applique tout de suite (on peut annuler juste après).
-    if (next.length && !next.some((r) => r.act.type === 'ask')) void apply(next)
+    if (!next.some((r) => r.act.type === 'ask')) void apply(next)
     else setPhase('review')
   }
 
@@ -336,12 +380,39 @@ export function VoiceAssistant() {
     <div className="cselect-overlay voice-overlay" onClick={close}>
       <div className="cselect-sheet voice-sheet" onClick={(e) => e.stopPropagation()} role="dialog" aria-label="Commande vocale">
         <div className="cselect-handle" />
-        {phase === 'done' ? (
+        {phase === 'answer' ? (
+          <>
+            <div className="voice-said">« {text} »</div>
+            <div className="voice-answer">
+              <span className="voice-answer-ico">
+                <Icon name="sparkles" />
+              </span>
+              <p>{reply || 'Je n’ai pas su répondre. Reformule ?'}</p>
+            </div>
+            <div className="voice-actions">
+              <button
+                className="btn-secondary"
+                onClick={() => {
+                  clearTimeout(doneTimer.current)
+                  setPhase('listen')
+                  setText('')
+                  if (VOICE_SUPPORTED && !voiceBroken) listen()
+                }}
+              >
+                Autre question
+              </button>
+              <button className="btn-primary" onClick={close}>
+                OK
+              </button>
+            </div>
+          </>
+        ) : phase === 'done' ? (
           <>
             <div className="voice-done-ico">
               <Icon name="check" width={3} />
             </div>
             <div className="voice-done-title">C’est fait</div>
+            {reply && <div className="voice-reply">{reply}</div>}
             <div className="voice-rows">
               {doneLabels.map((l, i) => (
                 <div className="voice-row done" key={i}>
@@ -383,7 +454,7 @@ export function VoiceAssistant() {
               ref={inputRef}
               className="voice-text"
               rows={2}
-              placeholder="« Ajoute du lait aux courses », « enlève 200 g de comté »…"
+              placeholder="« Ajoute du lait aux courses », « enlève 200 g de comté », « il me reste du beurre ? »…"
               value={text}
               onChange={(e) => setText(e.target.value)}
               onKeyDown={(e) => {
@@ -407,6 +478,7 @@ export function VoiceAssistant() {
         ) : (
           <>
             <div className="voice-said">« {text} »</div>
+            {reply && <div className="voice-reply">{reply}</div>}
             {rows.length === 0 && <div className="voice-hint">Je n’ai pas compris quoi faire. Reformule ?</div>}
             <div className="voice-rows">
               {rows.map((r, i) =>

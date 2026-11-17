@@ -3421,3 +3421,8 @@ html.kiosk .shopping-groups { padding-top: 20px; }
 html.kiosk .product-list.tiles .product-icon .product-img { width: 58cqw !important; max-width: none !important; height: auto !important; aspect-ratio: 1; }
 .product-list.tiles .product-icon > svg,
 html.kiosk .product-list.tiles .product-icon > svg { width: 32cqw !important; max-width: none !important; height: auto !important; }
+.voice-reply { font-size: 15px; color: var(--fg); margin: -4px 0 12px; line-height: 1.4; }
+.voice-answer { display: flex; gap: 12px; align-items: flex-start; text-align: left; background: var(--accent-soft); border-radius: 16px; padding: 14px; }
+.voice-answer p { margin: 0; font-size: 17px; font-weight: 600; line-height: 1.45; }
+.voice-answer-ico { width: 34px; height: 34px; flex: none; border-radius: 10px; background: var(--brand); display: grid; place-items: center; }
+.voice-answer-ico svg { width: 18px; height: 18px; stroke: #fff; color: #fff; }

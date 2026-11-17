@@ -14,7 +14,7 @@ const CATEGORIES = 'fruits, legumes, viandes, viandes-vg, poissons, laitiers, ep
 const UNITS = ['', 'g', 'kg', 'mL', 'cL', 'L']
 const TYPES = ['shop_add', 'shop_remove', 'stock_add', 'stock_remove', 'stock_finish', 'stock_open', 'stock_waste', 'ask']
 
-type StockLine = { id: string; name: string; brand?: string; qty: number; size?: string; opened?: boolean }
+type StockLine = { id: string; name: string; brand?: string; qty: number; size?: string; opened?: boolean; exp?: string; place?: string }
 type ShopLine = { id: string; name: string; qty?: string }
 
 Deno.serve(async (req) => {
@@ -34,14 +34,14 @@ Deno.serve(async (req) => {
   const shopping: ShopLine[] = Array.isArray(body.shopping) ? body.shopping.slice(0, 200) : []
 
   const stockTxt = stock
-    .map((p) => `${p.id} | ${p.name}${p.brand ? ` (${p.brand})` : ''} | ×${p.qty}${p.size ? ` | ${p.size}` : ''}${p.opened ? ' | ouvert' : ''}`)
+    .map((p) => `${p.id} | ${p.name}${p.brand ? ` (${p.brand})` : ''} | ×${p.qty}${p.size ? ` | ${p.size}` : ''}${p.opened ? ' | ouvert' : ''}${p.exp ? ` | à consommer avant ${p.exp}` : ''}${p.place ? ` | ${p.place}` : ''}`)
     .join('\n')
   const shopTxt = shopping.map((s) => `${s.id} | ${s.name}${s.qty ? ` | ${s.qty}` : ''}`).join('\n')
 
   const prompt = `Tu es l'assistant vocal d'une appli de garde-manger familiale. L'utilisateur a dit (transcription automatique, fautes possibles) :
 """${text}"""
 
-STOCK actuel (id | nom | nombre d'exemplaires | contenance restante/d'origine | état) :
+STOCK actuel (id | nom | nombre d'exemplaires | contenance restante/d'origine | état | date | emplacement). Nous sommes le ${new Date().toISOString().slice(0, 10)} :
 ${stockTxt || '(vide)'}
 
 LISTE DE COURSES actuelle (id | nom | quantité) :
@@ -63,11 +63,14 @@ Règles :
 - « ajoute X » sans précision = liste de courses (shop_add). « j'ai acheté / je range X » = stock_add.
 - « enlève X de la liste » = shop_remove. « enlève 200 g de X » / « j'ai utilisé » = stock_remove.
 - Un produit absent du stock pour une action stock_* : ne l'invente pas, ajoute-le à "unknown".
+- N'ajoute pas aux courses un article déjà présent dans la LISTE : signale-le dans reply.
 - Plusieurs demandes dans une phrase = plusieurs actions, dans l'ordre.
 - label : une phrase très courte en français décrivant l'action (ex « Lait 2 L aux courses », « −200 g de Comté »).
+- Si l'utilisateur POSE UNE QUESTION (« est-ce que j'ai encore du beurre ? », « il reste combien d'œufs ? », « qu'est-ce qui périme bientôt ? », « c'est sur la liste ? »), ne crée aucune action : réponds dans "reply" en t'appuyant uniquement sur le STOCK et la LISTE ci-dessus (quantités, contenance restante, ouvert ou non).
+- "reply" : toujours présent. Une ou deux phrases naturelles, au tutoiement, qui seront LUES À VOIX HAUTE : soit la réponse à la question, soit la confirmation de ce qui va être fait (ex « C'est noté, j'ajoute 2 litres de lait et des pommes à la liste de courses. »). Pas d'emoji, pas de liste, pas d'identifiants, orthographe soignée. S'il faut choisir (ask), pose la question.
 
 Réponds STRICTEMENT en JSON, sans texte autour :
-{"actions":[{"type":string,"label":string, ...champs}],"unknown":[string]}`
+{"reply":string,"actions":[{"type":string,"label":string, ...champs}],"unknown":[string]}`
 
   const res = await callClaude({ apiKey: gate.apiKey, prompt, tier: 'fast', maxTokens: 1200 })
   if (!res.ok) return json({ error: res.detail }, res.status)
@@ -115,5 +118,6 @@ Réponds STRICTEMENT en JSON, sans texte autour :
     .slice(0, 20)
   const unknown = (Array.isArray(parsed?.unknown) ? parsed.unknown : []).map((u: unknown) => str(u, 60)).filter(Boolean).slice(0, 10)
 
-  return json({ actions, unknown })
+  const reply = str(parsed?.reply, 400)
+  return json({ reply, actions, unknown })
 })
