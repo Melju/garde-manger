@@ -8,7 +8,7 @@ import { defaultConservation, type Category, type Product } from '../types'
 import { useToast } from './Toast'
 import { Icon } from './Icon'
 import { kioskEnabled, wakeEnabled } from '../lib/kiosk'
-import { startVosk, stopVosk, onVosk, voskActive, listenCommand, cancelCommand, setVoskPaused, voskStatus } from '../lib/voskEngine'
+import { startVosk, stopVosk, onVosk, voskActive, listenCommand, cancelCommand, setVoskPaused, voskStatus, handOffToBrowser, takeBackFromBrowser } from '../lib/voskEngine'
 
 // ----- Types renvoyés par la fonction « voice » -----
 type Act =
@@ -150,7 +150,8 @@ if (typeof window !== 'undefined' && window.speechSynthesis) {
   window.addEventListener('pointerdown', prime, true)
 }
 
-const canListen = () => voskActive() || (VOICE_SUPPORTED && !voiceBroken)
+const chromeOk = () => VOICE_SUPPORTED && !voiceBroken
+const canListen = () => voskActive() || chromeOk()
 
 const toBase = (v: number, u: string) => {
   const l = u.toLowerCase()
@@ -199,6 +200,7 @@ export function VoiceAssistant() {
 
   const close = () => {
     stopRec()
+    if (kioskEnabled() && wakeEnabled()) takeBackFromBrowser()
     try {
       window.speechSynthesis?.cancel()
     } catch {
@@ -208,13 +210,17 @@ export function VoiceAssistant() {
     setOpen(false)
   }
 
+  const listenRef = useRef<() => void>(() => {})
   const listen = () => {
     setError('')
-    if (voskActive()) {
+    if (voskActive() && !chromeOk()) {
+      // Fully Kiosk : seul le moteur local peut écouter.
       setText('')
       if (listenCommand()) setListening(true)
       return
     }
+    // Chrome écoute la commande (rapide et précis) ; le moteur local lui laisse le micro.
+    if (voskActive()) handOffToBrowser()
     if (!VOICE_SUPPORTED || voiceBroken) {
       inputRef.current?.focus()
       return
@@ -265,6 +271,8 @@ export function VoiceAssistant() {
     }
   }
 
+  listenRef.current = listen
+
   useEffect(() => {
     const on = (e: Event) => {
       const d = (e as CustomEvent<{ autoListen?: boolean; text?: string }>).detail
@@ -299,6 +307,11 @@ export function VoiceAssistant() {
         setError('')
         setReply('')
         setListening(true)
+        if (chromeOk()) {
+          cancelCommand()
+          handOffToBrowser()
+          setTimeout(() => listenRef.current(), 150)
+        }
       }
     })
     return () => {

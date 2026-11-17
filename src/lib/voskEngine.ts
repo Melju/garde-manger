@@ -272,3 +272,20 @@ export function stopVosk() {
   }
   wakeRec = cmdRec = null
 }
+
+// Quand Chrome sait reconnaître la voix (bien plus rapide que le modèle local), on ne garde Vosk que
+// pour le mot de réveil : le micro lui est retiré le temps que Chrome écoute la commande.
+let handedOff = false
+export function handOffToBrowser() {
+  if (mode === 'off') return
+  handedOff = true
+  stopVosk()
+}
+export function takeBackFromBrowser() {
+  if (!handedOff) return
+  handedOff = false
+  void startVosk()
+}
+export function isHandedOff() {
+  return handedOff
+}
