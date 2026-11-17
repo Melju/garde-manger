@@ -474,7 +474,7 @@ export function InventoryScreen({
                   key={key}
                   product={p}
                   detail={full}
-                  groupPos={view === 'list' && gSize > 1 && openGroups.has(sig) ? (gIndex === 0 ? 'first' : gIndex === gSize - 1 ? 'last' : 'middle') : undefined}
+                  groupPos={gSize > 1 && openGroups.has(sig) ? (gIndex === 0 ? 'first' : gIndex === gSize - 1 ? 'last' : 'middle') : undefined}
                   groupCount={gIndex === 0 ? gSize : undefined}
                   noSwipe={view === 'tiles'}
                   groupOpen={openGroups.has(sig)}

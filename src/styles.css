@@ -2842,3 +2842,9 @@ body.is-selecting .add-bar { display: none; }
 .cs-range-ends { display: flex; justify-content: space-between; align-items: center; font-size: 13px; color: var(--muted); }
 .cs-range-ends button { border: none; background: none; color: var(--brand); font: inherit; font-weight: 700; cursor: pointer; }
 .product-list.selecting .pi-actions { display: none; }
+
+/* Tuiles : groupe déplié repérable, et boutons d'action qui tiennent dans la largeur */
+.product-list.tiles .swipe-wrapper.grp { border-left: 0; border-radius: var(--radius); margin-bottom: 0; }
+.product-list.tiles .swipe-wrapper.grp .product-item { box-shadow: inset 0 0 0 2px var(--brand); }
+.product-list.tiles .pi-actions { gap: 4px; }
+.product-list.tiles .pi-act { flex: 1 1 0; min-width: 0; padding: 6px 4px; font-size: 12px; overflow: hidden; text-overflow: ellipsis; }
