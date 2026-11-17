@@ -67,6 +67,7 @@ export function ShoppingScreen({ addOpen, onCloseAdd }: ShoppingScreenProps) {
 
   const [name, setName] = useState('')
   const [quick, setQuick] = useState('')
+  const [quickFocus, setQuickFocus] = useState(false)
   const [qty, setQty] = useState(1)
   const [browseAll, setBrowseAll] = useState(false)
   const [store, setStore] = useState(getCurrentStore())
@@ -258,12 +259,18 @@ export function ShoppingScreen({ addOpen, onCloseAdd }: ShoppingScreenProps) {
     await recordShopItem(known?.name ?? trimmed, category, unitRaw, known?.qty ?? sc.defaultValue)
     setQuick('')
   }
+  // Champ vide et actif : ce qu'on achète le plus souvent (et pas déjà sur la liste).
+  // Dès 2 lettres : les articles connus qui correspondent.
   const quickSuggestions = useMemo(() => {
     const q = quick.trim().toLowerCase()
-    if (q.length < 2) return []
     const inList = new Set(shopping.filter((it) => !it.checked).map((it) => it.name.toLowerCase()))
-    return catalog.filter((it) => it.name.toLowerCase().includes(q) && !inList.has(it.name.toLowerCase())).slice(0, 5)
-  }, [catalog, quick, shopping])
+    if (!q) {
+      if (!quickFocus) return []
+      return catalog.filter((it) => it.count > 0 && !inList.has(it.name.toLowerCase())).slice(0, 12)
+    }
+    if (q.length < 2) return []
+    return catalog.filter((it) => it.name.toLowerCase().includes(q) && !inList.has(it.name.toLowerCase())).slice(0, 8)
+  }, [catalog, quick, shopping, quickFocus])
 
   // Toucher une suggestion remplit le champ : la roulette s'adapte, puis on
   // choisit la quantité et on valide avec « + ». (Pas d'ajout direct.)
@@ -349,6 +356,8 @@ export function ShoppingScreen({ addOpen, onCloseAdd }: ShoppingScreenProps) {
             value={quick}
             enterKeyHint="done"
             onChange={(e) => setQuick(e.target.value)}
+            onFocus={() => setQuickFocus(true)}
+            onBlur={() => setTimeout(() => setQuickFocus(false), 150)}
             onKeyDown={(e) => {
               if (e.key === 'Enter') void quickAdd()
             }}
@@ -360,13 +369,22 @@ export function ShoppingScreen({ addOpen, onCloseAdd }: ShoppingScreenProps) {
           )}
         </div>
         {quickSuggestions.length > 0 && (
-          <div className="shop-quick-sugg">
-            {quickSuggestions.map((it) => (
-              <button key={it.name} type="button" onClick={() => void quickAdd(it.name)}>
-                {it.name}
-              </button>
-            ))}
-          </div>
+          <>
+            {!quick.trim() && <div className="shop-quick-label">Souvent achetés</div>}
+            <div className={`shop-quick-sugg${quick.trim() ? '' : ' wrap'}`}>
+              {quickSuggestions.map((it) => (
+                <button
+                  key={it.name}
+                  type="button"
+                  onMouseDown={(e) => e.preventDefault()}
+                  onClick={() => void quickAdd(it.name)}
+                >
+                  <Icon name="plus" width={2.5} />
+                  {it.name}
+                </button>
+              ))}
+            </div>
+          </>
         )}
       </div>
 

@@ -3355,3 +3355,7 @@ html.kiosk .arr-name { font-size: 24px; }
 .search-row .sort-select.active svg { color: var(--brand); }
 .shopping-groups { padding-top: 4px; }
 html.kiosk .shopping-groups { padding-top: 20px; }
+.shop-quick-label { font-size: 11.5px; font-weight: 700; text-transform: uppercase; letter-spacing: .04em; color: var(--muted); padding: 10px 2px 0; }
+.shop-quick-sugg.wrap { flex-wrap: wrap; overflow: visible; }
+.shop-quick-sugg button { display: inline-flex; align-items: center; gap: 5px; }
+.shop-quick-sugg button svg { width: 13px; height: 13px; color: var(--brand); stroke: var(--brand); }
