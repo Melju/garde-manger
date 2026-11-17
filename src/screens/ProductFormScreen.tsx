@@ -23,6 +23,8 @@ import { OpenProductSheet } from '../components/OpenProductSheet'
 import { formatLong } from '../lib/dates'
 import { DateScanner, type ScannedDate } from '../components/DateScanner'
 import { PriceScanner } from '../components/PriceScanner'
+import { PriceCompare } from '../components/PriceCompare'
+import { recordPrices } from '../lib/prices'
 import { getCurrentStore, getStores, setProductStores, storeInName, storesFor } from '../lib/stores'
 import { rememberProduct } from '../lib/productMemory'
 import { learnPlace, placeFor, defaultPlace } from '../lib/learnedPlace'
@@ -124,6 +126,7 @@ export function ProductFormScreen({ product, initial, onClose, onSaved }: Produc
     ? consOfLocation(initLoc)
     : (product?.conservation ?? initial?.conservation ?? defaultConservation(initCategory))
   const [name, setName] = useState(product?.name ?? initial?.name ?? '')
+  const scannedPrice = useRef<number | null>(null)
   const [brand, setBrand] = useState(product?.brand ?? initial?.brand ?? '')
   const [brandOpen, setBrandOpen] = useState(false)
   // Marques connues (par fréquence) et marques corrélées au nom saisi (produits aux mots communs).
@@ -346,6 +349,11 @@ export function ProductFormScreen({ product, initial, onClose, onSaved }: Produc
     rememberProduct(inp)
     learnPlace(inp.name, inp.category, inp.location)
     setProductStores(inp.name, inp.category, undefined, undefined, shops)
+    // Un prix saisi ou modifié alimente le comparatif, pour le magasin indiqué.
+    const shopForPrice = shops[0] || getCurrentStore()
+    if (inp.price && shopForPrice && inp.price !== product?.price && inp.price !== scannedPrice.current) {
+      void recordPrices([{ name: inp.name, store: shopForPrice, price: inp.price, source: 'saisie' }])
+    }
     learn({
       name: inp.name,
       category: inp.category,
@@ -814,10 +822,17 @@ export function ProductFormScreen({ product, initial, onClose, onSaved }: Produc
             <Icon name="scan" width={2.2} />
           </button>
         </div>
+        {name.trim() && <PriceCompare name={name} />}
         {scanningPrice && (
           <PriceScanner
             onResult={(r) => {
               setPrice(String(r.price).replace('.', ','))
+              scannedPrice.current = r.price
+              const shopForPrice = shops[0] || getCurrentStore()
+              if (shopForPrice && name.trim())
+                void recordPrices([
+                  { name, store: shopForPrice, price: r.price, unitPrice: r.unitPrice, unitLabel: r.unitLabel, source: 'etiquette' },
+                ])
               setScanningPrice(false)
               toast(`Prix lu : ${r.price.toFixed(2).replace('.', ',')} €${r.confident ? '' : ' (à vérifier)'}`)
             }}

@@ -1,3 +1,5 @@
+import { recordPrices } from '../lib/prices'
+import { getCurrentStore } from '../lib/stores'
 import { notifyShoppingAdded } from '../lib/shoppingNotify'
 import { seedFromProducts } from '../lib/learnedShelf'
 import { seedProductMemory } from '../lib/productMemory'
@@ -742,6 +744,12 @@ export function StoreProvider({ children }: { children: ReactNode }) {
         if (error) throw new Error(error.message || 'Analyse impossible')
         const items = (data as any)?.items
         if (!Array.isArray(items)) throw new Error((data as any)?.error || 'Réponse invalide')
+        // Les prix du ticket alimentent le comparatif par magasin (enseigne lue sur le ticket, sinon magasin choisi).
+        const shop = ((data as any)?.store as string | null) || getCurrentStore()
+        if (shop)
+          void recordPrices(
+            (items as ReceiptItem[]).map((it) => ({ name: it.name, store: shop, price: it.price, source: 'ticket' })),
+          )
         return items as ReceiptItem[]
       },
       async scanRecipe(images) {

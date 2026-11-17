@@ -38,12 +38,14 @@ Pour chaque article, donne :
   biscuits, thés, infusions, etc. Pour un lot (« 6X33CL »), donne la contenance d'une unité (« 33 cl »)
   et mets le nombre d'unités dans quantity. null si rien n'est lisible : ne devine jamais.
 - unit : "" (obsolète, laisse vide)
-- price : prix payé en euros (nombre) si visible, sinon null
+- price : prix d'UNE unité en euros (nombre) si visible, sinon null (« 2 x 3,49 » → 3.49)
 - category : une seule valeur parmi [${CATEGORIES}]
 
+Indique aussi store : le nom court de l'enseigne du magasin (« Lidl », « Colruyt », « Carrefour Market »…), ou null si illisible.
+
 Réponds STRICTEMENT en JSON valide, sans texte autour :
-{"items":[{"name":string,"quantity":number,"size":string|null,"unit":string,"price":number|null,"category":string}]}
-Si le document n'est pas un ticket lisible, renvoie {"items":[]}.`
+{"store":string|null,"items":[{"name":string,"quantity":number,"size":string|null,"unit":string,"price":number|null,"category":string}]}
+Si le document n'est pas un ticket lisible, renvoie {"store":null,"items":[]}.`
 
   const res = await callClaude({ apiKey: gate.apiKey,
     prompt,
@@ -68,5 +70,6 @@ Si le document n'est pas un ticket lisible, renvoie {"items":[]}.`
     }))
     .slice(0, 80)
 
-  return json({ items })
+  const store = typeof parsed?.store === 'string' && parsed.store.trim() ? String(parsed.store).trim().slice(0, 40) : null
+  return json({ items, store })
 })

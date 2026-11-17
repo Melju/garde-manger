@@ -3,6 +3,7 @@ import { useStore } from '../data/store'
 import { detectNearbyStores, type NearbyStore } from '../lib/geoStore'
 import { addStore, getCurrentStore, getStores, habitsFor, isUsualAt, recordPurchases, setCurrentStore } from '../lib/stores'
 import { LowStockSheet, lowStockCandidates, type LowCandidate } from '../components/LowStockSheet'
+import { euros, pricesByStore, priceKey, usePriceObs } from '../lib/prices'
 import { useToast } from '../components/Toast'
 import { Icon } from '../components/Icon'
 import { QuantityWheel } from '../components/QuantityWheel'
@@ -42,6 +43,25 @@ export function ShoppingScreen({ addOpen, onCloseAdd }: ShoppingScreenProps) {
     settings,
   } = useStore()
   const [lowPick, setLowPick] = useState<LowCandidate[] | null>(null)
+  const priceObs = usePriceObs()
+  // Pour chaque article : magasins comparables (au moins 2 prix relevés).
+  const priceInfo = useMemo(() => {
+    const m = new Map<string, ReturnType<typeof pricesByStore>>()
+    for (const it of shopping) {
+      const list = pricesByStore(priceObs, it.name)
+      if (list.length > 1) m.set(it.id, list)
+    }
+    return m
+  }, [shopping, priceObs])
+  const cheapestSummary = useMemo(() => {
+    const count = new Map<string, number>()
+    for (const it of shopping) {
+      const list = priceInfo.get(it.id)
+      if (!list || it.checked) continue
+      count.set(list[0].store, (count.get(list[0].store) ?? 0) + 1)
+    }
+    return [...count.entries()].sort((a, b) => b[1] - a[1])
+  }, [shopping, priceInfo])
   const toast = useToast()
 
   const [name, setName] = useState('')
@@ -399,6 +419,21 @@ export function ShoppingScreen({ addOpen, onCloseAdd }: ShoppingScreenProps) {
         </div>
       )}
 
+      {cheapestSummary.length > 0 && (
+        <div className="cheapest-summary">
+          <Icon name="sparkles" />
+          <span>
+            D'après tes tickets :{' '}
+            {cheapestSummary.map(([st, n], i) => (
+              <span key={st}>
+                {i > 0 && ' · '}
+                <strong>{st}</strong> moins cher pour {n} article{n > 1 ? 's' : ''}
+              </span>
+            ))}
+          </span>
+        </div>
+      )}
+
       {grouped.length === 0 ? (
         <div className="empty-state">
           <Icon name="cart" />
@@ -422,6 +457,20 @@ export function ShoppingScreen({ addOpen, onCloseAdd }: ShoppingScreenProps) {
                   {(() => {
                     const st = stockOf(it.name)
                     return st ? <span className="shopping-stock">{st} en stock</span> : null
+                  })()}
+                  {(() => {
+                    const list = priceInfo.get(it.id)
+                    if (!list) return null
+                    const best = list[0]
+                    const here = store ? list.find((p) => priceKey(p.store) === priceKey(store)) : undefined
+                    if (here && priceKey(here.store) === priceKey(best.store))
+                      return <span className="shopping-price best">Meilleur prix ici · {euros(best.price)}</span>
+                    return (
+                      <span className="shopping-price">
+                        Moins cher chez {best.store} · {euros(best.price)}
+                        {here ? ` (ici ${euros(here.price)})` : ''}
+                      </span>
+                    )
                   })()}
                 </span>
                 <div className="shop-step" onClick={(e) => e.stopPropagation()}>

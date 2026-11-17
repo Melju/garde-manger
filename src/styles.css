@@ -3004,3 +3004,19 @@ html.modal-open body { position: fixed; left: 0; right: 0; width: 100%; }
   -webkit-mask-image: linear-gradient(to right, transparent 0, #000 56px, #000 calc(100% - 56px), transparent 100%);
           mask-image: linear-gradient(to right, transparent 0, #000 56px, #000 calc(100% - 56px), transparent 100%);
 }
+
+/* Comparatif des prix par magasin */
+.price-compare { margin-top: 10px; border: 1px solid var(--border); border-radius: 14px; padding: 10px 12px; background: var(--surface); }
+.pc-title { font-size: 13px; color: var(--muted); margin-bottom: 6px; }
+.pc-title strong { color: var(--fg); }
+.pc-row { display: flex; align-items: baseline; gap: 8px; padding: 5px 0; font-size: 14px; border-top: 1px solid var(--border); }
+.pc-row:first-of-type { border-top: 0; }
+.pc-store { font-weight: 700; }
+.pc-date { font-size: 12px; color: var(--muted); }
+.pc-price { margin-left: auto; font-weight: 700; }
+.pc-price small { font-weight: 500; color: var(--muted); }
+.pc-row.best .pc-price { color: #2f7a46; }
+.shopping-price { display: block; font-size: 12px; font-weight: 600; color: #a85d00; margin-top: 2px; }
+.shopping-price.best { color: #2f7a46; }
+.cheapest-summary { display: flex; gap: 10px; align-items: flex-start; margin: 0 20px 14px; padding: 12px 14px; border-radius: 14px; background: #e6f4ea; color: #1e5a33; font-size: 13.5px; line-height: 1.45; }
+.cheapest-summary svg { flex: 0 0 auto; width: 18px; height: 18px; margin-top: 1px; }
