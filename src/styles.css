@@ -2991,3 +2991,10 @@ html.modal-open body { position: fixed; left: 0; right: 0; width: 100%; }
 @media (hover: none) { .carousel-arrow { display: none; } }
 .week-board { scrollbar-width: none; }
 .week-board::-webkit-scrollbar { display: none; }
+
+/* Planning : de l'air sous l'en-tête, et les jours occupent la hauteur de l'écran */
+.plan-actions { margin-top: 18px; }
+.week-board { align-items: stretch; }
+.week-board .plan-day { min-height: max(340px, calc(100dvh - 330px)); }
+.week-board .plan-slots { flex: 1; grid-auto-rows: 1fr; }
+.week-board .plan-meal { min-height: 0; height: 100%; }
