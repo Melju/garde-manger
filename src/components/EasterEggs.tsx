@@ -57,48 +57,54 @@ const FALLBACK = ['pomme', 'banane', 'fraise', 'carotte', 'fromage', 'croissant'
 
 function FoodRain({ onDone }: { onDone: () => void }) {
   const { products } = useStore()
-  const drops = useMemo(() => {
+  // Le logo apparaît au centre et « avale » les aliments du stock qui arrivent de tout autour.
+  const foods = useMemo(() => {
     const slugs = [
       ...new Set(
         products.map((p) => chosenIconSlug(p.imageUrl) ?? productImageSlug(p.name)).filter((s): s is string => !!s),
       ),
     ]
-    const pool = slugs.length >= 6 ? slugs : [...slugs, ...FALLBACK]
-    return Array.from({ length: 42 }, (_, i) => ({
-      slug: pool[Math.floor(Math.random() * pool.length)],
-      left: Math.random() * 96,
-      delay: Math.random() * 1.6 + (i % 6) * 0.05,
-      dur: 1.6 + Math.random() * 1.1,
-      size: 34 + Math.random() * 34,
-      rot: (Math.random() < 0.5 ? -1 : 1) * (90 + Math.random() * 270),
-    }))
+    const pool = (slugs.length >= 8 ? slugs : [...slugs, ...FALLBACK]).sort(() => Math.random() - 0.5)
+    const n = 14
+    return Array.from({ length: n }, (_, i) => {
+      const angle = (i / n) * Math.PI * 2 + Math.random() * 0.3
+      const dist = 38 + Math.random() * 10
+      return {
+        slug: pool[i % pool.length],
+        x: Math.cos(angle) * dist,
+        y: Math.sin(angle) * dist,
+        delay: 0.55 + i * 0.13,
+        rot: (Math.random() < 0.5 ? -1 : 1) * (120 + Math.random() * 200),
+      }
+    })
   }, [products])
 
   useEffect(() => {
-    const t = setTimeout(onDone, 4800)
+    const t = setTimeout(onDone, 4200)
     return () => clearTimeout(t)
   }, [onDone])
 
   return (
-    <div className="egg-rain" aria-hidden="true">
-      {drops.map((d, i) => (
+    <div className="egg-feast" onClick={onDone} aria-hidden="true">
+      <div className="egg-feast-glow" />
+      {foods.map((f, i) => (
         <img
           key={i}
-          src={productImageUrl(d.slug)}
+          className="egg-feast-food"
+          src={productImageUrl(f.slug)}
           alt=""
           draggable={false}
           onError={(e) => ((e.currentTarget as HTMLImageElement).style.display = 'none')}
           style={{
-            left: `${d.left}%`,
-            width: d.size,
-            height: d.size,
-            animationDelay: `${d.delay}s`,
-            animationDuration: `${d.dur}s`,
-            ['--rot' as string]: `${d.rot}deg`,
+            ['--x' as string]: `${f.x}vmin`,
+            ['--y' as string]: `${f.y}vmin`,
+            ['--rot' as string]: `${f.rot}deg`,
+            animationDelay: `${f.delay}s`,
           }}
         />
       ))}
-      <div className="egg-rain-title">Miam miam !</div>
+      <img className="egg-feast-logo" src={`${import.meta.env.BASE_URL}logo.webp`} alt="" />
+      <div className="egg-feast-text">Miam miam !</div>
     </div>
   )
 }

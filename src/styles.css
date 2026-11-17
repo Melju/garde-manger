@@ -3147,32 +3147,50 @@ html.kiosk .arr-name { font-size: 24px; }
 }
 
 /* Œufs de Pâques (recherche du stock). */
-.egg-rain { position: fixed; inset: 0; z-index: 420; pointer-events: none; overflow: hidden; }
-.egg-rain img {
-  position: absolute; top: -90px; object-fit: contain;
-  filter: drop-shadow(0 4px 6px rgba(0, 0, 0, 0.18));
-  animation-name: egg-fall; animation-timing-function: cubic-bezier(0.45, 0, 0.8, 0.6); animation-fill-mode: both;
+.egg-feast {
+  position: fixed; inset: 0; z-index: 420; overflow: hidden; cursor: pointer;
+  display: grid; place-items: center;
+  background: rgba(15, 25, 35, 0.3); backdrop-filter: blur(4px); -webkit-backdrop-filter: blur(4px);
+  animation: egg-feast-bg 4.2s ease both;
 }
-@keyframes egg-fall {
-  0% { transform: translateY(0) rotate(0); opacity: 1; }
-  78% { transform: translateY(calc(100vh + 10px)) rotate(var(--rot)); }
-  86% { transform: translateY(calc(100vh - 40px)) rotate(calc(var(--rot) * 1.1)); }
-  93% { transform: translateY(calc(100vh + 10px)) rotate(calc(var(--rot) * 1.15)); opacity: 1; }
-  100% { transform: translateY(calc(100vh + 10px)) rotate(calc(var(--rot) * 1.15)); opacity: 0; }
+@keyframes egg-feast-bg { 0% { opacity: 0; } 8%, 88% { opacity: 1; } 100% { opacity: 0; } }
+.egg-feast > * { grid-area: 1 / 1; }
+.egg-feast-glow {
+  width: 46vmin; height: 46vmin; border-radius: 50%;
+  background: radial-gradient(circle, rgba(255, 255, 255, 0.95) 0%, rgba(255, 255, 255, 0.55) 45%, transparent 70%);
+  animation: egg-glow 4.2s ease both;
 }
-.egg-rain-title {
-  position: absolute; left: 50%; top: 38%;
-  transform: translate(-50%, -50%);
-  font-size: clamp(40px, 11vw, 84px); font-weight: 800; color: var(--brand);
-  text-shadow: 0 4px 0 #fff, 0 8px 24px rgba(0, 0, 0, 0.18);
-  animation: egg-title 4.6s cubic-bezier(0.2, 1.5, 0.4, 1) both;
+@keyframes egg-glow { 0% { transform: scale(0); } 15% { transform: scale(1.05); } 20%, 85% { transform: scale(1); } 100% { transform: scale(0.6); opacity: 0; } }
+.egg-feast-logo {
+  width: min(42vmin, 220px); height: auto; position: relative; z-index: 2;
+  filter: drop-shadow(0 10px 20px rgba(0, 0, 0, 0.18));
+  transform-origin: 50% 65%;
+  animation:
+    egg-logo-in 0.55s cubic-bezier(0.2, 1.6, 0.4, 1) both,
+    egg-logo-chomp 0.26s 0.75s ease-in-out 9,
+    egg-logo-out 0.5s 3.5s ease-in both;
 }
-@keyframes egg-title {
-  0% { opacity: 0; transform: translate(-50%, -50%) scale(0.3) rotate(-12deg); }
-  12% { opacity: 1; transform: translate(-50%, -50%) scale(1.1) rotate(4deg); }
-  20%, 80% { opacity: 1; transform: translate(-50%, -50%) scale(1) rotate(0); }
-  100% { opacity: 0; transform: translate(-50%, -50%) scale(0.9); }
+@keyframes egg-logo-in { from { transform: scale(0) rotate(-20deg); } }
+@keyframes egg-logo-chomp { 50% { transform: scale(1.1, 0.86); } }
+@keyframes egg-logo-out { 40% { transform: scale(1.15); } 100% { transform: scale(0); opacity: 0; } }
+.egg-feast-food {
+  width: 11vmin; height: 11vmin; max-width: 64px; max-height: 64px; object-fit: contain; z-index: 1;
+  filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.2));
+  animation: egg-food-in 0.75s cubic-bezier(0.55, 0, 0.75, 0.4) both;
 }
+@keyframes egg-food-in {
+  0% { opacity: 0; transform: translate(var(--x), var(--y)) scale(0.3) rotate(0); }
+  25% { opacity: 1; transform: translate(calc(var(--x) * 0.95), calc(var(--y) * 0.95)) scale(1.1) rotate(calc(var(--rot) * 0.2)); }
+  90% { opacity: 1; transform: translate(0, 0) scale(0.45) rotate(var(--rot)); }
+  100% { opacity: 0; transform: translate(0, 0) scale(0.2) rotate(var(--rot)); }
+}
+.egg-feast-text {
+  align-self: end; margin-bottom: 18vh; z-index: 2;
+  font-size: clamp(30px, 8vmin, 54px); font-weight: 800; color: #fff; letter-spacing: -0.5px;
+  text-shadow: 0 3px 14px rgba(0, 0, 0, 0.3);
+  animation: egg-text 4.2s cubic-bezier(0.2, 1.5, 0.4, 1) both;
+}
+@keyframes egg-text { 0%, 60% { opacity: 0; transform: translateY(20px) scale(0.8); } 70%, 86% { opacity: 1; transform: none; } 100% { opacity: 0; } }
 .egg-overlay {
   position: fixed; inset: 0; z-index: 410; display: grid; place-items: center;
   background: rgba(15, 25, 35, 0.35); backdrop-filter: blur(3px); -webkit-backdrop-filter: blur(3px);
@@ -3211,6 +3229,6 @@ html.kiosk .arr-name { font-size: 24px; }
 @keyframes egg-wave { 0%, 60%, 100% { transform: rotate(0); } 10%, 30% { transform: rotate(18deg); } 20%, 40% { transform: rotate(-10deg); } }
 .egg-msg { font-size: 17px; font-weight: 600; line-height: 1.4; }
 @media (prefers-reduced-motion: reduce) {
-  .egg-rain img { display: none; }
-  .egg-chomp, .egg-avatar, .egg-wave, .egg-rain-title { animation: none !important; }
+  .egg-feast-food { display: none; }
+  .egg-chomp, .egg-avatar, .egg-wave, .egg-feast-logo, .egg-feast-glow, .egg-feast-text { animation: none !important; }
 }
