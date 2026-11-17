@@ -66,7 +66,10 @@ export function VoiceAssistant() {
   const { products, shopping } = store
   const toast = useToast()
   const [open, setOpen] = useState(false)
-  const [phase, setPhase] = useState<'listen' | 'think' | 'review'>('listen')
+  const [phase, setPhase] = useState<'listen' | 'think' | 'review' | 'done'>('listen')
+  const [doneLabels, setDoneLabels] = useState<string[]>([])
+  const undoRef = useRef<(() => Promise<void>)[]>([])
+  const doneTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined)
   const [text, setText] = useState('')
   const [listening, setListening] = useState(false)
   const [rows, setRows] = useState<Row[]>([])
@@ -95,6 +98,7 @@ export function VoiceAssistant() {
 
   const close = () => {
     stopRec()
+    clearTimeout(doneTimer.current)
     setOpen(false)
   }
 
@@ -194,19 +198,22 @@ export function VoiceAssistant() {
     }
     const acts = ((data as any)?.actions ?? []) as Act[]
     setUnknown(((data as any)?.unknown ?? []) as string[])
-    setRows(acts.map((a) => ({ act: a, on: true })))
-    setPhase('review')
+    const next = acts.map((a) => ({ act: a, on: true }))
+    setRows(next)
+    // Rien d'ambigu : on applique tout de suite (on peut annuler juste après).
+    if (next.length && !next.some((r) => r.act.type === 'ask')) void apply(next)
+    else setPhase('review')
   }
 
   // ----- Application, avec de quoi annuler -----
-  async function apply() {
+  async function apply(list: Row[] = rows) {
     if (busy) return
     setBusy(true)
     const undo: (() => Promise<void>)[] = []
     const t0 = new Date().toISOString()
-    let done = 0
+    const labels: string[] = []
     try {
-      for (const r of rows) {
+      for (const r of list) {
         if (!r.on) continue
         let a = r.act
         if (a.type === 'ask') {
@@ -217,28 +224,38 @@ export function VoiceAssistant() {
               : { type: a.then, label: a.label, id: r.pick }
         }
         await applyOne(a, undo, t0)
-        done++
+        labels.push(a.label)
       }
     } catch (e) {
       toast(e instanceof Error ? e.message : 'Une action a échoué')
     } finally {
       setBusy(false)
     }
+    if (!labels.length) {
+      close()
+      return
+    }
+    // Récap dans la feuille, avec un gros bouton Annuler, puis fermeture automatique.
+    undoRef.current = undo
+    setDoneLabels(labels)
+    setPhase('done')
+    clearTimeout(doneTimer.current)
+    doneTimer.current = setTimeout(close, 7000)
+  }
+
+  async function undoAll() {
+    clearTimeout(doneTimer.current)
+    const list = undoRef.current
+    undoRef.current = []
+    for (const u of list.reverse()) {
+      try {
+        await u()
+      } catch {
+        /* au mieux */
+      }
+    }
     close()
-    if (done)
-      toast(`${done} action${done > 1 ? 's' : ''} faite${done > 1 ? 's' : ''}`, {
-        label: 'Annuler',
-        onClick: async () => {
-          for (const u of undo.reverse()) {
-            try {
-              await u()
-            } catch {
-              /* au mieux */
-            }
-          }
-          toast('Annulé')
-        },
-      })
+    toast('Annulé')
   }
 
   async function applyOne(a: Exclude<Act, { type: 'ask' }>, undo: (() => Promise<void>)[], t0: string) {
@@ -319,7 +336,31 @@ export function VoiceAssistant() {
     <div className="cselect-overlay voice-overlay" onClick={close}>
       <div className="cselect-sheet voice-sheet" onClick={(e) => e.stopPropagation()} role="dialog" aria-label="Commande vocale">
         <div className="cselect-handle" />
-        {phase !== 'review' ? (
+        {phase === 'done' ? (
+          <>
+            <div className="voice-done-ico">
+              <Icon name="check" width={3} />
+            </div>
+            <div className="voice-done-title">C’est fait</div>
+            <div className="voice-rows">
+              {doneLabels.map((l, i) => (
+                <div className="voice-row done" key={i}>
+                  <Icon name="check" width={2.5} />
+                  <span className="voice-label">{l}</span>
+                </div>
+              ))}
+            </div>
+            <div className="voice-actions">
+              <button className="btn-secondary" onClick={() => void undoAll()}>
+                Annuler
+              </button>
+              <button className="btn-primary" onClick={close}>
+                OK
+              </button>
+            </div>
+            <div className="voice-done-bar" />
+          </>
+        ) : phase !== 'review' ? (
           <>
             <button
               type="button"

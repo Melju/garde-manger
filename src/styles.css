@@ -3407,3 +3407,10 @@ html.kiosk .shopping-groups { padding-top: 20px; }
 .voice-ask-q { font-weight: 700; margin-bottom: 8px; }
 .voice-ask-opts { display: flex; flex-wrap: wrap; gap: 6px; }
 .voice-unknown { margin-top: 10px; font-size: 13px; color: #a85d00; text-align: left; }
+.voice-done-ico { width: 64px; height: 64px; margin: 8px auto 6px; border-radius: 50%; background: var(--success, #2f7a46); display: grid; place-items: center; animation: egg-happy 0.5s cubic-bezier(0.2, 1.6, 0.4, 1) both; }
+.voice-done-ico svg { width: 32px; height: 32px; stroke: #fff; color: #fff; }
+.voice-done-title { font-size: 18px; font-weight: 800; margin-bottom: 12px; }
+.voice-row.done { cursor: default; }
+.voice-row.done svg { width: 18px; height: 18px; color: var(--success, #2f7a46); stroke: currentColor; flex: none; }
+.voice-done-bar { height: 4px; border-radius: 4px; background: var(--brand); margin-top: 14px; transform-origin: left; animation: voice-countdown 7s linear both; }
+@keyframes voice-countdown { from { transform: scaleX(1); } to { transform: scaleX(0); } }
