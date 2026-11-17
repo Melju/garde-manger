@@ -7,6 +7,8 @@ import { addBrand, getCustomBrands, removeCustomBrand, renameCustomBrand } from 
 import { normalize } from '../lib/productIcon'
 import { addStore, getStores, removeStore, renameStore } from '../lib/stores'
 import { kioskEnabled, setKiosk } from '../lib/kiosk'
+import { defaultSort, setDefaultSort, SORT_OPTIONS, type InventorySort } from '../lib/inventorySort'
+import { Select } from '../components/Select'
 import { pushState, enablePush, disablePush, testPush, shoppingNotifEnabled, setShoppingNotif, type PushState } from '../lib/push'
 
 interface SettingsScreenProps {
@@ -71,6 +73,7 @@ export function SettingsScreen({ onBack }: SettingsScreenProps) {
   }
   const [shopNotif, setShopNotif] = useState(true)
   const [kiosk, setKioskState] = useState(kioskEnabled)
+  const [defSort, setDefSortState] = useState<InventorySort>(defaultSort)
   useEffect(() => {
     pushState().then(setPush).catch(() => setPush('unsupported'))
   }, [])
@@ -163,6 +166,24 @@ export function SettingsScreen({ onBack }: SettingsScreenProps) {
           <Toggle
             checked={push === 'on'}
             onChange={(v) => !pushBusy && (push === 'on' || push === 'off') && togglePush(v)}
+          />
+        </div>
+        <div className="setting-row">
+          <div className="setting-text">
+            <div className="setting-title">Tri du stock par défaut</div>
+            <div className="setting-desc">Ordre d'affichage à l'ouverture du stock</div>
+          </div>
+          <Select
+            className="settings-select"
+            ariaLabel="Tri du stock par défaut"
+            title="Tri par défaut"
+            value={defSort}
+            onChange={(v) => {
+              setDefaultSort(v as InventorySort)
+              setDefSortState(v as InventorySort)
+              toast('Tri par défaut enregistré')
+            }}
+            options={SORT_OPTIONS.map((o) => ({ value: o.value, label: o.label }))}
           />
         </div>
         <div className="setting-row">

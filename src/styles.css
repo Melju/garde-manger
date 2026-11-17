@@ -3020,3 +3020,10 @@ html.modal-open body { position: fixed; left: 0; right: 0; width: 100%; }
 .shopping-price.best { color: #2f7a46; }
 .cheapest-summary { display: flex; gap: 10px; align-items: flex-start; margin: 0 20px 14px; padding: 12px 14px; border-radius: 14px; background: #e6f4ea; color: #1e5a33; font-size: 13.5px; line-height: 1.45; }
 .cheapest-summary svg { flex: 0 0 auto; width: 18px; height: 18px; margin-top: 1px; }
+
+/* Tri du stock */
+.search-row .sort-select { flex: 0 0 auto; max-width: 46%; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; padding: 0 14px; border-radius: 14px; font-size: 14px; }
+.sort-default-link { display: block; margin: -8px 20px 10px auto; border: none; background: none; color: var(--brand); font: inherit; font-size: 12.5px; font-weight: 700; cursor: pointer; text-align: right; }
+.settings-select { flex: 0 0 auto; max-width: 52%; }
+.search-row .sort-select, .settings-select { border: 1px solid var(--border); background: var(--surface); color: var(--fg); font-weight: 600; min-height: 46px; padding: 0 14px; border-radius: 14px; }
+.search-row .sort-select::before { content: '⇅ '; color: var(--muted); }

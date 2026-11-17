@@ -2,6 +2,8 @@ import { ClearButton } from '../components/ClearButton'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { useStore } from '../data/store'
 import { kioskEnabled, KIOSK_IDLE } from '../lib/kiosk'
+import { defaultSort, setDefaultSort, sortProducts, SORT_OPTIONS, type InventorySort } from '../lib/inventorySort'
+import { Select } from '../components/Select'
 import { useToast } from '../components/Toast'
 import { Icon } from '../components/Icon'
 import { ProductItem } from '../components/ProductItem'
@@ -158,17 +160,19 @@ export function InventoryScreen({
   const urgent = useMemo(() => urgentCount(products), [products])
 
   // Recherche unique : nom, marque, catégorie ou magasin (tous les mots saisis doivent correspondre quelque part).
+  const [defSort, setDefSort] = useState<InventorySort>(defaultSort)
+  const [sort, setSort] = useState<InventorySort>(defSort)
   const filtered = useMemo(() => {
     const words = normalize(search).split(/\s+/).filter(Boolean)
-    if (!words.length) return products
-    return products.filter((p) => {
+    if (!words.length) return sortProducts(products, sort)
+    return sortProducts(products, sort).filter((p) => {
       const hay = normalize(
         [p.name, p.brand ?? '', CATEGORIES.find((c) => c.id === p.category)?.label ?? '', ...storesFor(p.name)].join(' '),
       )
       return words.every((w) => hay.includes(w))
     })
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [products, search, selecting])
+  }, [products, search, selecting, sort])
 
   // Liste : un produit au poids/volume en plusieurs paquets (2 × 200 g) s'affiche en une ligne par paquet,
   // pour retirer des grammes sur l'un sans toucher l'autre (4 paquets max, hors boissons : un lot de
@@ -218,6 +222,7 @@ export function InventoryScreen({
     const onKiosk = () => kioskEnabled() && setView('tiles')
     const onIdle = () => {
       setSearch('')
+      setSort(defaultSort())
       setOpenGroups(new Set())
     }
     window.addEventListener('miamm-kiosk', onKiosk)
@@ -440,7 +445,20 @@ export function InventoryScreen({
           </div>
           {search && <ClearButton onClick={() => setSearch('')} />}
         </div>
+        <Select
+          className="sort-select"
+          ariaLabel="Trier le stock"
+          title="Trier par"
+          value={sort}
+          onChange={(v) => setSort(v as InventorySort)}
+          options={SORT_OPTIONS.map((o) => ({ value: o.value, label: o.label }))}
+        />
       </div>
+      {sort !== defSort && (
+        <button className="sort-default-link" onClick={() => (setDefaultSort(sort), setDefSort(sort), toast('Tri par défaut enregistré'))}>
+          Garder « {SORT_OPTIONS.find((o) => o.value === sort)?.label} » comme tri par défaut
+        </button>
+      )}
 
       </div>
 
