@@ -54,14 +54,24 @@ export function ConsumeSheet({
         {scale ? (
           <div className="cs-range">
             <div className="cs-range-value">{label}</div>
-            <input
-              type="range"
-              min={1}
-              max={scale.values.length - 1}
-              value={idx}
-              onChange={(e) => setIdx(Number(e.target.value))}
-              autoFocus
-            />
+            <div className="cs-range-row">
+              <button className="cs-step" aria-label="Moins" disabled={idx <= 1} onClick={() => setIdx((i) => Math.max(1, i - 1))}>−</button>
+              <input
+                type="range"
+                min={1}
+                max={scale.values.length - 1}
+                value={idx}
+                onChange={(e) => setIdx(Number(e.target.value))}
+              />
+              <button
+                className="cs-step"
+                aria-label="Plus"
+                disabled={idx >= scale.values.length - 1}
+                onClick={() => setIdx((i) => Math.min(scale.values.length - 1, i + 1))}
+              >
+                +
+              </button>
+            </div>
             <div className="cs-range-ends">
               <span>{formatContenance(scale.values[1] ?? 0, scale.baseUnit)}</span>
               <button onClick={() => setIdx(scale.values.length - 1)}>Tout ({formatContenance(scale.values[scale.values.length - 1], scale.baseUnit)})</button>
