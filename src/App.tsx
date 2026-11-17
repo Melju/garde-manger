@@ -216,6 +216,12 @@ export function App() {
     }
   }, [auth.ready, auth.householdId, loading])
 
+  // Mode tablette : après inactivité, retour au stock sans sous-page ouverte.
+  const kioskIdle = useCallback(() => {
+    setStack([])
+    setTab('inventory')
+  }, [])
+
   // Invitation à rejoindre un autre foyer (envoyée par un membre) : on propose de la rejoindre.
   useEffect(() => {
     if (!auth.ready || !auth.user || !supabase) return
@@ -275,12 +281,6 @@ export function App() {
     setStack((s) => [...s, r])
   }
   const back = () => setStack((s) => s.slice(0, -1))
-  // Mode tablette : après inactivité, retour au stock sans sous-page ouverte.
-  const kioskIdle = useCallback(() => {
-    setStack([])
-    setTab('inventory')
-  }, [])
-
   const goTab = (t: Tab) => {
     scrollSaved.current = []
     setTab(t)
