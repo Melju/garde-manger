@@ -31,6 +31,7 @@ import { lookupBarcode } from './lib/openfoodfacts'
 import { recallProduct } from './lib/productMemory'
 import { supabase } from './data/supabaseClient'
 import { splitSize, consumeFraction, remainingLabel } from './lib/contenance'
+import { DuplicatesScreen } from './screens/DuplicatesScreen'
 import { UpdateBanner } from './components/UpdateBanner'
 import { KioskMode } from './components/KioskMode'
 import { ScanConsumeSheet, type ConsumeChoice } from './components/ScanConsumeSheet'
@@ -69,6 +70,7 @@ type Route =
   | { name: 'family' }
   | { name: 'member-edit'; member: FamilyMember | null }
   | { name: 'settings' }
+  | { name: 'duplicates' }
   | { name: 'account' }
   | { name: 'add-menu' }
 
@@ -376,6 +378,7 @@ export function App() {
                 onWaste={() => push({ name: 'waste' })}
                 onBudget={() => push({ name: 'budget' })}
                 onSettings={() => push({ name: 'settings' })}
+                onDuplicates={() => push({ name: 'duplicates' })}
                 onAccount={() => push({ name: 'account' })}
               />
             )}
@@ -490,6 +493,8 @@ export function App() {
         return <MemberEditScreen member={route.member} onBack={back} />
       case 'settings':
         return <SettingsScreen onBack={back} />
+      case 'duplicates':
+        return <DuplicatesScreen onBack={back} />
       case 'account':
         return <AccountScreen onBack={back} />
       case 'add-menu':

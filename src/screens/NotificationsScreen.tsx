@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { useToast } from '../components/Toast'
 import { useStore } from '../data/store'
 import { PageHeader } from '../components/PageHeader'
 import { Icon, type IconName } from '../components/Icon'
@@ -18,7 +19,8 @@ const ICON_BY_SEVERITY: Record<NotifSeverity, IconName> = {
 type Tab = 'toutes' | NotifKind
 
 export function NotificationsScreen({ onBack }: NotificationsScreenProps) {
-  const { notifications, markNotificationsRead, dismissNotifications } = useStore()
+  const { notifications, markNotificationsRead, dismissNotifications, addShoppingItem } = useStore()
+  const toast = useToast()
   const [tab, setTab] = useState<Tab>('toutes')
 
   // À l'ouverture, on marque les notifications comme vues (efface le badge).
@@ -37,7 +39,7 @@ export function NotificationsScreen({ onBack }: NotificationsScreenProps) {
         {([
           ['toutes', 'Toutes'],
           ['peremption', 'Péremptions'],
-          ['stock', 'Stock bas'],
+          ['stock', 'À racheter'],
         ] as [Tab, string][]).map(([id, label]) => (
           <button
             key={id}
@@ -72,6 +74,17 @@ export function NotificationsScreen({ onBack }: NotificationsScreenProps) {
               <div className="notif-content">
                 <div className="notif-title">{n.title}</div>
                 <div className="notif-desc">{n.desc}</div>
+                {n.shopName && (
+                  <button
+                    className="notif-shop"
+                    onClick={() => {
+                      void addShoppingItem({ name: n.shopName!, category: n.shopCategory ?? 'autre', quantity: 1, source: 'auto' })
+                      toast(`${n.shopName} ajouté aux courses`)
+                    }}
+                  >
+                    + Ajouter aux courses
+                  </button>
+                )}
               </div>
               <button className="notif-dismiss" aria-label="Effacer" onClick={() => dismissNotifications([n.id])}>
                 <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><path d="M6 6l12 12M18 6L6 18" /></svg>

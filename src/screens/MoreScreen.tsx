@@ -4,6 +4,7 @@ import { useAuth } from '../data/auth'
 import { Icon, type IconName } from '../components/Icon'
 import { budgetSummary } from '../lib/analytics'
 import { monthlyStats } from '../lib/analytics'
+import { findDuplicates } from '../lib/duplicates'
 
 interface MoreScreenProps {
   onFamily: () => void
@@ -12,6 +13,7 @@ interface MoreScreenProps {
   onWaste: () => void
   onBudget: () => void
   onSettings: () => void
+  onDuplicates: () => void
   onAccount: () => void
 }
 
@@ -20,6 +22,7 @@ export function MoreScreen(props: MoreScreenProps) {
   const auth = useAuth()
   const notifCount = unreadNotifCount
   const spent = useMemo(() => budgetSummary(expenses, budget).spent, [expenses, budget])
+  const dupCount = useMemo(() => findDuplicates(products).length, [products])
   const score = useMemo(() => monthlyStats(products, history, expenses).score, [products, history, expenses])
 
   const items: {
@@ -40,6 +43,13 @@ export function MoreScreen(props: MoreScreenProps) {
     },
     { icon: 'recycle', title: 'Anti-gaspillage', desc: `Score ${score}/100`, onClick: props.onWaste },
     { icon: 'wallet', title: 'Budget', desc: `${spent}€ ce mois`, onClick: props.onBudget },
+    {
+      icon: 'list',
+      title: 'Noms en double',
+      desc: dupCount > 0 ? `${dupCount} produit${dupCount > 1 ? 's' : ''} sous plusieurs noms` : 'Rien à harmoniser',
+      onClick: props.onDuplicates,
+      badge: dupCount || undefined,
+    },
     { icon: 'cog', title: 'Paramètres', desc: 'Notifications, données', onClick: props.onSettings },
     {
       icon: 'users',

@@ -338,7 +338,20 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     }
   }, [cloud, auth.householdId, loadAll])
 
-  const allNotifications = useMemo(() => buildNotifications(products, settings), [products, settings])
+  const allNotifications = useMemo(
+    () =>
+      buildNotifications(
+        products,
+        settings,
+        shopping.map((it) => it.name),
+        new Set(
+          shopCatalog
+            .filter((c) => (c.count ?? 0) >= 2)
+            .map((c) => c.name.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().trim()),
+        ),
+      ),
+    [products, settings, shopping, shopCatalog],
+  )
   const notifications = useMemo(
     () => allNotifications.filter((n) => !dismissedNotif.includes(notifKey(n))),
     [allNotifications, dismissedNotif],

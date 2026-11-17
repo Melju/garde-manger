@@ -1,7 +1,8 @@
 import type { BudgetConfig, Category, Expense, HistoryEntry, Product, Settings } from '../types'
 import { categoryLabel } from '../types'
-import { daysUntilExpiry, expiryStatus, expiryLabel, isFrozen } from './expiry'
+import { daysUntilExpiry, expiryStatus, isFrozen } from './expiry'
 import { monthKey, toISODate } from './dates'
+import { remainingRatio } from './contenance'
 
 // ===== Notifications =====
 
@@ -14,50 +15,91 @@ export interface Notification {
   severity: NotifSeverity
   title: string
   desc: string
+  /** Produit à mettre sur la liste de courses (bouton « Ajouter aux courses »). */
+  shopName?: string
+  shopCategory?: Category
 }
 
-/** Génère les notifications à partir du stock et des préférences. */
-export function buildNotifications(products: Product[], settings: Settings): Notification[] {
+const keyOf = (s: string) => s.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().trim()
+
+/**
+ * Notifications utiles uniquement (une liste qu'on lit, pas un inventaire) :
+ * - périmés et « à consommer sous 3 jours » : une par produit (lots identiques regroupés) ;
+ * - « bientôt » (4 à 14 jours) : un seul résumé ;
+ * - stock : seulement ce qui est vraiment à racheter (épuisé, presque fini, dernier paquet ouvert,
+ *   produit acheté souvent), lots additionnés, et pas ce qui est déjà sur la liste de courses.
+ */
+export function buildNotifications(
+  products: Product[],
+  settings: Settings,
+  shoppingNames: string[] = [],
+  boughtOften: Set<string> = new Set(),
+): Notification[] {
   const list: Notification[] = []
 
   if (settings.notifExpiry) {
+    const urgentByName = new Map<string, { p: Product; status: string; days: number; qty: number }>()
+    const soon: Product[] = []
     for (const p of products) {
       const status = expiryStatus(p)
-      if (status === 'urgent' || status === 'expired') {
-        const days = daysUntilExpiry(p)
-        list.push({
-          id: `exp-${p.id}`,
-          kind: 'peremption',
-          severity: status === 'expired' ? 'danger' : days! <= 1 ? 'danger' : 'warn',
-          title:
-            status === 'expired'
-              ? `${p.name} est périmé`
-              : `${p.name} expire ${days === 0 ? "aujourd'hui" : days === 1 ? 'demain' : `dans ${days} jours`}`,
-          desc: `Il reste ×${p.quantity}${p.unit ? ' ' + p.unit : ''} à consommer`,
-        })
-      } else if (status === 'soon' && !isFrozen(p)) {
-        list.push({
-          id: `exp-${p.id}`,
-          kind: 'peremption',
-          severity: 'warn',
-          title: `${p.name} expire dans ${expiryLabel(p).toLowerCase()}`,
-          desc: 'Pensez à le cuisiner bientôt',
-        })
-      }
+      const days = daysUntilExpiry(p)
+      if ((status === 'urgent' || status === 'expired') && days !== null) {
+        const k = keyOf(p.name) + '|' + status
+        const prev = urgentByName.get(k)
+        if (!prev || days < prev.days) urgentByName.set(k, { p, status, days, qty: (prev?.qty ?? 0) + p.quantity })
+        else prev.qty += p.quantity
+      } else if (status === 'soon' && !isFrozen(p)) soon.push(p)
+    }
+    for (const { p, status, days, qty } of urgentByName.values()) {
+      list.push({
+        id: `exp-${p.id}`,
+        kind: 'peremption',
+        severity: status === 'expired' || days <= 1 ? 'danger' : 'warn',
+        title:
+          status === 'expired'
+            ? `${p.name} est périmé`
+            : `${p.name} expire ${days === 0 ? "aujourd'hui" : days === 1 ? 'demain' : `dans ${days} jours`}`,
+        desc: status === 'expired' ? 'À vérifier ou à jeter' : `À consommer en priorité (×${qty})`,
+      })
+    }
+    if (soon.length) {
+      const names = [...new Set(soon.map((p) => p.name))]
+      list.push({
+        id: `soon-${toISODate(new Date())}-${names.length}`,
+        kind: 'peremption',
+        severity: 'info',
+        title: `${names.length} produit${names.length > 1 ? 's' : ''} à consommer dans les 2 semaines`,
+        desc: names.slice(0, 5).join(', ') + (names.length > 5 ? ` et ${names.length - 5} autre${names.length - 5 > 1 ? 's' : ''}` : ''),
+      })
     }
   }
 
   if (settings.notifLowStock) {
+    const inList = new Set(shoppingNames.map(keyOf))
+    const groups = new Map<string, Product[]>()
     for (const p of products) {
-      if (p.quantity <= settings.lowStockThreshold) {
-        list.push({
-          id: `low-${p.id}`,
-          kind: 'stock',
-          severity: 'info',
-          title: `Stock bas : ${p.name}`,
-          desc: `Il ne reste que ×${p.quantity}${p.unit ? ' ' + p.unit : ''}`,
-        })
-      }
+      const k = keyOf(p.name)
+      if (!k || inList.has(k)) continue
+      groups.set(k, [...(groups.get(k) ?? []), p])
+    }
+    for (const [k, lots] of groups) {
+      const total = lots.reduce((s, p) => s + (p.quantity || 0), 0)
+      if (total > settings.lowStockThreshold) continue
+      const p = lots[0]
+      const ratio = lots.map((l) => remainingRatio(l.size)).filter((r): r is number => r !== null)
+      const almost = ratio.length > 0 && Math.min(...ratio) <= 0.25
+      const opened = lots.some((l) => l.openedAt)
+      const often = boughtOften.has(k)
+      if (!(total <= 0 || almost || opened || often)) continue
+      list.push({
+        id: `low-${p.id}`,
+        kind: 'stock',
+        severity: 'info',
+        title: `À racheter : ${p.name}`,
+        desc: almost ? 'Presque fini' : opened ? 'Dernier paquet, déjà ouvert' : often ? 'Dernier exemplaire, acheté souvent' : 'Épuisé',
+        shopName: p.name,
+        shopCategory: p.category,
+      })
     }
   }
 
