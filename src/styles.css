@@ -3442,3 +3442,12 @@ html.kiosk .product-list.tiles .product-icon > svg { width: 32cqw !important; ma
 .voice-pick { display: flex; gap: 8px; align-items: center; flex: 0 1 360px; min-width: 0; }
 .voice-pick-select { flex: 1; min-width: 0; height: 46px; border: 1px solid var(--border); border-radius: 14px; background: var(--surface); color: var(--fg); font: inherit; padding: 0 12px; }
 .voice-pick-note { font-size: 13px; color: var(--fg-2); }
+
+/* Mise en veille de l'écran (mode tablette) */
+.screen-dim { position: fixed; inset: 0; z-index: 900; background: #000; opacity: 0; pointer-events: none; transition: opacity 1.2s ease; }
+.screen-dim.on { opacity: 1; pointer-events: auto; cursor: pointer; }
+.screen-dim-clock { position: absolute; transform: translate(-50%, -50%); text-align: center; color: rgba(255, 255, 255, 0.55); transition: left 3s ease, top 3s ease; white-space: nowrap; }
+.screen-dim-time { font-size: 96px; font-weight: 300; letter-spacing: 2px; line-height: 1; }
+.screen-dim-date { font-size: 22px; margin-top: 10px; text-transform: capitalize; }
+.screen-dim-hint { font-size: 14px; margin-top: 18px; color: rgba(255, 255, 255, 0.3); }
+.screen-dim.shield { pointer-events: auto; }

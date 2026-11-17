@@ -37,6 +37,7 @@ import { ArrivalsPopup } from './components/ArrivalsPopup'
 import { EasterEggs } from './components/EasterEggs'
 import { VoiceAssistant, WakeWord } from './components/VoiceAssistant'
 import { KioskMode } from './components/KioskMode'
+import { ScreenDim } from './components/ScreenDim'
 import { ScanConsumeSheet, type ConsumeChoice } from './components/ScanConsumeSheet'
 import type { FamilyMember, Product, ProductInput, Recipe } from './types'
 
@@ -345,6 +346,7 @@ export function App() {
       <VoiceAssistant />
       <WakeWord />
       <KioskMode onIdle={kioskIdle} />
+      <ScreenDim />
       <main className={`app${!top && add ? ' with-fab' : ''} wide`}>
         {!top && <InstallPrompt />}
         {/* Cloud configuré mais aucune session : l'app tourne sur le stockage local de cet appareil. */}

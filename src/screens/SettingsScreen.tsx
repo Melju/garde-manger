@@ -6,7 +6,7 @@ import { PageHeader } from '../components/PageHeader'
 import { addBrand, getCustomBrands, removeCustomBrand, renameCustomBrand } from '../lib/brands'
 import { normalize } from '../lib/productIcon'
 import { addStore, getStores, removeStore, renameStore } from '../lib/stores'
-import { kioskEnabled, setKiosk, wakeEnabled, setWake } from '../lib/kiosk'
+import { kioskEnabled, setKiosk, wakeEnabled, setWake, dimMinutes, setDimMinutes } from '../lib/kiosk'
 import { WakeDiag, VoicePicker, VOICE_SUPPORTED } from '../components/VoiceAssistant'
 import { defaultSort, setDefaultSort, SORT_OPTIONS, type InventorySort } from '../lib/inventorySort'
 import { Select } from '../components/Select'
@@ -75,6 +75,7 @@ export function SettingsScreen({ onBack }: SettingsScreenProps) {
   const [shopNotif, setShopNotif] = useState(true)
   const [kiosk, setKioskState] = useState(kioskEnabled)
   const [wake, setWakeState] = useState(wakeEnabled)
+  const [dimMin, setDimMin] = useState(dimMinutes)
   const [defSort, setDefSortState] = useState<InventorySort>(defaultSort)
   useEffect(() => {
     pushState().then(setPush).catch(() => setPush('unsupported'))
@@ -205,6 +206,30 @@ export function SettingsScreen({ onBack }: SettingsScreenProps) {
             }}
           />
         </div>
+        {kiosk && (
+          <div className="setting-row">
+            <div className="setting-text">
+              <div className="setting-title">Mise en veille de l’écran</div>
+              <div className="setting-desc">L’écran s’assombrit et n’affiche plus que l’heure quand personne ne s’en sert</div>
+            </div>
+            <Select
+              className="sort-select"
+              ariaLabel="Mise en veille de l’écran"
+              value={String(dimMin)}
+              onChange={(v) => {
+                setDimMinutes(Number(v))
+                setDimMin(Number(v))
+              }}
+              options={[
+                { value: '2', label: 'Après 2 min' },
+                { value: '5', label: 'Après 5 min' },
+                { value: '10', label: 'Après 10 min' },
+                { value: '30', label: 'Après 30 min' },
+                { value: '0', label: 'Jamais' },
+              ]}
+            />
+          </div>
+        )}
         {kiosk && VOICE_SUPPORTED && (
           <div className="setting-row" style={{ flexWrap: 'wrap' }}>
             <div className="setting-text">

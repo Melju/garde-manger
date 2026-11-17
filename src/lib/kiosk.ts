@@ -40,3 +40,22 @@ export function setWake(on: boolean) {
   }
   window.dispatchEvent(new Event('miamm-wake'))
 }
+
+/** Mise en veille de l'écran (mode tablette) : minutes sans toucher avant d'estomper, 0 = jamais. */
+const DIM_KEY = 'miamm.dim'
+export function dimMinutes(): number {
+  try {
+    const v = localStorage.getItem(DIM_KEY)
+    return v === null ? 5 : Math.max(0, Number(v) || 0)
+  } catch {
+    return 5
+  }
+}
+export function setDimMinutes(m: number) {
+  try {
+    localStorage.setItem(DIM_KEY, String(m))
+  } catch {
+    /* ignore */
+  }
+  window.dispatchEvent(new Event('miamm-dim'))
+}
