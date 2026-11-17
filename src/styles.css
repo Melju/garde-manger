@@ -3414,3 +3414,9 @@ html.kiosk .shopping-groups { padding-top: 20px; }
 .voice-row.done svg { width: 18px; height: 18px; color: var(--success, #2f7a46); stroke: currentColor; flex: none; }
 .voice-done-bar { height: 4px; border-radius: 4px; background: var(--brand); margin-top: 14px; transform-origin: left; animation: voice-countdown 7s linear both; }
 @keyframes voice-countdown { from { transform: scaleX(1); } to { transform: scaleX(0); } }
+
+/* Tuiles : visuel plus grand dans sa zone (taille en largeur : la hauteur en % ne se résout pas ici) */
+.product-list.tiles .product-icon .product-img,
+html.kiosk .product-list.tiles .product-icon .product-img { width: 58% !important; height: auto !important; max-width: 190px; aspect-ratio: 1; }
+.product-list.tiles .product-icon > svg,
+html.kiosk .product-list.tiles .product-icon > svg { width: 40% !important; height: auto !important; max-width: 120px; aspect-ratio: 1; }
