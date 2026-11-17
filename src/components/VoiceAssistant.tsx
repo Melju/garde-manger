@@ -79,12 +79,9 @@ export function speak(text: string) {
     const go = () => {
       const u = new SpeechSynthesisUtterance(t)
       u.lang = 'fr-FR'
-      const voices = synth.getVoices()
-      const fr =
-        voices.find((v) => v.lang?.toLowerCase().startsWith('fr') && v.localService) ??
-        voices.find((v) => v.lang?.toLowerCase().startsWith('fr'))
+      const fr = pickVoice()
       if (fr) u.voice = fr
-      u.rate = 1.05
+      u.rate = 1
       synth.resume()
       synth.speak(u)
     }
@@ -104,6 +101,38 @@ export function speak(text: string) {
   } catch {
     /* pas de voix disponible */
   }
+}
+
+const VOICE_KEY = 'miamm.voice'
+/** Voix françaises disponibles sur l'appareil, les plus naturelles d'abord. */
+export function frenchVoices(): SpeechSynthesisVoice[] {
+  const all = window.speechSynthesis?.getVoices() ?? []
+  const score = (v: SpeechSynthesisVoice) =>
+    (/google/i.test(v.name) ? 4 : 0) +
+    (/natural|neural|premium|enhanced|wavenet/i.test(v.name) ? 3 : 0) +
+    (!v.localService ? 2 : 0) +
+    (v.lang?.toLowerCase() === 'fr-fr' ? 1 : 0)
+  return all.filter((v) => v.lang?.toLowerCase().startsWith('fr')).sort((a, b) => score(b) - score(a))
+}
+export function savedVoiceName(): string {
+  try {
+    return localStorage.getItem(VOICE_KEY) ?? ''
+  } catch {
+    return ''
+  }
+}
+export function saveVoiceName(name: string) {
+  try {
+    if (name) localStorage.setItem(VOICE_KEY, name)
+    else localStorage.removeItem(VOICE_KEY)
+  } catch {
+    /* rien */
+  }
+}
+function pickVoice(): SpeechSynthesisVoice | undefined {
+  const list = frenchVoices()
+  const want = savedVoiceName()
+  return (want && list.find((v) => v.name === want)) || list[0]
 }
 
 /** Chrome n'autorise la voix qu'après un geste : on « amorce » la synthèse au premier toucher. */
@@ -688,6 +717,48 @@ export function VoskDiag() {
         <span style={{ width: `${Math.min(100, Math.round(level * 900))}%` }} />
       </div>
       <div className="vosk-heard">Entendu : {heard || '…'}</div>
+    </div>
+  )
+}
+
+/** Choix de la voix de Miam miam (Paramètres), avec écoute d'essai. */
+export function VoicePicker() {
+  const [voices, setVoices] = useState<SpeechSynthesisVoice[]>(() => frenchVoices())
+  const [name, setName] = useState(savedVoiceName())
+  useEffect(() => {
+    const synth = window.speechSynthesis
+    if (!synth) return
+    const up = () => setVoices(frenchVoices())
+    synth.addEventListener?.('voiceschanged', up)
+    const t = setTimeout(up, 800)
+    return () => {
+      synth.removeEventListener?.('voiceschanged', up)
+      clearTimeout(t)
+    }
+  }, [])
+  if ((window as any).fully?.textToSpeech) return <div className="voice-pick-note">Voix gérée par Fully Kiosk (réglages de synthèse vocale d’Android).</div>
+  if (!voices.length) return <div className="voice-pick-note">Aucune voix française sur cet appareil.</div>
+  return (
+    <div className="voice-pick">
+      <select
+        className="voice-pick-select"
+        value={name || voices[0]?.name}
+        onChange={(e) => {
+          setName(e.target.value)
+          saveVoiceName(e.target.value)
+          speak('Salut, moi c’est Miam miam. Qu’est-ce qu’on mange ce soir ?')
+        }}
+      >
+        {voices.map((v) => (
+          <option key={v.name} value={v.name}>
+            {v.name}
+            {v.localService ? '' : ' (en ligne)'}
+          </option>
+        ))}
+      </select>
+      <button type="button" className="voice-btn" onClick={() => speak('Salut, moi c’est Miam miam. Qu’est-ce qu’on mange ce soir ?')} aria-label="Écouter">
+        <Icon name="volume" />
+      </button>
     </div>
   )
 }

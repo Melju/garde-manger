@@ -3439,3 +3439,6 @@ html.kiosk .product-list.tiles .product-icon > svg { width: 32cqw !important; ma
 .vosk-meter { height: 6px; border-radius: 6px; background: rgba(0,0,0,.08); overflow: hidden; }
 .vosk-meter span { display: block; height: 100%; background: var(--brand); transition: width .15s; }
 .vosk-heard { color: var(--fg-2); }
+.voice-pick { display: flex; gap: 8px; align-items: center; flex: 0 1 360px; min-width: 0; }
+.voice-pick-select { flex: 1; min-width: 0; height: 46px; border: 1px solid var(--border); border-radius: 14px; background: var(--surface); color: var(--fg); font: inherit; padding: 0 12px; }
+.voice-pick-note { font-size: 13px; color: var(--fg-2); }

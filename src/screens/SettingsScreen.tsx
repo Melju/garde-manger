@@ -7,7 +7,7 @@ import { addBrand, getCustomBrands, removeCustomBrand, renameCustomBrand } from 
 import { normalize } from '../lib/productIcon'
 import { addStore, getStores, removeStore, renameStore } from '../lib/stores'
 import { kioskEnabled, setKiosk, wakeEnabled, setWake } from '../lib/kiosk'
-import { VoskDiag } from '../components/VoiceAssistant'
+import { VoskDiag, VoicePicker } from '../components/VoiceAssistant'
 import { defaultSort, setDefaultSort, SORT_OPTIONS, type InventorySort } from '../lib/inventorySort'
 import { Select } from '../components/Select'
 import { pushState, enablePush, disablePush, testPush, shoppingNotifEnabled, setShoppingNotif, type PushState } from '../lib/push'
@@ -225,6 +225,13 @@ export function SettingsScreen({ onBack }: SettingsScreenProps) {
             {wake && <VoskDiag />}
           </div>
         )}
+        <div className="setting-row" style={{ flexWrap: 'wrap', gap: 10 }}>
+          <div className="setting-text">
+            <div className="setting-title">Voix de Miam miam</div>
+            <div className="setting-desc">Les voix « Google » ou « en ligne » sont les plus naturelles</div>
+          </div>
+          <VoicePicker />
+        </div>
         {push === 'on' && (
           <div className="setting-row">
             <div className="setting-text">
