@@ -210,8 +210,9 @@ export function SettingsScreen({ onBack }: SettingsScreenProps) {
             <div className="setting-text">
               <div className="setting-title">Réveil vocal « Miam miam »</div>
               <div className="setting-desc">
-                Dis « Miam miam » pour ouvrir la commande vocale sans toucher l’écran. Le micro reste à l’écoute tant
-                que l’app est ouverte ; la reconnaissance passe par le service vocal du navigateur.
+                Dis « Miam miam » (ou « Miam miam, ajoute du lait ») sans toucher l’écran. L’app surveille seulement le
+                niveau sonore sur la tablette et ne lance la reconnaissance, qui passe par le service vocal du
+                navigateur, que quand quelqu’un parle.
               </div>
             </div>
             <Toggle
