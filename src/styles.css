@@ -2857,3 +2857,52 @@ body.is-selecting .add-bar { display: none; }
 /* Mode tablette : cibles tactiles plus grandes */
 html.kiosk .product-list.tiles .pi-act { padding: 10px 6px; font-size: 14px; }
 html.kiosk .product-list.tiles .product-name { font-size: 16px; }
+
+/* ---------- Mode tablette (pensé pour une Galaxy Tab S3 : 768 × 1024 en portrait) ---------- */
+@media (min-width: 600px) {
+  /* Barre latérale réduite à des icônes légendées : toute la place va au stock. */
+  html.kiosk .shell { display: flex; align-items: stretch; min-height: 100vh; }
+  html.kiosk .sidebar {
+    display: flex; flex-direction: column; gap: 6px; width: 96px; flex-shrink: 0;
+    position: sticky; top: 0; align-self: flex-start; height: 100vh;
+    background: var(--surface); border-right: 1px solid var(--border); padding: 16px 8px;
+  }
+  html.kiosk .sidebar-logo { padding: 0 0 12px; }
+  html.kiosk .sidebar-logo img { height: auto; width: 100%; }
+  html.kiosk .sidebar-nav { display: flex; flex-direction: column; gap: 6px; }
+  html.kiosk .sidebar-item,
+  html.kiosk .sidebar-add {
+    display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px;
+    padding: 12px 4px; border: none; border-radius: 14px; font-family: inherit;
+    font-size: 12px; font-weight: 700; text-align: center; cursor: pointer;
+  }
+  html.kiosk .sidebar-item { background: transparent; color: var(--fg-2); }
+  html.kiosk .sidebar-item.active { background: var(--accent-soft); color: var(--brand); }
+  html.kiosk .sidebar-item svg,
+  html.kiosk .sidebar-add svg { width: 26px; height: 26px; }
+  html.kiosk .sidebar-add { margin-top: auto; background: var(--brand-grad); color: #fff; }
+  html.kiosk .sidebar-add span { font-size: 11px; line-height: 1.15; }
+  html.kiosk .shell .header .logo { display: none; }
+
+  /* Tuiles compactes : 3 colonnes en portrait, 4 en paysage. */
+  html.kiosk .product-list.tiles {
+    display: grid; grid-template-columns: repeat(auto-fill, minmax(196px, 1fr)); gap: 12px; align-items: start;
+  }
+  html.kiosk .product-list.tiles > .swipe-hint,
+  html.kiosk .product-list.tiles > .list-sentinel,
+  html.kiosk .product-list.tiles > .empty-state { grid-column: 1 / -1; }
+  html.kiosk .product-list.tiles .swipe-wrapper { margin-bottom: 0; }
+  html.kiosk .product-list.tiles .swipe-actions { display: none; }
+  html.kiosk .product-list.tiles .product-item { flex-direction: column; align-items: stretch; gap: 8px; padding: 12px; height: 100%; }
+  html.kiosk .product-list.tiles .product-icon { width: 60px; height: 60px; }
+  html.kiosk .product-list.tiles .product-img { width: 52px; height: 52px; }
+  html.kiosk .product-list.tiles .product-name { font-size: 15px; }
+  html.kiosk .product-list.tiles .product-right { display: flex; flex-direction: row; align-items: center; justify-content: space-between; width: 100%; gap: 6px; margin-top: auto; }
+
+  /* Boutons au doigt : « Consommé » sur toute la largeur, « Ouvert » et « Périmé » dessous. */
+  html.kiosk .product-list.tiles .pi-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
+  html.kiosk .product-list.tiles .pi-act { padding: 11px 4px; font-size: 14px; min-height: 44px; }
+  html.kiosk .product-list.tiles .pi-act.consume { grid-column: 1 / -1; }
+  html.kiosk .product-list.tiles .pi-actions.two .pi-act.waste { grid-column: 1 / -1; }
+}
+@media (min-width: 600px) { html.kiosk .select-bar { left: 112px; } }

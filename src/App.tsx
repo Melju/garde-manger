@@ -315,14 +315,14 @@ export function App() {
               onClick={() => goTab(n.tab)}
             >
               <Icon name={n.icon} />
-              {n.label}
+              <span>{n.label}</span>
             </button>
           ))}
         </nav>
         {add && (
           <button className="sidebar-add" onClick={add.run}>
             <Icon name="plus" />
-            {add.label}
+            <span>{add.label}</span>
           </button>
         )}
       </aside>

@@ -244,7 +244,7 @@ export function ProductItem({
           <span className={`status-tag ${status}`}>{expiryLabel(product)}</span>
         </div>
         {mouse && (
-          <div className="pi-actions" onClick={(e) => e.stopPropagation()} onPointerDown={(e) => e.stopPropagation()}>
+          <div className={`pi-actions${canOpen ? '' : ' two'}`} onClick={(e) => e.stopPropagation()} onPointerDown={(e) => e.stopPropagation()}>
             <button className="pi-act consume" title="Indiquer une quantité consommée" onClick={() => setConsuming(true)}>
               Consommé
             </button>
