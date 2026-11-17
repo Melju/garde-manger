@@ -3241,7 +3241,7 @@ html.kiosk .arr-name { font-size: 24px; }
 }
 
 /* Courses : ajout éclair et lignes plus fines */
-.shop-quick { padding: 0 0 12px; position: relative; }
+.shop-quick { padding: 0 20px 4px; position: relative; }
 .shop-quick .search-input input { flex: 1; min-width: 0; border: none; background: none; font: inherit; font-size: 15px; color: var(--fg); outline: none; }
 .shop-quick-go { flex: none; width: 34px; height: 34px; border-radius: 10px; border: none; background: var(--brand); color: #fff; display: grid; place-items: center; cursor: pointer; }
 .shop-quick-go svg { width: 18px; height: 18px; stroke: #fff; }
@@ -3268,7 +3268,7 @@ html.kiosk .arr-name { font-size: 24px; }
   html:not(.kiosk) .plan-actions .generate-list-btn { border-width: 1.5px; }
   html:not(.kiosk) .plan-actions svg { width: 16px; height: 16px; flex: none; }
   html:not(.kiosk) .plan-long { display: none; }
-  html:not(.kiosk) .plan-short { display: inline; }
+  html:not(.kiosk) .plan-short { display: inline; white-space: nowrap; }
   html:not(.kiosk) .carousel-arrow { display: none; }
   html:not(.kiosk) .week-board {
     flex-direction: column; overflow: visible; padding: 0 16px 16px; gap: 8px;
@@ -3307,7 +3307,7 @@ html.kiosk .arr-name { font-size: 24px; }
 .add-bar.round .add-btn-label { display: none; }
 
 /* Recettes : recherche, générateur replié, cartes compactes */
-.recipe-search { padding: 0 0 10px; }
+.recipe-search { padding: 0 20px 10px; }
 .recipe-search .search-input input { flex: 1; min-width: 0; }
 .ai-gen-toggle {
   width: 100%; display: flex; align-items: center; gap: 12px; text-align: left;
