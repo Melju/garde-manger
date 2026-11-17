@@ -3349,3 +3349,7 @@ html.kiosk .arr-name { font-size: 24px; }
 
 /* Courses : de l'air sous la zone collante */
 .store-bar { margin-top: 16px !important; }
+.recipe-search.search-row { display: flex; gap: 8px; align-items: stretch; }
+.recipe-search .search-input { flex: 1; min-width: 0; }
+.search-row .sort-select.active { border-color: var(--brand); color: var(--brand); }
+.search-row .sort-select.active svg { color: var(--brand); }

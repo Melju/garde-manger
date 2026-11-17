@@ -27,6 +27,19 @@ type Filter =
 
 const norm = (s: string) => s.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '')
 
+const FILTERS: [Filter, string][] = [
+  ['toutes', 'Toutes'],
+  ['perso', 'Perso'],
+  ['favoris', 'Favoris'],
+  ['plats', 'Plats'],
+  ['entrees', 'Entrées'],
+  ['soupes', 'Soupes'],
+  ['apero', 'Apéro'],
+  ['desserts', 'Desserts'],
+  ['rapides', 'Rapides'],
+  ['vegetarien', 'Végétarien'],
+]
+
 export function RecipesScreen({ onOpenRecipe, onOpenFamily }: RecipesScreenProps) {
   const { recipes, products, family, toggleFavorite, generateRecipe } = useStore()
   const toast = useToast()
@@ -103,7 +116,7 @@ export function RecipesScreen({ onOpenRecipe, onOpenFamily }: RecipesScreenProps
         </div>
       </header>
 
-      <div className="recipe-search">
+      <div className="recipe-search search-row">
         <div className="search-input">
           <Icon name="search" />
           <input
@@ -115,30 +128,22 @@ export function RecipesScreen({ onOpenRecipe, onOpenFamily }: RecipesScreenProps
           />
           {q && <ClearButton onClick={() => setQ('')} />}
         </div>
+        <Select
+          className={`sort-select${filter !== 'toutes' ? ' active' : ''}`}
+          ariaLabel="Filtrer les recettes"
+          title="Afficher"
+          value={filter}
+          onChange={(v) => setFilter(v as Filter)}
+          options={FILTERS.map(([value, label]) => ({ value, label }))}
+          renderTrigger={(label) => (
+            <>
+              <Icon name="sliders" />
+              <span className="sort-label">{label}</span>
+            </>
+          )}
+        />
       </div>
 
-      <div className="filter-tabs">
-        {([
-          ['toutes', 'Toutes'],
-          ['perso', 'Perso'],
-          ['favoris', 'Favoris'],
-          ['plats', 'Plats'],
-          ['entrees', 'Entrées'],
-          ['soupes', 'Soupes'],
-          ['apero', 'Apéro'],
-          ['desserts', 'Desserts'],
-          ['rapides', 'Rapides'],
-          ['vegetarien', 'Végétarien'],
-        ] as [Filter, string][]).map(([id, label]) => (
-          <button
-            key={id}
-            className={`filter-tab${filter === id ? ' active' : ''}`}
-            onClick={() => setFilter(id)}
-          >
-            {label}
-          </button>
-        ))}
-      </div>
 
       </div>
 
