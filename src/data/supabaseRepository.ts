@@ -34,6 +34,7 @@ function toProduct(r: any): Product {
     dateType: r.date_type ?? undefined,
     location: r.location ?? undefined,
     openedAt: r.opened_at ?? undefined,
+    createdBy: r.created_by ?? undefined,
     imageUrl: r.image_url ?? undefined,
     nutriscore: r.nutriscore ?? undefined,
     nova: r.nova ?? undefined,

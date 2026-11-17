@@ -4,7 +4,7 @@ import { notifyShoppingAdded } from '../lib/shoppingNotify'
 import { seedFromProducts } from '../lib/learnedShelf'
 import { seedProductMemory } from '../lib/productMemory'
 import { seedPlaces } from '../lib/learnedPlace'
-import {
+import { useRef,
   createContext,
   useCallback,
   useContext,
@@ -228,6 +228,9 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     [auth.householdId],
   )
 
+  const knownIds = useRef<Set<string> | null>(null)
+  const meRef = useRef<string | undefined>(undefined)
+  meRef.current = auth.user?.id
   const loadAll = useCallback(async () => {
     try {
       const [p, s, r, f, m, h, e, b, st, sc] = await Promise.all([
@@ -249,6 +252,20 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       } catch {
         /* l'apprentissage local ne doit jamais bloquer le chargement */
       }
+      // Produits apparus depuis le dernier chargement et ajoutés par un AUTRE membre :
+      // on prévient l'écran (popup d'arrivée). Rien au premier chargement.
+      const me = meRef.current
+      if (knownIds.current && me) {
+        const known = knownIds.current
+        const fresh = p.filter((x) => !known.has(x.id) && x.createdBy && x.createdBy !== me)
+        if (fresh.length)
+          window.dispatchEvent(
+            new CustomEvent('miamm-arrivals', {
+              detail: fresh.map((x) => ({ name: x.name, category: x.category, by: x.createdBy, imageUrl: x.imageUrl })),
+            }),
+          )
+      }
+      knownIds.current = new Set(p.map((x) => x.id))
       setProducts(p)
       setShopping(s)
       setRecipes(r)
@@ -323,23 +340,6 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     for (const table of SYNC_TABLES) {
       channel.on('postgres_changes', { event: '*', schema: 'public', table }, refresh)
     }
-    // Ajouts au stock faits par un AUTRE membre : on les regroupe (un retour de courses = un lot)
-    // et on prévient l'écran (animation d'arrivée).
-    const me = auth.user?.id
-    let arrivals: { name: string; category: string; by: string }[] = []
-    let arrivalTimer: ReturnType<typeof setTimeout> | undefined
-    channel.on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'products' }, (payload) => {
-      const row = payload.new as { name?: string; category?: string; created_by?: string | null; household_id?: string }
-      if (!row?.name || !row.created_by || row.created_by === me) return
-      if (row.household_id && row.household_id !== auth.householdId) return
-      arrivals.push({ name: row.name, category: row.category ?? 'autre', by: row.created_by })
-      clearTimeout(arrivalTimer)
-      arrivalTimer = setTimeout(() => {
-        const batch = arrivals
-        arrivals = []
-        window.dispatchEvent(new CustomEvent('miamm-arrivals', { detail: batch }))
-      }, 1500)
-    })
     channel.subscribe()
     // Filet de sécurité : mobile en veille ou réseau coupé = WebSocket perdu, on rattrape au retour.
     const onVisible = () => {
@@ -347,14 +347,19 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     }
     document.addEventListener('visibilitychange', onVisible)
     window.addEventListener('online', refresh)
+    // Filet supplémentaire : si le temps réel décroche sans prévenir (tablette allumée en continu),
+    // on relit le foyer toutes les 45 s tant que l'écran est visible.
+    const poll = setInterval(() => {
+      if (document.visibilityState === 'visible') refresh()
+    }, 45000)
     return () => {
       clearTimeout(timer)
-      clearTimeout(arrivalTimer)
+      clearInterval(poll)
       document.removeEventListener('visibilitychange', onVisible)
       window.removeEventListener('online', refresh)
       sb.removeChannel(channel)
     }
-  }, [cloud, auth.householdId, auth.user?.id, loadAll])
+  }, [cloud, auth.householdId, loadAll])
 
   const allNotifications = useMemo(
     () =>

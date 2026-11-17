@@ -97,6 +97,8 @@ export interface Product {
   location?: string
   /** Date d'ouverture (ISO) : le produit se garde alors moins longtemps. */
   openedAt?: string
+  /** Membre qui a ajouté le produit (cloud uniquement). */
+  createdBy?: string
   // ----- Données enrichies Open Food Facts (optionnelles) -----
   /** URL de la photo du produit. */
   imageUrl?: string
