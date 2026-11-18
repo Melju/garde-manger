@@ -74,10 +74,9 @@ Deno.serve(async (req) => {
         r.ingredients.map((g) => `- ${g.name}${g.qty ? ` : ${g.qty}` : ''}`).join('\n'),
     )
     .join('\n\n')
-  const itemsTxt = items
-    .filter((i) => !open.has(i.key))
-    .map((i) => `${i.key} | ${i.name}${i.qty ? ` | ${i.qty}` : ''}`)
-    .join('\n')
+  // Identifiants courts pour l'IA (les clés de l'app contiennent des « | »).
+  const toAsk = items.filter((i) => !open.has(i.key))
+  const itemsTxt = toAsk.map((i, n) => `A${n + 1} | ${i.name}${i.qty ? ` | ${i.qty}` : ''}`).join('\n')
 
   const prompt = `Tu estimes des prix de courses alimentaires en supermarché (France / Belgique, gamme standard, ni premier prix ni bio, ${new Date().getFullYear()}).
 
@@ -85,13 +84,14 @@ PRIX RÉELS RELEVÉS PAR LE FOYER (nom | magasin | prix du paquet | prix au kilo
 ${knownTxt || '(aucun)'}
 
 ${recipes.length ? `RECETTES : pour chaque ingrédient, donne le coût de la QUANTITÉ UTILISÉE dans la recette (au prorata du paquet : 2 œufs = 2/6 d'une boîte de 6). Sel, poivre, épices, huile en petite quantité : coût de quelques centimes.\n${recipesTxt}\n` : ''}
-${itemsTxt ? `ARTICLES DE LA LISTE DE COURSES (clé | nom | quantité) : donne le prix d'ACHAT pour cette quantité (prix du paquet le plus courant).\n${itemsTxt}\n` : ''}
+${itemsTxt ? `ARTICLES DE LA LISTE DE COURSES (id | nom | quantité) : donne le prix d'ACHAT pour cette quantité (prix du paquet le plus courant).\n${itemsTxt}\n` : ''}
 Règles :
 - Si un prix réel du foyer correspond clairement à l'ingrédient ou à l'article, utilise-le (src "ticket"), sinon estime (src "estimation").
 - Montants en euros, nombres décimaux, réalistes.
+- Donne une ligne pour CHAQUE recette et un prix pour CHAQUE article listé, en recopiant exactement son id ou sa clé.
 
 Réponds STRICTEMENT en JSON :
-{"recipes":[{"id":string,"lines":[{"name":string,"cost":number,"src":"ticket"|"estimation"}]}],"items":[{"key":string,"price":number,"src":"ticket"|"estimation"}]}`
+{"recipes":[{"id":string,"lines":[{"name":string,"cost":number,"src":"ticket"|"estimation"}]}],"items":[{"id":string,"price":number,"src":"ticket"|"estimation"}]}`
 
   const needAi = recipes.length || itemsTxt
   let parsed: any = { recipes: [], items: [] }
@@ -114,12 +114,15 @@ Réponds STRICTEMENT en JSON :
       const total = Math.round(lines.reduce((s: number, l: any) => s + l.cost, 0) * 100) / 100
       return { id: r.id, total, lines }
     })
-  const keys = new Set(items.map((i) => i.key))
   const outItems = [
     ...[...open.entries()].map(([key, v]) => ({ key, price: v.price, src: 'openprices', n: v.n })),
     ...(Array.isArray(parsed.items) ? parsed.items : [])
-      .filter((i: any) => i && keys.has(i.key) && !open.has(i.key))
-      .map((i: any) => ({ key: i.key, price: num(i.price), src: i.src === 'ticket' ? 'ticket' : 'estimation' })),
+      .map((i: any) => {
+        const n = Number(String(i?.id ?? i?.key ?? '').replace(/\D/g, '')) - 1
+        const it = toAsk[n]
+        return it ? { key: it.key, price: num(i.price), src: i.src === 'ticket' ? 'ticket' : 'estimation' } : null
+      })
+      .filter(Boolean),
   ]
   return json({ recipes: outRecipes, items: outItems })
 })
