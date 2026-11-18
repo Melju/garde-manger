@@ -19,3 +19,8 @@ create policy price_obs_household on price_obs for all to authenticated
   with check (household_id = auth_household_id());
 grant select, insert, delete on price_obs to authenticated;
 notify pgrst, 'reload schema';
+
+-- Code-barres du produit (rapprochement fiable, partage possible avec Open Prices).
+alter table public.price_obs add column if not exists barcode text;
+create index if not exists price_obs_barcode on public.price_obs(household_id, barcode);
+notify pgrst, 'reload schema';

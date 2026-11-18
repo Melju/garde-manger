@@ -12,7 +12,7 @@ import { invokeFn } from './aiKey'
 import { priceKey, type PriceObs } from './prices'
 
 export type CostLine = { name: string; cost: number; src: 'ticket' | 'estimation' }
-export type RecipeCost = { total: number; lines: CostLine[]; hash: string; at: number }
+export type RecipeCost = { total: number; lines: CostLine[]; hash: string; at: number; pf?: string }
 export type ItemCost = { price: number; src: 'ticket' | 'estimation' | 'openprices'; at: number }
 
 const R_KEY = 'miamm.costs.recipes.v1'
@@ -36,6 +36,28 @@ function write(k: string, v: unknown) {
 
 const recipeHash = (r: Recipe) =>
   JSON.stringify([r.servings ?? 4, r.ingredients.map((g) => [priceKey(g.name), (g.qty ?? '').trim()])])
+
+/**
+ * Empreinte des prix réels liés à une recette (nombre de relevés et date du plus récent) :
+ * un nouveau ticket qui touche un de ses ingrédients change l'empreinte, et la recette est recalculée.
+ */
+function priceFingerprint(r: Recipe, obs: PriceObs[]): string {
+  const words = new Set(
+    r.ingredients.flatMap((g) =>
+      priceKey(g.name)
+        .split(' ')
+        .filter((w) => w.length > 3),
+    ),
+  )
+  let n = 0
+  let last = ''
+  for (const o of obs)
+    if (o.key.split(' ').some((w) => words.has(w))) {
+      n++
+      if (o.at > last) last = o.at
+    }
+  return `${n}|${last}`
+}
 
 const itemKey = (it: { name: string; quantity: number; unit?: string }) => `${priceKey(it.name)}|${it.quantity}|${it.unit ?? ''}`
 
@@ -93,7 +115,7 @@ async function fillRecipes(todo: Recipe[], obs: PriceObs[]) {
     const now = Date.now()
     for (const r of ((data as any)?.recipes ?? []) as { id: string; total: number; lines: CostLine[] }[]) {
       const rec = batch.find((b) => b.id === r.id)
-      if (rec) recipeCache[r.id] = { total: r.total, lines: r.lines, hash: recipeHash(rec), at: now }
+      if (rec) recipeCache[r.id] = { total: r.total, lines: r.lines, hash: recipeHash(rec), at: now, pf: priceFingerprint(rec, obs) }
     }
     write(R_KEY, recipeCache)
     notify()
@@ -141,9 +163,9 @@ export function useRecipeCosts(recipes: Recipe[], obs: PriceObs[], enabled = tru
     return recipes.filter((r) => {
       if (!r.ingredients?.length) return false
       const c = recipeCache[r.id]
-      return !c || c.hash !== recipeHash(r) || now - c.at > MAX_AGE
+      return !c || c.hash !== recipeHash(r) || now - c.at > MAX_AGE || (c.pf ?? '0|') !== priceFingerprint(r, obs)
     })
-  }, [recipes])
+  }, [recipes, obs])
   useEffect(() => {
     if (!enabled || !todo.length) return
     const t = setTimeout(() => schedule(() => fillRecipes(todo, obs)), 1200)

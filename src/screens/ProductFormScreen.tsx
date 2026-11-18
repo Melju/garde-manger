@@ -352,7 +352,7 @@ export function ProductFormScreen({ product, initial, onClose, onSaved }: Produc
     // Un prix saisi ou modifié alimente le comparatif, pour le magasin indiqué.
     const shopForPrice = shops[0] || getCurrentStore()
     if (inp.price && shopForPrice && inp.price !== product?.price && inp.price !== scannedPrice.current) {
-      void recordPrices([{ name: inp.name, store: shopForPrice, price: inp.price, source: 'saisie' }])
+      void recordPrices([{ name: inp.name, store: shopForPrice, price: inp.price, source: 'saisie', barcode: inp.barcode }])
     }
     learn({
       name: inp.name,
@@ -822,7 +822,7 @@ export function ProductFormScreen({ product, initial, onClose, onSaved }: Produc
             <Icon name="scan" width={2.2} />
           </button>
         </div>
-        {name.trim() && <PriceCompare name={name} />}
+        {name.trim() && <PriceCompare name={name} barcode={barcode} />}
         {scanningPrice && (
           <PriceScanner
             onResult={(r) => {
@@ -831,7 +831,7 @@ export function ProductFormScreen({ product, initial, onClose, onSaved }: Produc
               const shopForPrice = shops[0] || getCurrentStore()
               if (shopForPrice && name.trim())
                 void recordPrices([
-                  { name, store: shopForPrice, price: r.price, unitPrice: r.unitPrice, unitLabel: r.unitLabel, source: 'etiquette' },
+                  { name, store: shopForPrice, price: r.price, unitPrice: r.unitPrice, unitLabel: r.unitLabel, source: 'etiquette', barcode },
                 ])
               setScanningPrice(false)
               toast(`Prix lu : ${r.price.toFixed(2).replace('.', ',')} €${r.confident ? '' : ' (à vérifier)'}`)

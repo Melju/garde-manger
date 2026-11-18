@@ -9,6 +9,8 @@ import { DatePicker } from '../components/DatePicker'
 import { DateScanner } from '../components/DateScanner'
 import { estimatedExpiryISO } from '../lib/shelfLife'
 import { chosenIconSlug, productImageSlug, productImageUrl } from '../lib/productImage'
+import { getCurrentStore } from '../lib/stores'
+import { usePriceObs, recordPrices, lastPriceAt } from '../lib/prices'
 
 interface ScanScreenProps {
   /** Mode 'add' (défaut) : recherche OFF + préremplissage. Mode 'consume' : retrait. */
@@ -45,6 +47,10 @@ export function ScanScreen({ mode = 'add', onResult, onConsume, findKnown, onAdd
   const [addedOpen, setAddedOpen] = useState(false)
   const [known, setKnown] = useState<Product | null>(null)
   const [knownQty, setKnownQty] = useState(1)
+  const [knownPrice, setKnownPrice] = useState('')
+  const priceObs = usePriceObs()
+  const priceObsRef = useRef(priceObs)
+  priceObsRef.current = priceObs
   const [knownExpiry, setKnownExpiry] = useState('')
   const [scanIdx, setScanIdx] = useState<number | null>(null) // -1 = date commune
   const [diffDates, setDiffDates] = useState(false)
@@ -76,6 +82,13 @@ export function ScanScreen({ mode = 'add', onResult, onConsume, findKnown, onAdd
         pausedRef.current = true
         setKnownQty(1)
         setKnownExpiry('')
+        // Prix prérempli : dernier prix payé dans le magasin du moment, sinon celui de la fiche.
+        {
+          const st = getCurrentStore()
+          const last = st ? lastPriceAt(priceObsRef.current, k.name, st, k.barcode) : null
+          const pr = last ?? k.price ?? null
+          setKnownPrice(pr ? pr.toFixed(2).replace('.', ',') : '')
+        }
         setDiffDates(false)
         setKnownDates([])
         setKnown(k)
@@ -168,6 +181,11 @@ export function ScanScreen({ mode = 'add', onResult, onConsume, findKnown, onAdd
     const n = knownQty
     setKnown(null)
     const exps = Array.from({ length: n }, (_, i) => (diffDates ? knownDates[i] || '' : knownExpiry))
+    // Prix confirmé : il alimente la comparaison par magasin (et le prix des recettes).
+    const pr = Number(knownPrice.replace(',', '.').replace(/[^\d.]/g, ''))
+    const store = getCurrentStore()
+    if (pr > 0 && store)
+      void recordPrices([{ name: p.name, store, price: pr, source: 'scan', barcode: p.barcode }])
     try {
       await onAddKnown?.(p, n, exps)
     } catch (e) {
@@ -261,6 +279,24 @@ export function ScanScreen({ mode = 'add', onResult, onConsume, findKnown, onAdd
                   <button type="button" onClick={() => setKnownQty((q) => q + 1)} aria-label="Plus">
                     <Icon name="plus" width={3} />
                   </button>
+                </div>
+                <div className="scan-known-price">
+                  <label className="form-label">
+                    Prix unitaire <span>(facultatif{getCurrentStore() ? ` · ${getCurrentStore()}` : ''})</span>
+                  </label>
+                  <div className="scan-known-price-row">
+                    <input
+                      className="form-input"
+                      inputMode="decimal"
+                      placeholder="0,00"
+                      value={knownPrice}
+                      onChange={(e) => setKnownPrice(e.target.value)}
+                    />
+                    <span>€</span>
+                  </div>
+                  {!getCurrentStore() && (
+                    <div className="scan-known-price-hint">Choisis ton magasin dans les Courses pour comparer les prix.</div>
+                  )}
                 </div>
                 <div className="scan-known-exp">
                   {knownQty > 1 && (

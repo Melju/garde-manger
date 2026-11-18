@@ -10,6 +10,7 @@ export interface PriceObs {
   unitPrice: number | null
   unitLabel: string | null
   at: string
+  barcode?: string | null
 }
 
 /** Clé de rapprochement des noms (« Fusilli Da Rocca » = « fusilli da rocca »). */
@@ -31,7 +32,7 @@ async function load(): Promise<PriceObs[]> {
   const since = new Date(Date.now() - 365 * 86400_000).toISOString()
   const { data, error } = await supabase
     .from('price_obs')
-    .select('name,name_key,store,price,unit_price,unit_label,observed_at')
+    .select('name,name_key,store,price,unit_price,unit_label,observed_at,barcode')
     .gte('observed_at', since)
     .order('observed_at', { ascending: false })
     .limit(5000)
@@ -44,6 +45,7 @@ async function load(): Promise<PriceObs[]> {
     unitPrice: r.unit_price != null ? Number(r.unit_price) : null,
     unitLabel: r.unit_label ?? null,
     at: r.observed_at,
+    barcode: r.barcode ?? null,
   }))
 }
 
@@ -65,7 +67,15 @@ export function usePriceObs(): PriceObs[] {
 
 /** Enregistre des prix relevés (sans bloquer l'interface ; erreurs ignorées). */
 export async function recordPrices(
-  rows: { name: string; store: string; price: number | null | undefined; unitPrice?: number | null; unitLabel?: string | null; source: string }[],
+  rows: {
+    name: string
+    store: string
+    price: number | null | undefined
+    unitPrice?: number | null
+    unitLabel?: string | null
+    source: string
+    barcode?: string | null
+  }[],
 ) {
   if (!supabase) return
   const clean = rows
@@ -78,13 +88,23 @@ export async function recordPrices(
       unit_price: r.unitPrice ?? null,
       unit_label: r.unitLabel ?? null,
       source: r.source,
+      barcode: r.barcode && /^\d{8,14}$/.test(r.barcode) ? r.barcode : null,
     }))
   if (!clean.length) return
   const { error } = await supabase.from('price_obs').insert(clean)
   if (error) return
   const now = new Date().toISOString()
   publish([
-    ...clean.map((c) => ({ name: c.name, key: c.name_key, store: c.store, price: c.price, unitPrice: c.unit_price, unitLabel: c.unit_label, at: now })),
+    ...clean.map((c) => ({
+      name: c.name,
+      key: c.name_key,
+      store: c.store,
+      price: c.price,
+      unitPrice: c.unit_price,
+      unitLabel: c.unit_label,
+      at: now,
+      barcode: c.barcode,
+    })),
     ...(cache ?? []),
   ])
 }
@@ -98,11 +118,12 @@ export interface StorePrice {
 }
 
 /** Dernier prix connu par magasin pour un produit, du moins cher au plus cher. */
-export function pricesByStore(obs: PriceObs[], name: string): StorePrice[] {
+export function pricesByStore(obs: PriceObs[], name: string, barcode?: string | null): StorePrice[] {
   const k = priceKey(name)
   const latest = new Map<string, StorePrice>()
   for (const o of obs) {
-    if (o.key !== k) continue
+    // Même produit : même code-barres, ou à défaut même nom.
+    if (!(barcode && o.barcode === barcode) && o.key !== k) continue
     const s = o.store.trim()
     const sk = priceKey(s)
     if (!latest.has(sk)) latest.set(sk, { store: s, price: o.price, unitPrice: o.unitPrice, unitLabel: o.unitLabel, at: o.at })
@@ -114,3 +135,14 @@ export function pricesByStore(obs: PriceObs[], name: string): StorePrice[] {
 }
 
 export const euros = (n: number) => `${n.toFixed(2).replace('.', ',')} €`
+
+/** Dernier prix payé pour un produit dans un magasin donné (code-barres d'abord, sinon nom). */
+export function lastPriceAt(obs: PriceObs[], name: string, store: string, barcode?: string | null): number | null {
+  const k = priceKey(name)
+  const sk = priceKey(store)
+  for (const o of obs) {
+    if (priceKey(o.store) !== sk) continue
+    if ((barcode && o.barcode === barcode) || o.key === k) return o.price
+  }
+  return null
+}

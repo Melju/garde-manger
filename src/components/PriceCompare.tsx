@@ -1,9 +1,9 @@
 import { euros, pricesByStore, usePriceObs } from '../lib/prices'
 
 /** Comparatif des derniers prix relevés par magasin pour un produit. */
-export function PriceCompare({ name }: { name: string }) {
+export function PriceCompare({ name, barcode }: { name: string; barcode?: string | null }) {
   const obs = usePriceObs()
-  const list = pricesByStore(obs, name)
+  const list = pricesByStore(obs, name, barcode)
   if (list.length === 0) return null
   const best = list[0]
   const unit = list.length > 1 && list.every((p) => p.unitPrice != null && p.unitLabel === list[0].unitLabel)
