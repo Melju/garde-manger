@@ -1,4 +1,6 @@
 import { MemberAvatar } from '../components/MemberAvatar'
+import { usePriceObs, euros } from '../lib/prices'
+import { useRecipeCosts } from '../lib/costs'
 import { useConfirm } from '../components/Confirm'
 import { useStore } from '../data/store'
 import { useToast } from '../components/Toast'
@@ -18,7 +20,10 @@ interface RecipeDetailScreenProps {
 }
 
 export function RecipeDetailScreen({ recipe, onBack, onGoShopping, onEdit }: RecipeDetailScreenProps) {
-  const { products, family, addManyShopping, prepareRecipe, removeRecipe, shareRecipe } = useStore()
+  const { products, family, addManyShopping, prepareRecipe, removeRecipe, shareRecipe, cloudMode } = useStore()
+  const priceObs = usePriceObs()
+  const cost = useRecipeCosts([recipe], priceObs, cloudMode)[recipe.id]
+  const [showCost, setShowCost] = useState(false)
   const [shareUrl, setShareUrl] = useState<string | null>(null)
   const [sharing, setSharing] = useState(false)
   const base = recipe.servings ?? 0
@@ -109,6 +114,34 @@ export function RecipeDetailScreen({ recipe, onBack, onGoShopping, onEdit }: Rec
             .filter(Boolean)
             .join(' · ')}
         </p>
+        {cost && cost.total > 0 && (
+          <button type="button" className="recipe-cost-pill" onClick={() => setShowCost((v) => !v)}>
+            ≈ {euros((cost.total * (base > 0 ? people : 4)) / (base || 4))}
+            {unit === 'personnes' && (
+              <span>
+                {' · '}
+                {euros(cost.total / (base || 4))} / pers.
+              </span>
+            )}
+            <Icon name="chevron" />
+          </button>
+        )}
+        {cost && showCost && (
+          <div className="recipe-cost-detail">
+            {cost.lines.map((l, i) => (
+              <div key={i} className="recipe-cost-line">
+                <span>{l.name}</span>
+                <span className={l.src === 'ticket' ? 'real' : ''}>
+                  {euros((l.cost * (base > 0 ? people : 4)) / (base || 4))}
+                  {l.src === 'ticket' ? ' · ticket' : ''}
+                </span>
+              </div>
+            ))}
+            <p className="recipe-cost-note">
+              Prix de tes tickets quand ils existent (« ticket »), sinon estimation en supermarché, gamme standard.
+            </p>
+          </div>
+        )}
       </div>
 
       {base > 0 && (

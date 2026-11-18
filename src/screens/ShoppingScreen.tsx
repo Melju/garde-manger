@@ -5,6 +5,7 @@ import { detectNearbyStores, type NearbyStore } from '../lib/geoStore'
 import { addStore, getCurrentStore, getStores, habitsFor, isUsualAt, recordPurchases, setCurrentStore } from '../lib/stores'
 import { LowStockSheet, lowStockCandidates, type LowCandidate } from '../components/LowStockSheet'
 import { euros, pricesByStore, priceKey, usePriceObs } from '../lib/prices'
+import { useBasketEstimate } from '../lib/costs'
 import { kioskEnabled } from '../lib/kiosk'
 import { useToast } from '../components/Toast'
 import { Icon } from '../components/Icon'
@@ -43,9 +44,12 @@ export function ShoppingScreen({ addOpen, onCloseAdd }: ShoppingScreenProps) {
     addShoppingBatch,
     removeShoppingItems,
     settings,
+    cloudMode,
   } = useStore()
   const [lowPick, setLowPick] = useState<LowCandidate[] | null>(null)
   const priceObs = usePriceObs()
+  const basket = useBasketEstimate(shopping, priceObs, products, cloudMode)
+  const [basketOpen, setBasketOpen] = useState(false)
   // Pour chaque article : magasins comparables (au moins 2 prix relevés).
   const priceInfo = useMemo(() => {
     const m = new Map<string, ReturnType<typeof pricesByStore>>()
@@ -525,6 +529,44 @@ export function ShoppingScreen({ addOpen, onCloseAdd }: ShoppingScreenProps) {
             ))}
           </span>
         </div>
+      )}
+
+      {basket.count > 0 && (basket.estimate != null || basket.stores.length > 0) && (
+        <button type="button" className="basket" onClick={() => setBasketOpen((v) => !v)}>
+          <div className="basket-head">
+            <Icon name="cart" />
+            <span>
+              Panier estimé{' '}
+              <strong>
+                ≈ {euros(basket.stores[0]?.total ?? basket.estimate ?? 0)}
+              </strong>
+              {basket.stores[0] && <em> chez {basket.stores[0].store}</em>}
+            </span>
+            {basket.stores.length > 0 && <Icon name="chevron" />}
+          </div>
+          {basketOpen && basket.stores.length > 0 && (
+            <div className="basket-stores">
+              {basket.stores.slice(0, 5).map((st, i) => (
+                <div className="basket-store" key={st.store}>
+                  <span>
+                    {i === 0 && '★ '}
+                    {st.store}
+                  </span>
+                  <span>
+                    {euros(st.total)}
+                    <small>
+                      {' '}
+                      · {st.known}/{basket.count} prix réels
+                    </small>
+                  </span>
+                </div>
+              ))}
+              <p className="basket-note">
+                Prix de tes tickets dans chaque magasin ; à défaut, prix Open Prices ou estimation.
+              </p>
+            </div>
+          )}
+        </button>
       )}
 
       <div className="shopping-groups">

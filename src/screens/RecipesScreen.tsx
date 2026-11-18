@@ -1,4 +1,6 @@
 import { RecipeIcon } from '../components/RecipeIcon'
+import { usePriceObs, euros } from '../lib/prices'
+import { useRecipeCosts } from '../lib/costs'
 import { ClearButton } from '../components/ClearButton'
 import { Select } from '../components/Select'
 import { useMemo, useState } from 'react'
@@ -41,7 +43,9 @@ const FILTERS: [Filter, string][] = [
 ]
 
 export function RecipesScreen({ onOpenRecipe, onOpenFamily }: RecipesScreenProps) {
-  const { recipes, products, family, toggleFavorite, generateRecipe } = useStore()
+  const { recipes, products, family, toggleFavorite, generateRecipe, cloudMode } = useStore()
+  const priceObs = usePriceObs()
+  const costs = useRecipeCosts(recipes, priceObs, cloudMode)
   const toast = useToast()
   const [filter, setFilter] = useState<Filter>('toutes')
   const [generating, setGenerating] = useState(false)
@@ -225,6 +229,11 @@ export function RecipesScreen({ onOpenRecipe, onOpenFamily }: RecipesScreenProps
                   <div className="recipe-title">{recipe.title}</div>
                   <div className="recipe-meta">
                     {recipe.timeMin} min{recipe.cuisine ? ` · ${recipe.cuisine}` : ''}
+                    {costs[recipe.id] && costs[recipe.id].total > 0 && (
+                      <span className="recipe-cost">
+                        {' · '}≈ {euros(costs[recipe.id].total)}
+                      </span>
+                    )}
                   </div>
                 </div>
                 <button

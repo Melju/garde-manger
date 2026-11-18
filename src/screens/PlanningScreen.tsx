@@ -1,4 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
+import { usePriceObs, euros } from '../lib/prices'
+import { useRecipeCosts } from '../lib/costs'
 import { useStore } from '../data/store'
 import { useToast } from '../components/Toast'
 import { Icon } from '../components/Icon'
@@ -9,7 +11,9 @@ import { recipeStock, recipeIconSlug } from '../lib/recipesLib'
 import { productImageSlug, productImageUrl } from '../lib/productImage'
 
 export function PlanningScreen() {
-  const { mealPlan, recipes, products, addManyShopping, generateWeekPlan } = useStore()
+  const { mealPlan, recipes, products, addManyShopping, generateWeekPlan, cloudMode } = useStore()
+  const priceObs = usePriceObs()
+  const costs = useRecipeCosts(recipes, priceObs, cloudMode)
   const toast = useToast()
   const [weekRef, setWeekRef] = useState(() => startOfWeek(new Date()))
   const [drawer, setDrawer] = useState<{ date: string; slot: string } | null>(null)
@@ -60,6 +64,15 @@ export function PlanningScreen() {
     return () => board.removeEventListener('wheel', onWheel)
   }, [])
   const label = `Semaine du ${formatDayMonth(days[0])}`
+  // Coût estimé de la semaine (repas reliés à une recette chiffrée).
+  const weekCost = days.reduce((sum, date) => {
+    for (const slot of MEAL_SLOTS) {
+      const meal = mealPlan[`${date}_${slot.id}`]
+      const r = meal ? recipes.find((x) => x.title.toLowerCase() === meal.toLowerCase()) : undefined
+      if (r && costs[r.id]) sum += costs[r.id].total
+    }
+    return sum
+  }, 0)
 
   async function generateList() {
     // Recettes planifiées cette semaine → ingrédients manquants → liste de courses.
@@ -101,7 +114,10 @@ export function PlanningScreen() {
         <button onClick={() => setWeekRef((d) => addDays(d, -7))} aria-label="Semaine précédente">
           <Icon name="back" />
         </button>
-        <span>{label}</span>
+        <span className="week-label">
+          {label}
+          {weekCost > 0 && <small className="week-cost">≈ {euros(weekCost)} de repas planifiés</small>}
+        </span>
         <button onClick={() => setWeekRef((d) => addDays(d, 7))} aria-label="Semaine suivante">
           <Icon name="chevron" />
         </button>
@@ -166,6 +182,9 @@ export function PlanningScreen() {
                           </span>
                           <span className="plan-meal-name">{meal}</span>
                           {missing > 0 && <span className="plan-missing">{missing} manquant{missing > 1 ? 's' : ''}</span>}
+                          {recipe && costs[recipe.id]?.total > 0 && (
+                            <span className="plan-cost">≈ {euros(costs[recipe.id].total)}</span>
+                          )}
                         </>
                       ) : (
                         <span className="plan-empty">
