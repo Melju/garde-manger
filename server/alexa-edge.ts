@@ -9,7 +9,7 @@
 import { X509Certificate, createHmac, verify as cryptoVerify, randomUUID } from 'node:crypto'
 import { createClient } from 'npm:@supabase/supabase-js@2'
 import { SupabaseRepository } from '../src/data/supabaseRepository'
-import { consumeAmount, parseContenance } from '../src/lib/contenance'
+import { consumeAmount, formatContenance, parseContenance } from '../src/lib/contenance'
 import { openShelfDays } from '../src/lib/openShelf'
 import { isIngredientInStock } from '../src/lib/recipesLib'
 import { defaultConservation, type Category, type Product } from '../src/types'
@@ -353,6 +353,8 @@ async function handleUse(id: string, amount: number, unit: string, label: string
   const [products, shopping] = await Promise.all([repo.listProducts(), repo.listShopping()])
   const p = products.find((x) => x.id === id)
   if (!p || !(amount > 0)) return quiet(null, apl)
+  if (!label)
+    label = unit === 'g' || unit === 'mL' ? formatContenance(amount, unit) : unit ? `${amount} ${unit}${amount > 1 ? 's' : ''}` : `${amount}`
   const undo: Undo[] = []
   await applyOne(unit ? { type: 'stock_remove', id, amount, unit } : { type: 'stock_remove', id, amount }, repo, sb, products, shopping, undo)
   await rpc('alexa_set_undo', { p_alexa: alexaUser, p_undo: { at: Date.now(), ops: undo } }).catch(() => {})

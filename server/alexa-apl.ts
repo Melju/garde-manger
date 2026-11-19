@@ -612,27 +612,77 @@ export type UseChip = { label: string; amount: string; unit: string }
 export function useChips(p: Product): UseChip[] {
   const chips: UseChip[] = []
   const ps = isWeightProduct(p.size) ? portionScale(p.size) : null
-  if (ps) {
-    const total = ps.values[ps.values.length - 1]
-    if (ps.count) {
-      for (let v = 1; v < Math.min(total, 6); v++) chips.push({ label: `${v} ${ps.baseUnit}${v > 1 ? 's' : ''}`, amount: String(v), unit: ps.baseUnit })
-    } else {
-      const seen = new Set<number>()
-      for (const f of [0.1, 0.25, 0.5, 0.75]) {
-        const v = Math.round((total * f) / ps.major) * ps.major
-        if (v > 0 && v < total && !seen.has(v)) {
-          seen.add(v)
-          chips.push({ label: formatContenance(v, ps.baseUnit), amount: String(v), unit: ps.baseUnit })
-        }
-      }
-    }
-  }
   if (p.quantity > 1) {
     const word = ps && !ps.count ? 'entier' : 'unité'
     for (let n = 1; n < Math.min(p.quantity, 5); n++)
       chips.push({ label: word === 'entier' ? `${n} entier${n > 1 ? 's' : ''}` : `${n} unité${n > 1 ? 's' : ''}`, amount: String(n), unit: '' })
   }
   return chips
+}
+
+/** Curseur « J'en ai utilisé » (comme la roulette de l'app) : produits au poids, au volume ou à la pièce. */
+export function useSlider(p: Product): { total: number; step: number; unit: string } | null {
+  const ps = isWeightProduct(p.size) ? portionScale(p.size) : null
+  if (!ps) return null
+  const total = ps.values[ps.values.length - 1]
+  if (!(total > 0)) return null
+  const step = ps.count ? 1 : Math.max(1, Math.round(ps.values[1] - ps.values[0]) || ps.major / 2)
+  return { total, step, unit: ps.baseUnit }
+}
+
+function sliderBlock(p: Product, sl: { total: number; step: number; unit: string }) {
+  const A = `Math.min(${sl.total}, Math.round(Pos / ${sl.step}) * ${sl.step})`
+  const fmt = (x: string) =>
+    sl.unit === 'g'
+      ? `\${${x} >= 1000 ? (${x}) / 1000 + ' kg' : ${x} + ' g'}`
+      : sl.unit === 'mL'
+        ? `\${${x} >= 1000 ? (${x}) / 1000 + ' L' : ${x} >= 100 ? (${x}) / 10 + ' cl' : ${x} + ' mL'}`
+        : `\${${x} + ' ${sl.unit}' + (${x} > 1 ? 's' : '')}`
+  return {
+    type: 'Container',
+    bind: [{ name: 'Pos', type: 'number', value: 0 }],
+    direction: 'row',
+    alignItems: 'center',
+    width: '100%',
+    spacing: 20,
+    items: [
+      {
+        type: 'Container',
+        width: 330,
+        items: [
+          { type: 'Text', text: 'J’en ai utilisé', fontSize: 26, fontWeight: '700', color: C.muted },
+          { type: 'Text', text: fmt(A), fontSize: 50, fontWeight: '800', color: C.strong },
+          { type: 'Text', text: `il en restera ${fmt(`(${sl.total} - ${A})`)}`, fontSize: 24, color: C.muted },
+        ],
+      },
+      {
+        type: 'AlexaSlider',
+        sliderId: 'useSlider',
+        width: `\${viewport.width - ${PADX} - 330 - 300}`,
+        theme: 'light',
+        progressValue: 0,
+        totalValue: sl.total,
+        positionPropertyName: 'Pos',
+        sliderMoveMillisecond: sl.step,
+        progressFillColor: C.brand,
+        thumbColor: C.strong,
+        accessibilityLabel: 'Quantité utilisée',
+      },
+      {
+        type: 'TouchWrapper',
+        spacing: 30,
+        onPress: [{ type: 'SendEvent', arguments: ['use', p.id, `\${${A}}`, sl.unit, ''] }],
+        item: {
+          type: 'Frame',
+          height: 96,
+          width: 240,
+          borderRadius: 48,
+          backgroundColor: C.brand,
+          item: { type: 'Text', text: 'Valider', width: 240, height: 96, textAlign: 'center', textAlignVertical: 'center', fontSize: 34, fontWeight: '800', color: '#ffffff' },
+        },
+      },
+    ],
+  }
 }
 
 export function productScreen(p: Product) {
@@ -647,8 +697,7 @@ export function productScreen(p: Product) {
     p.openedAt ? `Entamé le ${new Date(p.openedAt).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', timeZone: 'Europe/Paris' })}` : '',
   ].filter(Boolean)
   const line = (text: string) => ({ type: 'Text', text, fontSize: 30, color: C.fg, spacing: 10, maxLines: 1 })
-  return {
-    document: page(
+  const doc: any = page(
       [
         { type: 'Header', title: '', hint: '' },
         {
@@ -662,20 +711,20 @@ export function productScreen(p: Product) {
           items: [
             {
               type: 'Frame',
-              width: '${viewport.width >= 1500 ? 440 : 300}',
-              height: '${viewport.width >= 1500 ? 440 : 300}',
+              width: '${viewport.width >= 1500 ? 380 : 280}',
+              height: '${viewport.width >= 1500 ? 380 : 280}',
               borderRadius: 40,
               backgroundColor: `\${miam.tone == 'expired' ? '${C.dangerSoft}' : '${C.surface}'}`,
               borderWidth: 2,
               borderColor: C.border,
               item: {
                 type: 'Container',
-                width: '${viewport.width >= 1500 ? 436 : 296}',
-                height: '${viewport.width >= 1500 ? 436 : 296}',
+                width: '${viewport.width >= 1500 ? 376 : 276}',
+                height: '${viewport.width >= 1500 ? 376 : 276}',
                 alignItems: 'center',
                 justifyContent: 'center',
                 items: [
-                  { type: 'Image', when: '${miam.img}', source: '${miam.img}', width: '${viewport.width >= 1500 ? 340 : 230}', height: '${viewport.width >= 1500 ? 340 : 230}', scale: 'best-fit' },
+                  { type: 'Image', when: '${miam.img}', source: '${miam.img}', width: '${viewport.width >= 1500 ? 290 : 210}', height: '${viewport.width >= 1500 ? 290 : 210}', scale: 'best-fit' },
                   { type: 'Text', when: '${!miam.img}', text: '${miam.initial}', fontSize: 160, fontWeight: '800', color: C.strong },
                 ],
               },
@@ -701,6 +750,7 @@ export function productScreen(p: Product) {
             },
           ],
         },
+        ...(useSlider(p) ? [sliderBlock(p, useSlider(p)!)] : []),
         {
           type: 'Container',
           when: '${miam.uses.length > 0}',
@@ -709,7 +759,7 @@ export function productScreen(p: Product) {
           width: '100%',
           spacing: 16,
           items: [
-            { type: 'Text', text: 'J’en ai utilisé :', fontSize: 30, fontWeight: '700', color: C.fg },
+            { type: 'Text', text: '${miam.usesTitle}', fontSize: 30, fontWeight: '700', color: C.fg },
             {
               type: 'Container',
               direction: 'row',
@@ -747,10 +797,14 @@ export function productScreen(p: Product) {
         },
       ],
       '',
-    ),
+    )
+  doc.import = [{ name: 'alexa-layouts', version: '1.7.0' }]
+  return {
+    document: doc,
     data: { miam: {
         name: p.name,
         uses: useChips(p),
+        usesTitle: useSlider(p) ? 'Ou des paquets entiers :' : 'J’en ai utilisé :',
         img: t.img ?? '',
         initial: t.initial,
         tone: t.tone,

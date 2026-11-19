@@ -1944,27 +1944,69 @@ function answerScreen(text, o = {}) {
 function useChips(p) {
   const chips = [];
   const ps = isWeightProduct(p.size) ? portionScale(p.size) : null;
-  if (ps) {
-    const total = ps.values[ps.values.length - 1];
-    if (ps.count) {
-      for (let v = 1; v < Math.min(total, 6); v++) chips.push({ label: `${v} ${ps.baseUnit}${v > 1 ? "s" : ""}`, amount: String(v), unit: ps.baseUnit });
-    } else {
-      const seen = /* @__PURE__ */ new Set();
-      for (const f of [0.1, 0.25, 0.5, 0.75]) {
-        const v = Math.round(total * f / ps.major) * ps.major;
-        if (v > 0 && v < total && !seen.has(v)) {
-          seen.add(v);
-          chips.push({ label: formatContenance(v, ps.baseUnit), amount: String(v), unit: ps.baseUnit });
-        }
-      }
-    }
-  }
   if (p.quantity > 1) {
     const word = ps && !ps.count ? "entier" : "unit\xE9";
     for (let n = 1; n < Math.min(p.quantity, 5); n++)
       chips.push({ label: word === "entier" ? `${n} entier${n > 1 ? "s" : ""}` : `${n} unit\xE9${n > 1 ? "s" : ""}`, amount: String(n), unit: "" });
   }
   return chips;
+}
+function useSlider(p) {
+  const ps = isWeightProduct(p.size) ? portionScale(p.size) : null;
+  if (!ps) return null;
+  const total = ps.values[ps.values.length - 1];
+  if (!(total > 0)) return null;
+  const step = ps.count ? 1 : Math.max(1, Math.round(ps.values[1] - ps.values[0]) || ps.major / 2);
+  return { total, step, unit: ps.baseUnit };
+}
+function sliderBlock(p, sl) {
+  const A = `Math.min(${sl.total}, Math.round(Pos / ${sl.step}) * ${sl.step})`;
+  const fmt = (x) => sl.unit === "g" ? `\${${x} >= 1000 ? (${x}) / 1000 + ' kg' : ${x} + ' g'}` : sl.unit === "mL" ? `\${${x} >= 1000 ? (${x}) / 1000 + ' L' : ${x} >= 100 ? (${x}) / 10 + ' cl' : ${x} + ' mL'}` : `\${${x} + ' ${sl.unit}' + (${x} > 1 ? 's' : '')}`;
+  return {
+    type: "Container",
+    bind: [{ name: "Pos", type: "number", value: 0 }],
+    direction: "row",
+    alignItems: "center",
+    width: "100%",
+    spacing: 20,
+    items: [
+      {
+        type: "Container",
+        width: 330,
+        items: [
+          { type: "Text", text: "J\u2019en ai utilis\xE9", fontSize: 26, fontWeight: "700", color: C.muted },
+          { type: "Text", text: fmt(A), fontSize: 50, fontWeight: "800", color: C.strong },
+          { type: "Text", text: `il en restera ${fmt(`(${sl.total} - ${A})`)}`, fontSize: 24, color: C.muted }
+        ]
+      },
+      {
+        type: "AlexaSlider",
+        sliderId: "useSlider",
+        width: `\${viewport.width - ${PADX} - 330 - 300}`,
+        theme: "light",
+        progressValue: 0,
+        totalValue: sl.total,
+        positionPropertyName: "Pos",
+        sliderMoveMillisecond: sl.step,
+        progressFillColor: C.brand,
+        thumbColor: C.strong,
+        accessibilityLabel: "Quantit\xE9 utilis\xE9e"
+      },
+      {
+        type: "TouchWrapper",
+        spacing: 30,
+        onPress: [{ type: "SendEvent", arguments: ["use", p.id, `\${${A}}`, sl.unit, ""] }],
+        item: {
+          type: "Frame",
+          height: 96,
+          width: 240,
+          borderRadius: 48,
+          backgroundColor: C.brand,
+          item: { type: "Text", text: "Valider", width: 240, height: 96, textAlign: "center", textAlignVertical: "center", fontSize: 34, fontWeight: "800", color: "#ffffff" }
+        }
+      }
+    ]
+  };
 }
 function productScreen(p) {
   const t = productTile(p);
@@ -1976,111 +2018,115 @@ function productScreen(p) {
     p.openedAt ? `Entam\xE9 le ${new Date(p.openedAt).toLocaleDateString("fr-FR", { day: "numeric", month: "long", timeZone: "Europe/Paris" })}` : ""
   ].filter(Boolean);
   const line = (text) => ({ type: "Text", text, fontSize: 30, color: C.fg, spacing: 10, maxLines: 1 });
-  return {
-    document: page(
-      [
-        { type: "Header", title: "", hint: "" },
-        {
-          type: "Container",
-          direction: "row",
-          spacing: 32,
-          width: "100%",
-          grow: 1,
-          shrink: 1,
-          alignItems: "center",
-          items: [
-            {
-              type: "Frame",
-              width: "${viewport.width >= 1500 ? 440 : 300}",
-              height: "${viewport.width >= 1500 ? 440 : 300}",
-              borderRadius: 40,
-              backgroundColor: `\${miam.tone == 'expired' ? '${C.dangerSoft}' : '${C.surface}'}`,
-              borderWidth: 2,
-              borderColor: C.border,
-              item: {
-                type: "Container",
-                width: "${viewport.width >= 1500 ? 436 : 296}",
-                height: "${viewport.width >= 1500 ? 436 : 296}",
-                alignItems: "center",
-                justifyContent: "center",
-                items: [
-                  { type: "Image", when: "${miam.img}", source: "${miam.img}", width: "${viewport.width >= 1500 ? 340 : 230}", height: "${viewport.width >= 1500 ? 340 : 230}", scale: "best-fit" },
-                  { type: "Text", when: "${!miam.img}", text: "${miam.initial}", fontSize: 160, fontWeight: "800", color: C.strong }
-                ]
-              }
-            },
-            {
+  const doc = page(
+    [
+      { type: "Header", title: "", hint: "" },
+      {
+        type: "Container",
+        direction: "row",
+        spacing: 32,
+        width: "100%",
+        grow: 1,
+        shrink: 1,
+        alignItems: "center",
+        items: [
+          {
+            type: "Frame",
+            width: "${viewport.width >= 1500 ? 380 : 280}",
+            height: "${viewport.width >= 1500 ? 380 : 280}",
+            borderRadius: 40,
+            backgroundColor: `\${miam.tone == 'expired' ? '${C.dangerSoft}' : '${C.surface}'}`,
+            borderWidth: 2,
+            borderColor: C.border,
+            item: {
               type: "Container",
-              grow: 1,
-              shrink: 1,
-              spacing: 48,
+              width: "${viewport.width >= 1500 ? 376 : 276}",
+              height: "${viewport.width >= 1500 ? 376 : 276}",
+              alignItems: "center",
+              justifyContent: "center",
               items: [
-                { type: "Text", text: "${miam.name}", fontSize: 54, fontWeight: "800", color: C.fg, maxLines: 2 },
-                {
-                  type: "Text",
-                  when: "${miam.exp}",
-                  text: "${miam.exp}",
-                  spacing: 14,
-                  fontSize: 32,
-                  fontWeight: "700",
-                  color: `\${miam.tone == 'expired' ? '${C.danger}' : miam.tone == 'soon' ? '${C.warn}' : '${C.strong}'}`
-                },
-                ...lines.map(line)
+                { type: "Image", when: "${miam.img}", source: "${miam.img}", width: "${viewport.width >= 1500 ? 290 : 210}", height: "${viewport.width >= 1500 ? 290 : 210}", scale: "best-fit" },
+                { type: "Text", when: "${!miam.img}", text: "${miam.initial}", fontSize: 160, fontWeight: "800", color: C.strong }
               ]
             }
-          ]
-        },
-        {
-          type: "Container",
-          when: "${miam.uses.length > 0}",
-          direction: "row",
-          alignItems: "center",
-          width: "100%",
-          spacing: 16,
-          items: [
-            { type: "Text", text: "J\u2019en ai utilis\xE9 :", fontSize: 30, fontWeight: "700", color: C.fg },
-            {
-              type: "Container",
-              direction: "row",
-              data: "${miam.uses}",
+          },
+          {
+            type: "Container",
+            grow: 1,
+            shrink: 1,
+            spacing: 48,
+            items: [
+              { type: "Text", text: "${miam.name}", fontSize: 54, fontWeight: "800", color: C.fg, maxLines: 2 },
+              {
+                type: "Text",
+                when: "${miam.exp}",
+                text: "${miam.exp}",
+                spacing: 14,
+                fontSize: 32,
+                fontWeight: "700",
+                color: `\${miam.tone == 'expired' ? '${C.danger}' : miam.tone == 'soon' ? '${C.warn}' : '${C.strong}'}`
+              },
+              ...lines.map(line)
+            ]
+          }
+        ]
+      },
+      ...useSlider(p) ? [sliderBlock(p, useSlider(p))] : [],
+      {
+        type: "Container",
+        when: "${miam.uses.length > 0}",
+        direction: "row",
+        alignItems: "center",
+        width: "100%",
+        spacing: 16,
+        items: [
+          { type: "Text", text: "${miam.usesTitle}", fontSize: 30, fontWeight: "700", color: C.fg },
+          {
+            type: "Container",
+            direction: "row",
+            data: "${miam.uses}",
+            item: {
+              type: "TouchWrapper",
+              spacing: 16,
+              onPress: [{ type: "SendEvent", arguments: ["use", p.id, "${data.amount}", "${data.unit}", "${data.label}"] }],
               item: {
-                type: "TouchWrapper",
-                spacing: 16,
-                onPress: [{ type: "SendEvent", arguments: ["use", p.id, "${data.amount}", "${data.unit}", "${data.label}"] }],
-                item: {
-                  type: "Frame",
-                  height: 80,
-                  borderRadius: 40,
-                  borderWidth: 3,
-                  borderColor: C.brand,
-                  backgroundColor: C.surface,
-                  paddingLeft: 30,
-                  paddingRight: 30,
-                  item: { type: "Text", text: "${data.label}", height: 74, textAlignVertical: "center", fontSize: 30, fontWeight: "800", color: C.strong }
-                }
+                type: "Frame",
+                height: 80,
+                borderRadius: 40,
+                borderWidth: 3,
+                borderColor: C.brand,
+                backgroundColor: C.surface,
+                paddingLeft: 30,
+                paddingRight: 30,
+                item: { type: "Text", text: "${data.label}", height: 74, textAlignVertical: "center", fontSize: 30, fontWeight: "800", color: C.strong }
               }
             }
-          ]
-        },
-        {
-          type: "Container",
-          direction: "row",
-          width: "100%",
-          spacing: 24,
-          items: [
-            { type: "BigButton", label: "J\u2019ai fini", action: "finish", pid: p.id, danger: false, grow: 1 },
-            { type: "BigButton", label: p.openedAt ? "D\xE9j\xE0 entam\xE9" : "Entam\xE9", action: "open", pid: p.id, grow: 1, spacing: 20, danger: false },
-            { type: "BigButton", label: "Ajouter aux courses", action: "shop", pid: p.id, grow: 1, spacing: 20, danger: false },
-            { type: "BigButton", label: "Jet\xE9", action: "waste", pid: p.id, grow: 1, spacing: 20, danger: true }
-          ]
-        }
-      ],
-      ""
-    ),
+          }
+        ]
+      },
+      {
+        type: "Container",
+        direction: "row",
+        width: "100%",
+        spacing: 24,
+        items: [
+          { type: "BigButton", label: "J\u2019ai fini", action: "finish", pid: p.id, danger: false, grow: 1 },
+          { type: "BigButton", label: p.openedAt ? "D\xE9j\xE0 entam\xE9" : "Entam\xE9", action: "open", pid: p.id, grow: 1, spacing: 20, danger: false },
+          { type: "BigButton", label: "Ajouter aux courses", action: "shop", pid: p.id, grow: 1, spacing: 20, danger: false },
+          { type: "BigButton", label: "Jet\xE9", action: "waste", pid: p.id, grow: 1, spacing: 20, danger: true }
+        ]
+      }
+    ],
+    ""
+  );
+  doc.import = [{ name: "alexa-layouts", version: "1.7.0" }];
+  return {
+    document: doc,
     data: {
       miam: {
         name: p.name,
         uses: useChips(p),
+        usesTitle: useSlider(p) ? "Ou des paquets entiers :" : "J\u2019en ai utilis\xE9 :",
         img: t.img ?? "",
         initial: t.initial,
         tone: t.tone,
@@ -2648,6 +2694,8 @@ async function handleUse(id, amount, unit, label, link, alexaUser, apl) {
   const [products, shopping] = await Promise.all([repo.listProducts(), repo.listShopping()]);
   const p = products.find((x) => x.id === id);
   if (!p || !(amount > 0)) return quiet(null, apl);
+  if (!label)
+    label = unit === "g" || unit === "mL" ? formatContenance(amount, unit) : unit ? `${amount} ${unit}${amount > 1 ? "s" : ""}` : `${amount}`;
   const undo = [];
   await applyOne(unit ? { type: "stock_remove", id, amount, unit } : { type: "stock_remove", id, amount }, repo, sb, products, shopping, undo);
   await rpc("alexa_set_undo", { p_alexa: alexaUser, p_undo: { at: Date.now(), ops: undo } }).catch(() => {
