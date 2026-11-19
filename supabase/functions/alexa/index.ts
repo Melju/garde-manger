@@ -2720,10 +2720,12 @@ async function handleAct(kind, id, link, alexaUser, apl) {
   const sub = { finish: "Termin\xE9", waste: "Jet\xE9", open: "Entam\xE9", shop: "Ajout\xE9 aux courses" }[kind] ?? "";
   return attach(say(text), doneScreen(text, [{ ...productTile(p), sub, tone: "ok" }]), apl);
 }
-async function logHistory(sb, hid, kind, label, meta) {
+async function logHistory(undo, sb, hid, kind, label, meta) {
   const now = /* @__PURE__ */ new Date();
+  const id = randomUUID();
+  undo.push({ t: "hist_del", id });
   await sb.from("history").insert({
-    id: randomUUID(),
+    id,
     household_id: hid,
     entry_date: now.toISOString().slice(0, 10),
     at: now.toISOString(),
@@ -2766,12 +2768,12 @@ async function applyOne(a, repo, sb, products, shopping, undo) {
   const meta = { name: p.name, category: p.category, conservation: p.conservation };
   if (a.type === "stock_finish") {
     await repo.removeProduct(p.id);
-    await logHistory(sb, hid, "consomme", `${p.name} consomm\xE9 (\xD7${p.quantity})`, { ...meta, qty: p.quantity });
+    await logHistory(undo, sb, hid, "consomme", `${p.name} consomm\xE9 (\xD7${p.quantity})`, { ...meta, qty: p.quantity });
     return;
   }
   if (a.type === "stock_waste") {
     await repo.removeProduct(p.id);
-    await logHistory(sb, hid, "jete", `${p.name} jet\xE9 (p\xE9rim\xE9)`, { ...meta, qty: p.quantity });
+    await logHistory(undo, sb, hid, "jete", `${p.name} jet\xE9 (p\xE9rim\xE9)`, { ...meta, qty: p.quantity });
     return;
   }
   if (a.type === "stock_open") {
@@ -2786,13 +2788,13 @@ async function applyOne(a, repo, sb, products, shopping, undo) {
     if (!a.unit || !parsed) {
       const n = Math.min(a.unit ? 1 : Math.max(1, Math.round(a.amount)), p.quantity);
       await repo.adjustQuantity(p.id, -n);
-      await logHistory(sb, hid, "consomme", `${p.name} consomm\xE9 (\xD7${n})`, { ...meta, qty: n });
+      await logHistory(undo, sb, hid, "consomme", `${p.name} consomm\xE9 (\xD7${n})`, { ...meta, qty: n });
       return;
     }
     const newSize = consumeAmount(p.size, a.amount, a.unit);
     if (newSize === null) {
       await repo.adjustQuantity(p.id, -1);
-      await logHistory(sb, hid, "consomme", `${p.name} consomm\xE9 (\xD71)`, { ...meta, qty: 1 });
+      await logHistory(undo, sb, hid, "consomme", `${p.name} consomm\xE9 (\xD71)`, { ...meta, qty: 1 });
       return;
     }
     if (p.quantity > 1) {
@@ -2823,7 +2825,12 @@ async function handleUndo(link, alexaUser, apl = false) {
       else if (op.t === "prod_restore") {
         const { id, createdAt: _c, updatedAt: _u, ...rest } = op.snap;
         if (products.some((p) => p.id === id)) await repo.updateProduct(id, rest);
-        else await repo.addProduct(rest);
+        else {
+          const np = await repo.addProduct(rest);
+          await sb.from("products").update({ id, created_at: op.snap.createdAt }).eq("id", np.id);
+        }
+      } else if (op.t === "hist_del") {
+        await sb.from("history").delete().eq("id", op.id);
       }
     } catch {
     }

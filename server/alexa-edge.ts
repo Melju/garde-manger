@@ -171,6 +171,7 @@ type Undo =
   | { t: 'shop_add'; item: { name: string; category: string; quantity: number; unit?: string } }
   | { t: 'prod_del'; id: string }
   | { t: 'prod_restore'; snap: Product }
+  | { t: 'hist_del'; id: string }
 
 function open(link: { user_id: string; household_id: string }) {
   const jwt = userJwt(link.user_id)
@@ -435,10 +436,12 @@ async function handleAct(kind: string, id: string, link: any, alexaUser: string,
   return attach(say(text), doneScreen(text, [{ ...productTile(p), sub, tone: 'ok' }]), apl)
 }
 
-async function logHistory(sb: any, hid: string, kind: string, label: string, meta: Record<string, unknown>) {
+async function logHistory(undo: Undo[], sb: any, hid: string, kind: string, label: string, meta: Record<string, unknown>) {
   const now = new Date()
+  const id = randomUUID()
+  undo.push({ t: 'hist_del', id })
   await sb.from('history').insert({
-    id: randomUUID(),
+    id,
     household_id: hid,
     entry_date: now.toISOString().slice(0, 10),
     at: now.toISOString(),
@@ -482,12 +485,12 @@ async function applyOne(a: any, repo: SupabaseRepository, sb: any, products: Pro
   const meta = { name: p.name, category: p.category, conservation: p.conservation }
   if (a.type === 'stock_finish') {
     await repo.removeProduct(p.id)
-    await logHistory(sb, hid, 'consomme', `${p.name} consommé (×${p.quantity})`, { ...meta, qty: p.quantity })
+    await logHistory(undo, sb, hid, 'consomme', `${p.name} consommé (×${p.quantity})`, { ...meta, qty: p.quantity })
     return
   }
   if (a.type === 'stock_waste') {
     await repo.removeProduct(p.id)
-    await logHistory(sb, hid, 'jete', `${p.name} jeté (périmé)`, { ...meta, qty: p.quantity })
+    await logHistory(undo, sb, hid, 'jete', `${p.name} jeté (périmé)`, { ...meta, qty: p.quantity })
     return
   }
   if (a.type === 'stock_open') {
@@ -502,13 +505,13 @@ async function applyOne(a: any, repo: SupabaseRepository, sb: any, products: Pro
     if (!a.unit || !parsed) {
       const n = Math.min(a.unit ? 1 : Math.max(1, Math.round(a.amount)), p.quantity)
       await repo.adjustQuantity(p.id, -n)
-      await logHistory(sb, hid, 'consomme', `${p.name} consommé (×${n})`, { ...meta, qty: n })
+      await logHistory(undo, sb, hid, 'consomme', `${p.name} consommé (×${n})`, { ...meta, qty: n })
       return
     }
     const newSize = consumeAmount(p.size!, a.amount, a.unit)
     if (newSize === null) {
       await repo.adjustQuantity(p.id, -1)
-      await logHistory(sb, hid, 'consomme', `${p.name} consommé (×1)`, { ...meta, qty: 1 })
+      await logHistory(undo, sb, hid, 'consomme', `${p.name} consommé (×1)`, { ...meta, qty: 1 })
       return
     }
     if (p.quantity > 1) {
@@ -540,7 +543,13 @@ async function handleUndo(link: { user_id: string; household_id: string; last_un
       else if (op.t === 'prod_restore') {
         const { id, createdAt: _c, updatedAt: _u, ...rest } = op.snap as any
         if (products.some((p) => p.id === id)) await repo.updateProduct(id, rest)
-        else await repo.addProduct(rest)
+        else {
+          // Recréé avec son identifiant et sa date d'ajout d'origine (liens des recettes, historique).
+          const np = await repo.addProduct(rest)
+          await sb.from('products').update({ id, created_at: (op.snap as any).createdAt }).eq('id', np.id)
+        }
+      } else if (op.t === 'hist_del') {
+        await sb.from('history').delete().eq('id', op.id)
       }
     } catch {
       /* au mieux */
