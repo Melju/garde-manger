@@ -1232,6 +1232,15 @@ var check = {
   parameters: ["color"],
   items: [{ type: "path", pathData: "M5 12.5l4.5 4.5L19 7.5", stroke: "${color}", strokeWidth: 3, strokeLineCap: "round", strokeLineJoin: "round", fill: "transparent" }]
 };
+var NAV = [
+  { key: "home", label: "Accueil" },
+  { key: "stock", label: "Stock" },
+  { key: "urgent", label: "\xC0 consommer vite" },
+  { key: "frigo", label: "Frigo" },
+  { key: "congel", label: "Cong\xE9lateur" },
+  { key: "list", label: "Courses" },
+  { key: "recipe", label: "Id\xE9es repas" }
+];
 var layouts = {
   Header: {
     parameters: ["title", "hint"],
@@ -1259,48 +1268,118 @@ var layouts = {
       paddingBottom: 20,
       items: [
         {
-          type: "Frame",
+          type: "TouchWrapper",
           width: "100%",
           height: "100%",
-          borderRadius: 28,
-          borderWidth: 2,
-          backgroundColor: `\${tile.tone == 'expired' ? '${C.dangerSoft}' : '${C.surface}'}`,
-          borderColor: `\${tile.tone == 'expired' ? '#f4b8b8' : '${C.border}'}`,
+          onPress: [{ type: "SendEvent", arguments: ["product", "${tile.id}"] }],
           item: {
-            type: "Container",
+            type: "Frame",
             width: "100%",
             height: "100%",
-            alignItems: "center",
-            justifyContent: "center",
-            paddingLeft: 16,
-            paddingRight: 16,
-            items: [
-              { type: "Image", when: "${tile.img}", source: "${tile.img}", width: "62%", height: "52%", scale: "best-fit" },
-              {
-                type: "Frame",
-                when: "${!tile.img}",
-                width: 110,
-                height: 110,
-                borderRadius: 55,
-                backgroundColor: C.soft,
-                item: { type: "Text", text: "${tile.initial}", width: 110, height: 110, textAlign: "center", textAlignVertical: "center", fontSize: 52, fontWeight: 800, color: C.strong }
-              },
-              { type: "Text", text: "${tile.name}", spacing: 12, fontSize: 26, fontWeight: 700, color: C.fg, textAlign: "center", maxLines: 2 },
-              {
-                type: "Text",
-                when: "${tile.sub}",
-                text: "${tile.sub}",
-                spacing: 4,
-                fontSize: 22,
-                fontWeight: 600,
-                textAlign: "center",
-                maxLines: 1,
-                color: `\${tile.tone == 'expired' ? '${C.danger}' : tile.tone == 'soon' ? '${C.warn}' : '${C.muted}'}`
-              }
-            ]
+            borderRadius: 28,
+            borderWidth: 2,
+            backgroundColor: `\${tile.tone == 'expired' ? '${C.dangerSoft}' : '${C.surface}'}`,
+            borderColor: `\${tile.tone == 'expired' ? '#f4b8b8' : '${C.border}'}`,
+            item: {
+              type: "Container",
+              width: "100%",
+              height: "100%",
+              alignItems: "center",
+              justifyContent: "center",
+              paddingLeft: 16,
+              paddingRight: 16,
+              items: [
+                { type: "Image", when: "${tile.img}", source: "${tile.img}", width: "62%", height: "52%", scale: "best-fit" },
+                {
+                  type: "Frame",
+                  when: "${!tile.img}",
+                  width: 110,
+                  height: 110,
+                  borderRadius: 55,
+                  backgroundColor: C.soft,
+                  item: { type: "Text", text: "${tile.initial}", width: 110, height: 110, textAlign: "center", textAlignVertical: "center", fontSize: 52, fontWeight: 800, color: C.strong }
+                },
+                { type: "Text", text: "${tile.name}", spacing: 12, fontSize: 26, fontWeight: 700, color: C.fg, textAlign: "center", maxLines: 2 },
+                {
+                  type: "Text",
+                  when: "${tile.sub}",
+                  text: "${tile.sub}",
+                  spacing: 4,
+                  fontSize: 22,
+                  fontWeight: 600,
+                  textAlign: "center",
+                  maxLines: 1,
+                  color: `\${tile.tone == 'expired' ? '${C.danger}' : tile.tone == 'soon' ? '${C.warn}' : '${C.muted}'}`
+                }
+              ]
+            }
           }
         }
       ]
+    }
+  },
+  NavBar: {
+    parameters: ["current"],
+    item: {
+      type: "Container",
+      direction: "row",
+      width: "100%",
+      height: 96,
+      spacing: 16,
+      justifyContent: "center",
+      data: NAV,
+      item: {
+        type: "TouchWrapper",
+        spacing: 14,
+        onPress: [{ type: "SendEvent", arguments: ["nav", "${data.key}"] }],
+        item: {
+          type: "Frame",
+          height: 80,
+          borderRadius: 40,
+          paddingLeft: 34,
+          paddingRight: 34,
+          backgroundColor: `\${data.key == current ? '${C.brand}' : '${C.surface}'}`,
+          borderWidth: 2,
+          borderColor: `\${data.key == current ? '${C.brand}' : '${C.border}'}`,
+          item: {
+            type: "Text",
+            text: "${data.label}",
+            height: 76,
+            textAlignVertical: "center",
+            fontSize: 28,
+            fontWeight: 700,
+            color: `\${data.key == current ? '#ffffff' : '${C.fg}'}`
+          }
+        }
+      }
+    }
+  },
+  BigButton: {
+    parameters: ["label", "action", "pid", "danger"],
+    item: {
+      type: "TouchWrapper",
+      grow: 1,
+      spacing: 20,
+      onPress: [{ type: "SendEvent", arguments: ["act", "${action}", "${pid}"] }],
+      item: {
+        type: "Frame",
+        height: 110,
+        borderRadius: 30,
+        backgroundColor: `\${danger ? '${C.dangerSoft}' : '${C.brand}'}`,
+        borderWidth: 2,
+        borderColor: `\${danger ? '#f4b8b8' : '${C.brand}'}`,
+        item: {
+          type: "Text",
+          text: "${label}",
+          height: 106,
+          width: "100%",
+          textAlign: "center",
+          textAlignVertical: "center",
+          fontSize: 32,
+          fontWeight: 800,
+          color: `\${danger ? '${C.danger}' : '#ffffff'}`
+        }
+      }
     }
   },
   Chip: {
@@ -1345,7 +1424,7 @@ function row(dataPath) {
     item: { type: "Container", width: "${viewport.width >= 1500 ? 260 : 210}", height: "100%", item: { type: "Tile", tile: "${data}" } }
   };
 }
-function page(items) {
+function page(items, nav = "") {
   return {
     type: "APL",
     version: "2023.3",
@@ -1363,31 +1442,38 @@ function page(items) {
         paddingLeft: "${viewport.width >= 1500 ? 64 : 32}",
         paddingRight: "${viewport.width >= 1500 ? 64 : 32}",
         paddingTop: "${viewport.width >= 1500 ? 44 : 24}",
-        paddingBottom: 24,
-        items
+        paddingBottom: 20,
+        items: [
+          { type: "Container", width: "100%", grow: 1, shrink: 1, items },
+          { type: "NavBar", current: nav }
+        ]
       }
     }
   };
 }
 var hintDefault = "Dis \xAB Alexa, \u2026 \xBB pour me parler";
 function homeScreen(o) {
-  const stat = (value, label, color) => ({
-    type: "Frame",
+  const stat = (value, label, color, nav) => ({
+    type: "TouchWrapper",
     grow: 1,
     spacing: 24,
-    backgroundColor: C.surface,
-    borderRadius: 28,
-    borderWidth: 2,
-    borderColor: C.border,
+    onPress: [{ type: "SendEvent", arguments: ["nav", nav] }],
     item: {
-      type: "Container",
-      paddingLeft: 32,
-      paddingTop: 24,
-      paddingBottom: 24,
-      items: [
-        { type: "Text", text: value, fontSize: 68, fontWeight: 800, color },
-        { type: "Text", text: label, fontSize: 26, color: C.muted, fontWeight: 600 }
-      ]
+      type: "Frame",
+      backgroundColor: C.surface,
+      borderRadius: 28,
+      borderWidth: 2,
+      borderColor: C.border,
+      item: {
+        type: "Container",
+        paddingLeft: 32,
+        paddingTop: 24,
+        paddingBottom: 24,
+        items: [
+          { type: "Text", text: value, fontSize: 68, fontWeight: 800, color },
+          { type: "Text", text: label, fontSize: 26, color: C.muted, fontWeight: 600 }
+        ]
+      }
     }
   });
   return {
@@ -1400,9 +1486,9 @@ function homeScreen(o) {
         spacing: 24,
         width: "100%",
         items: [
-          stat("${payload.total}", "produits en stock", C.strong),
-          stat("${payload.soon}", "\xE0 consommer vite", o.soon ? C.warn : C.strong),
-          stat("${payload.shop}", "articles \xE0 acheter", C.strong)
+          stat("${payload.total}", "produits en stock  \u203A", C.strong, "stock"),
+          stat("${payload.soon}", "\xE0 consommer vite  \u203A", o.soon ? C.warn : C.strong, "urgent"),
+          stat("${payload.shop}", "articles \xE0 acheter  \u203A", C.strong, "list")
         ]
       },
       { type: "Text", when: "${payload.urgent.length > 0}", text: "\xC0 consommer en priorit\xE9", spacing: 32, fontSize: 32, fontWeight: 800, color: C.fg },
@@ -1414,14 +1500,14 @@ function homeScreen(o) {
         spacing: 28,
         alignItems: "center",
         items: [
-          { type: "Text", text: "Essaie :", fontSize: 25, color: C.muted, fontWeight: 600 },
-          { type: "Chip", label: "\xAB ajoute du lait \xBB" },
-          { type: "Chip", label: "\xAB j\u2019ai fini le beurre \xBB" },
-          { type: "Chip", label: "\xAB qu\u2019est-ce qu\u2019on mange ce soir \xBB" },
-          { type: "Chip", label: "\xAB la liste de courses \xBB" }
+          { type: "Text", text: "\xC0 dire :", fontSize: 25, color: C.muted, fontWeight: 600 },
+          { type: "Chip", label: "\xAB Alexa, ajoute du lait \xBB" },
+          { type: "Chip", label: "\xAB Alexa, j\u2019ai fini le beurre \xBB" },
+          { type: "Chip", label: "\xAB Alexa, il reste des \u0153ufs ? \xBB" },
+          { type: "Text", text: "Touche un produit pour agir dessus.", fontSize: 25, color: C.muted, spacing: 24 }
         ]
       }
-    ]),
+    ], "home"),
     data: {
       payload: {
         hello: o.name ? `Salut ${o.name} !` : "Salut !",
@@ -1434,12 +1520,12 @@ function homeScreen(o) {
     }
   };
 }
-function gridScreen(title, count, tiles) {
+function gridScreen(title, count, tiles, nav = "stock") {
   return {
     document: page([
       { type: "Header", title: "${payload.title}", hint: "${payload.count}" },
       tiles.length ? { type: "Container", spacing: 28, width: "100%", grow: 1, shrink: 1, items: [grid("${payload.tiles}")] } : { type: "Text", text: "Rien ici pour l\u2019instant.", spacing: 60, fontSize: 40, color: C.muted, textAlign: "center", width: "100%" }
-    ]),
+    ], nav),
     data: { payload: { title, count, tiles } }
   };
 }
@@ -1526,9 +1612,32 @@ function listScreen(items) {
         data: "${payload.rows}",
         item: rowItem
       } : { type: "Text", text: "La liste est vide. Dis \xAB Alexa, ajoute du pain \xBB.", spacing: 60, fontSize: 40, color: C.muted, textAlign: "center", width: "100%" },
-      { type: "Text", when: "${payload.rows.length > 0}", text: "Touche un article pour le cocher.", spacing: 8, fontSize: 24, color: C.muted }
-    ]),
-    data: { payload: { rows, count: left ? `${left} \xE0 acheter` : "Tout est pris" } }
+      {
+        type: "Container",
+        when: "${payload.rows.length > 0}",
+        direction: "row",
+        alignItems: "center",
+        spacing: 8,
+        width: "100%",
+        items: [
+          { type: "Text", text: "Touche un article pour le cocher.", fontSize: 24, color: C.muted, grow: 1 },
+          {
+            type: "TouchWrapper",
+            when: "${payload.checked > 0}",
+            onPress: [{ type: "SendEvent", arguments: ["clear"] }],
+            item: { type: "Chip", label: "${payload.clearLabel}" }
+          }
+        ]
+      }
+    ], "list"),
+    data: {
+      payload: {
+        rows,
+        count: left ? `${left} \xE0 acheter` : "Tout est pris",
+        checked: items.length - left,
+        clearLabel: `Retirer les ${items.length - left} coch\xE9s`
+      }
+    }
   };
 }
 function doneScreen(text, tiles, undoHint = true) {
@@ -1565,7 +1674,7 @@ function doneScreen(text, tiles, undoHint = true) {
           { type: "Text", when: "${payload.undo}", text: "Pour revenir en arri\xE8re : \xAB Alexa, annule \xBB", spacing: 28, fontSize: 25, color: C.muted }
         ]
       }
-    ]),
+    ], ""),
     data: { payload: { text, tiles: tiles.slice(0, 6), undo: undoHint } }
   };
 }
@@ -1609,8 +1718,98 @@ function answerScreen(text, o = {}) {
       },
       { type: "Text", when: "${payload.tiles.length > 0}", text: "${payload.tilesTitle}", spacing: 32, fontSize: 30, fontWeight: 800, color: C.fg },
       { type: "Container", when: "${payload.tiles.length > 0}", spacing: 16, width: "100%", grow: 1, shrink: 1, items: [grid("${payload.tiles}")] }
-    ]),
+    ], o.nav ?? ""),
     data: { payload: { text, title: o.title ?? "", tiles, tilesTitle: o.tilesTitle ?? "", options: o.options ?? [] } }
+  };
+}
+function productScreen(p) {
+  const t = productTile(p);
+  const exp = p.expiryDate ? (/* @__PURE__ */ new Date(p.expiryDate + "T12:00:00")).toLocaleDateString("fr-FR", { day: "numeric", month: "long", year: "numeric", timeZone: "Europe/Paris" }) : "";
+  const lines = [
+    p.brand ? p.brand : "",
+    p.location ? `Emplacement : ${p.location}` : "",
+    `Quantit\xE9 : \xD7${p.quantity}${p.size ? ` \xB7 ${p.size}` : ""}`,
+    p.openedAt ? `Entam\xE9 le ${new Date(p.openedAt).toLocaleDateString("fr-FR", { day: "numeric", month: "long", timeZone: "Europe/Paris" })}` : ""
+  ].filter(Boolean);
+  const line = (text) => ({ type: "Text", text, fontSize: 30, color: C.fg, spacing: 10, maxLines: 1 });
+  return {
+    document: page(
+      [
+        { type: "Header", title: "", hint: "" },
+        {
+          type: "Container",
+          direction: "row",
+          spacing: 32,
+          width: "100%",
+          grow: 1,
+          shrink: 1,
+          alignItems: "center",
+          items: [
+            {
+              type: "Frame",
+              width: "${viewport.width >= 1500 ? 440 : 300}",
+              height: "${viewport.width >= 1500 ? 440 : 300}",
+              borderRadius: 40,
+              backgroundColor: `\${payload.tone == 'expired' ? '${C.dangerSoft}' : '${C.surface}'}`,
+              borderWidth: 2,
+              borderColor: C.border,
+              item: {
+                type: "Container",
+                width: "100%",
+                height: "100%",
+                alignItems: "center",
+                justifyContent: "center",
+                items: [
+                  { type: "Image", when: "${payload.img}", source: "${payload.img}", width: "78%", height: "78%", scale: "best-fit" },
+                  { type: "Text", when: "${!payload.img}", text: "${payload.initial}", fontSize: 160, fontWeight: 800, color: C.strong }
+                ]
+              }
+            },
+            {
+              type: "Container",
+              grow: 1,
+              shrink: 1,
+              spacing: 48,
+              items: [
+                { type: "Text", text: "${payload.name}", fontSize: 54, fontWeight: 800, color: C.fg, maxLines: 2 },
+                {
+                  type: "Text",
+                  when: "${payload.exp}",
+                  text: "${payload.exp}",
+                  spacing: 14,
+                  fontSize: 32,
+                  fontWeight: 700,
+                  color: `\${payload.tone == 'expired' ? '${C.danger}' : payload.tone == 'soon' ? '${C.warn}' : '${C.strong}'}`
+                },
+                ...lines.map(line)
+              ]
+            }
+          ]
+        },
+        {
+          type: "Container",
+          direction: "row",
+          width: "100%",
+          spacing: 24,
+          items: [
+            { type: "BigButton", label: "J\u2019ai fini", action: "finish", pid: p.id, danger: false, spacing: 0 },
+            { type: "BigButton", label: p.openedAt ? "D\xE9j\xE0 entam\xE9" : "Entam\xE9", action: "open", pid: p.id, danger: false },
+            { type: "BigButton", label: "Ajouter aux courses", action: "shop", pid: p.id, danger: false },
+            { type: "BigButton", label: "Jet\xE9", action: "waste", pid: p.id, danger: true }
+          ]
+        }
+      ],
+      ""
+    ),
+    data: {
+      payload: {
+        name: p.name,
+        img: t.img ?? "",
+        initial: t.initial,
+        tone: t.tone,
+        exp: p.expiryDate ? t.tone === "expired" ? `P\xE9rim\xE9 depuis le ${exp}` : `\xC0 consommer avant le ${exp}` : ""
+      }
+    }
   };
 }
 
@@ -1756,7 +1955,7 @@ async function displayName(link, repo) {
 async function handleHome(link, apl, text) {
   const { repo } = open(link);
   const name = await displayName(link, repo);
-  const r = say(text(name), { end: false, reprompt: "Que veux-tu faire ?" });
+  const r = text ? say(text(name), { end: false, reprompt: "Que veux-tu faire ?" }) : { version: "1.0", response: {} };
   if (!apl) return r;
   const [products, shopping] = await Promise.all([repo.listProducts(), repo.listShopping()]);
   const limit = new Date(Date.now() + 3 * 864e5).toISOString().slice(0, 10);
@@ -1812,10 +2011,11 @@ async function handleCommand(text, link, alexaUser, ui = { apl: false }) {
       const l = ui.lieu ? norm2(ui.lieu) : "";
       const list = byExpiry(l ? products.filter((p) => norm2(p.location ?? "").includes(l)) : products);
       const title = ui.lieu ? ui.lieu.charAt(0).toUpperCase() + ui.lieu.slice(1) : "Tout le stock";
-      return attach(r2, gridScreen(title, `${list.length} produit${list.length > 1 ? "s" : ""}`, list.slice(0, 90).map(productTile)), true);
+      const nav = l.startsWith("refri") ? "frigo" : l.startsWith("congel") ? "congel" : l ? "" : "stock";
+      return attach(r2, gridScreen(title, `${list.length} produit${list.length > 1 ? "s" : ""}`, list.slice(0, 90).map(productTile), nav), true);
     }
     if (ui.view === "recipe")
-      return attach(r2, answerScreen(reply, { title: "Id\xE9es de repas", tiles: urgent(products, 12).map(productTile), tilesTitle: "\xC0 utiliser en priorit\xE9" }), true);
+      return attach(r2, answerScreen(reply, { title: "Id\xE9es de repas", tiles: urgent(products, 12).map(productTile), tilesTitle: "\xC0 utiliser en priorit\xE9", nav: "recipe" }), true);
     return attach(r2, answerScreen(reply, { tiles: matching(products, ui.query || text).map(productTile), tilesTitle: "Dans ton stock" }), true);
   }
   const ask = actions.find((a) => a.type === "ask");
@@ -1854,6 +2054,43 @@ async function handleCommand(text, link, alexaUser, ui = { apl: false }) {
   return attach(say(reply || "C\u2019est fait.", { card: actions.map((a) => a.label).join("\n") }), doneScreen(reply || "C\u2019est fait.", tiles), ui.apl);
 }
 var norm2 = (s) => s.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+var quiet = (screen, apl, attrs = {}) => attach({ version: "1.0", sessionAttributes: attrs, response: {} }, screen, apl);
+async function handleNav(key, link, alexaUser, apl) {
+  if (key === "home") return handleHome(link, apl, null);
+  if (key === "recipe") return handleCommand(FIXED.RecetteIntent(), link, alexaUser, { apl, view: "recipe" });
+  const { repo } = open(link);
+  if (key === "list") return quiet(listScreen(await repo.listShopping()), apl);
+  const products = await repo.listProducts();
+  const count = (n) => `${n} produit${n > 1 ? "s" : ""}`;
+  if (key === "urgent") {
+    const limit = new Date(Date.now() + 7 * 864e5).toISOString().slice(0, 10);
+    const list2 = byExpiry(products.filter((p) => p.expiryDate && p.expiryDate <= limit));
+    return quiet(gridScreen("\xC0 consommer vite", count(list2.length), list2.map(productTile), "urgent"), apl);
+  }
+  if (key === "frigo" || key === "congel") {
+    const want = key === "frigo" ? ["refrigerateur", "frigo"] : ["congel"];
+    const list2 = byExpiry(products.filter((p) => want.some((w) => norm2(p.location ?? "").includes(w))));
+    return quiet(gridScreen(key === "frigo" ? "R\xE9frig\xE9rateur" : "Cong\xE9lateur", count(list2.length), list2.slice(0, 90).map(productTile), key), apl);
+  }
+  const list = byExpiry(products);
+  const label = list.length > 120 ? `${list.length} produits, les 120 plus urgents` : count(list.length);
+  return quiet(gridScreen("Tout le stock", label, list.slice(0, 120).map(productTile), "stock"), apl);
+}
+async function handleAct(kind, id, link, alexaUser, apl) {
+  const { sb, repo } = open(link);
+  const [products, shopping] = await Promise.all([repo.listProducts(), repo.listShopping()]);
+  const p = products.find((x) => x.id === id);
+  if (!p) return attach(say("Ce produit n\u2019est plus dans le stock."), doneScreen("Ce produit n\u2019est plus dans le stock.", [], false), apl);
+  const a = kind === "shop" ? { type: "shop_add", name: p.name, category: p.category, quantity: 1 } : { type: { finish: "stock_finish", open: "stock_open", waste: "stock_waste" }[kind] ?? "", id: p.id };
+  if (!a.type) return quiet(null, apl);
+  const undo = [];
+  await applyOne(a, repo, sb, products, shopping, undo);
+  await rpc("alexa_set_undo", { p_alexa: alexaUser, p_undo: { at: Date.now(), ops: undo } }).catch(() => {
+  });
+  const text = kind === "finish" ? `${p.name} : termin\xE9, je le retire du stock.` : kind === "waste" ? `${p.name} : not\xE9 comme jet\xE9.` : kind === "open" ? `${p.name} : not\xE9 comme entam\xE9.` : `${p.name} ajout\xE9 aux courses.`;
+  const sub = { finish: "Termin\xE9", waste: "Jet\xE9", open: "Entam\xE9", shop: "Ajout\xE9 aux courses" }[kind] ?? "";
+  return attach(say(text), doneScreen(text, [{ ...productTile(p), sub, tone: "ok" }]), apl);
+}
 async function logHistory(sb, hid, kind, label, meta) {
   const now = /* @__PURE__ */ new Date();
   await sb.from("history").insert({
@@ -2048,6 +2285,22 @@ Deno.serve(async (req) => {
         await repo.toggleShoppingItem(value);
         const shopping = await repo.listShopping();
         return send(attach({ version: "1.0", sessionAttributes: body?.session?.attributes ?? {}, response: {} }, listScreen(shopping), apl));
+      }
+      if (kind === "nav" && value) return send(await handleNav(value, link, alexaUser, apl));
+      if (kind === "product" && value) {
+        const { repo } = open(link);
+        const p = (await repo.listProducts()).find((x) => x.id === value);
+        return send(p ? quiet(productScreen(p), apl) : await handleNav("stock", link, alexaUser, apl));
+      }
+      if (kind === "act" && value && rq.arguments?.[2]) return send(await handleAct(value, String(rq.arguments[2]), link, alexaUser, apl));
+      if (kind === "clear") {
+        const { repo } = open(link);
+        const done = (await repo.listShopping()).filter((s) => s.checked);
+        await repo.clearCheckedShopping();
+        const undo = done.map((it) => ({ t: "shop_add", item: { name: it.name, category: it.category, quantity: it.quantity, unit: it.unit } }));
+        await rpc("alexa_set_undo", { p_alexa: alexaUser, p_undo: { at: Date.now(), ops: undo } }).catch(() => {
+        });
+        return send(quiet(listScreen(await repo.listShopping()), apl));
       }
       if (kind === "answer" && value) {
         const pend = body?.session?.attributes?.pending;

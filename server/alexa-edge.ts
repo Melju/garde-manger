@@ -12,7 +12,7 @@ import { SupabaseRepository } from '../src/data/supabaseRepository'
 import { consumeAmount, parseContenance } from '../src/lib/contenance'
 import { openShelfDays } from '../src/lib/openShelf'
 import { defaultConservation, type Category, type Product } from '../src/types'
-import { answerScreen, byExpiry, doneScreen, gridScreen, homeScreen, listScreen, matching, nameTile, productTile, urgent, type Tile } from './alexa-apl'
+import { answerScreen, byExpiry, doneScreen, gridScreen, homeScreen, listScreen, matching, nameTile, productScreen, productTile, urgent, type Tile } from './alexa-apl'
 
 declare const Deno: any
 const env = (k: string) => Deno.env.get(k) ?? ''
@@ -195,10 +195,10 @@ async function displayName(link: any, repo: SupabaseRepository) {
   return hits.length === 1 ? String(hits[0].name).split(' ')[0] : ''
 }
 
-async function handleHome(link: any, apl: boolean, text: (name: string) => string) {
+async function handleHome(link: any, apl: boolean, text: ((name: string) => string) | null) {
   const { repo } = open(link)
   const name = await displayName(link, repo)
-  const r = say(text(name), { end: false, reprompt: 'Que veux-tu faire ?' })
+  const r: any = text ? say(text(name), { end: false, reprompt: 'Que veux-tu faire ?' }) : { version: '1.0', response: {} }
   if (!apl) return r
   const [products, shopping] = await Promise.all([repo.listProducts(), repo.listShopping()])
   const limit = new Date(Date.now() + 3 * 86400_000).toISOString().slice(0, 10)
@@ -264,10 +264,11 @@ async function handleCommand(text: string, link: { user_id: string; household_id
       const l = ui.lieu ? norm(ui.lieu) : ''
       const list = byExpiry(l ? products.filter((p) => norm(p.location ?? '').includes(l)) : products)
       const title = ui.lieu ? ui.lieu.charAt(0).toUpperCase() + ui.lieu.slice(1) : 'Tout le stock'
-      return attach(r, gridScreen(title, `${list.length} produit${list.length > 1 ? 's' : ''}`, list.slice(0, 90).map(productTile)), true)
+      const nav = l.startsWith('refri') ? 'frigo' : l.startsWith('congel') ? 'congel' : l ? '' : 'stock'
+      return attach(r, gridScreen(title, `${list.length} produit${list.length > 1 ? 's' : ''}`, list.slice(0, 90).map(productTile), nav), true)
     }
     if (ui.view === 'recipe')
-      return attach(r, answerScreen(reply, { title: 'Idées de repas', tiles: urgent(products, 12).map(productTile), tilesTitle: 'À utiliser en priorité' }), true)
+      return attach(r, answerScreen(reply, { title: 'Idées de repas', tiles: urgent(products, 12).map(productTile), tilesTitle: 'À utiliser en priorité', nav: 'recipe' }), true)
     return attach(r, answerScreen(reply, { tiles: matching(products, ui.query || text).map(productTile), tilesTitle: 'Dans ton stock' }), true)
   }
 
@@ -314,6 +315,52 @@ const norm = (s: string) =>
     .toLowerCase()
     .normalize('NFD')
     .replace(/[\u0300-\u036f]/g, '')
+
+const quiet = (screen: any, apl: boolean, attrs: Record<string, unknown> = {}) =>
+  attach({ version: '1.0', sessionAttributes: attrs, response: {} }, screen, apl)
+
+/** Navigation par la barre du bas et les compteurs de l'accueil (sans voix, sauf les idées repas qui passent par l'IA). */
+async function handleNav(key: string, link: any, alexaUser: string, apl: boolean) {
+  if (key === 'home') return handleHome(link, apl, null)
+  if (key === 'recipe') return handleCommand(FIXED.RecetteIntent(), link, alexaUser, { apl, view: 'recipe' })
+  const { repo } = open(link)
+  if (key === 'list') return quiet(listScreen(await repo.listShopping()), apl)
+  const products = await repo.listProducts()
+  const count = (n: number) => `${n} produit${n > 1 ? 's' : ''}`
+  if (key === 'urgent') {
+    const limit = new Date(Date.now() + 7 * 86400_000).toISOString().slice(0, 10)
+    const list = byExpiry(products.filter((p) => p.expiryDate && p.expiryDate <= limit))
+    return quiet(gridScreen('À consommer vite', count(list.length), list.map(productTile), 'urgent'), apl)
+  }
+  if (key === 'frigo' || key === 'congel') {
+    const want = key === 'frigo' ? ['refrigerateur', 'frigo'] : ['congel']
+    const list = byExpiry(products.filter((p) => want.some((w) => norm(p.location ?? '').includes(w))))
+    return quiet(gridScreen(key === 'frigo' ? 'Réfrigérateur' : 'Congélateur', count(list.length), list.slice(0, 90).map(productTile), key), apl)
+  }
+  const list = byExpiry(products)
+  const label = list.length > 120 ? `${list.length} produits, les 120 plus urgents` : count(list.length)
+  return quiet(gridScreen('Tout le stock', label, list.slice(0, 120).map(productTile), 'stock'), apl)
+}
+
+/** Boutons de la fiche produit. */
+async function handleAct(kind: string, id: string, link: any, alexaUser: string, apl: boolean) {
+  const { sb, repo } = open(link)
+  const [products, shopping] = await Promise.all([repo.listProducts(), repo.listShopping()])
+  const p = products.find((x) => x.id === id)
+  if (!p) return attach(say('Ce produit n’est plus dans le stock.'), doneScreen('Ce produit n’est plus dans le stock.', [], false), apl)
+  const a =
+    kind === 'shop'
+      ? { type: 'shop_add', name: p.name, category: p.category, quantity: 1 }
+      : { type: { finish: 'stock_finish', open: 'stock_open', waste: 'stock_waste' }[kind] ?? '', id: p.id }
+  if (!a.type) return quiet(null, apl)
+  const undo: Undo[] = []
+  await applyOne(a, repo, sb, products, shopping, undo)
+  await rpc('alexa_set_undo', { p_alexa: alexaUser, p_undo: { at: Date.now(), ops: undo } }).catch(() => {})
+  const text =
+    kind === 'finish' ? `${p.name} : terminé, je le retire du stock.` : kind === 'waste' ? `${p.name} : noté comme jeté.` : kind === 'open' ? `${p.name} : noté comme entamé.` : `${p.name} ajouté aux courses.`
+  const sub = { finish: 'Terminé', waste: 'Jeté', open: 'Entamé', shop: 'Ajouté aux courses' }[kind] ?? ''
+  return attach(say(text), doneScreen(text, [{ ...productTile(p), sub, tone: 'ok' }]), apl)
+}
 
 async function logHistory(sb: any, hid: string, kind: string, label: string, meta: Record<string, unknown>) {
   const now = new Date()
@@ -523,6 +570,21 @@ Deno.serve(async (req: Request) => {
         await repo.toggleShoppingItem(value)
         const shopping = await repo.listShopping()
         return send(attach({ version: '1.0', sessionAttributes: body?.session?.attributes ?? {}, response: {} }, listScreen(shopping), apl))
+      }
+      if (kind === 'nav' && value) return send(await handleNav(value, link, alexaUser, apl))
+      if (kind === 'product' && value) {
+        const { repo } = open(link)
+        const p = (await repo.listProducts()).find((x) => x.id === value)
+        return send(p ? quiet(productScreen(p), apl) : await handleNav('stock', link, alexaUser, apl))
+      }
+      if (kind === 'act' && value && rq.arguments?.[2]) return send(await handleAct(value, String(rq.arguments[2]), link, alexaUser, apl))
+      if (kind === 'clear') {
+        const { repo } = open(link)
+        const done = (await repo.listShopping()).filter((s) => s.checked)
+        await repo.clearCheckedShopping()
+        const undo: Undo[] = done.map((it) => ({ t: 'shop_add', item: { name: it.name, category: it.category, quantity: it.quantity, unit: it.unit } }))
+        await rpc('alexa_set_undo', { p_alexa: alexaUser, p_undo: { at: Date.now(), ops: undo } }).catch(() => {})
+        return send(quiet(listScreen(await repo.listShopping()), apl))
       }
       if (kind === 'answer' && value) {
         const pend = body?.session?.attributes?.pending
