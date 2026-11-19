@@ -2,6 +2,7 @@
 // Pensés d'abord pour l'Echo Show 15 (1920 × 1080), et lisibles sur les écrans plus petits.
 import { productImageSlug, chosenIconSlug } from '../src/lib/productImage'
 import type { Product, ShoppingItem } from '../src/types'
+import { daysUntilExpiry, expiryLabel, expiryStatus, priorityProducts, urgentCount } from '../src/lib/expiry'
 
 const SITE = 'https://food.graphikeo.com'
 const C = {
@@ -21,8 +22,6 @@ const C = {
 export type Tile = { id?: string; name: string; sub?: string; img?: string; initial: string; tone: 'ok' | 'soon' | 'expired' }
 
 // ---------- Données ----------
-const today = () => new Date().toLocaleDateString('sv-SE', { timeZone: 'Europe/Paris' })
-const dayDiff = (iso: string) => Math.round((Date.parse(iso) - Date.parse(today())) / 86400_000)
 
 /** Comme dans l'app : icône choisie, sinon illustration devinée du nom, jamais la photo du produit (sinon : initiale). */
 export function imageFor(name: string, imageUrl?: string, _category?: string): string | undefined {
@@ -30,29 +29,26 @@ export function imageFor(name: string, imageUrl?: string, _category?: string): s
   return slug ? `${SITE}/icons-png/${slug}.png` : undefined
 }
 
-function expiryText(iso?: string): { sub?: string; tone: Tile['tone'] } {
-  if (!iso) return { tone: 'ok' }
-  const d = dayDiff(iso)
-  if (d < 0) return { sub: 'Périmé', tone: 'expired' }
-  if (d === 0) return { sub: 'Aujourd’hui', tone: 'soon' }
-  if (d === 1) return { sub: 'Demain', tone: 'soon' }
-  if (d <= 3) return { sub: `Dans ${d} jours`, tone: 'soon' }
-  const s = new Date(iso + 'T12:00:00').toLocaleDateString('fr-FR', { day: 'numeric', month: 'short', timeZone: 'Europe/Paris' })
-  return { sub: s, tone: 'ok' }
-}
-
+/** Même statut et même libellé que l'app (DDM, épicerie sèche, surgelés avec tolérance). */
 export function productTile(p: Product): Tile {
-  const e = expiryText(p.expiryDate)
+  const st = expiryStatus(p)
+  const label = expiryLabel(p)
+  let sub: string | undefined
+  if (st === 'expired' || st === 'urgent' || st === 'soon' || st === 'still-good') sub = label
+  else if (st === 'ok' && p.expiryDate)
+    sub = new Date(p.expiryDate + 'T12:00:00').toLocaleDateString('fr-FR', { day: 'numeric', month: 'short', timeZone: 'Europe/Paris' })
   const qty = p.quantity > 1 ? `×${p.quantity}` : p.size || ''
   return {
     id: p.id,
     name: p.name,
-    sub: [e.sub, qty].filter(Boolean).join(' · ') || undefined,
+    sub: [sub, qty].filter(Boolean).join(' · ') || undefined,
     img: imageFor(p.name, p.imageUrl, p.category),
     initial: p.name.trim().charAt(0).toUpperCase() || '?',
-    tone: e.tone,
+    tone: st === 'expired' ? 'expired' : st === 'urgent' ? 'soon' : 'ok',
   }
 }
+
+export { urgentCount, priorityProducts }
 
 export function nameTile(name: string, sub?: string): Tile {
   return { name, sub, img: imageFor(name), initial: name.trim().charAt(0).toUpperCase() || '?', tone: 'ok' }
@@ -60,11 +56,13 @@ export function nameTile(name: string, sub?: string): Tile {
 
 /** Produits triés par date de péremption (les sans date à la fin). */
 export function byExpiry(products: Product[]): Product[] {
-  return [...products].sort((a, b) => (a.expiryDate ?? '9999').localeCompare(b.expiryDate ?? '9999') || a.name.localeCompare(b.name))
+  const key = (p: Product) => (expiryStatus(p) === 'none' ? Infinity : (daysUntilExpiry(p) ?? Infinity))
+  return [...products].sort((a, b) => key(a) - key(b) || a.name.localeCompare(b.name))
 }
 
+/** Les produits prioritaires, comme le bloc « À consommer » de l'app. */
 export function urgent(products: Product[], n = 8): Product[] {
-  return byExpiry(products.filter((p) => p.expiryDate)).slice(0, n)
+  return priorityProducts(products).slice(0, n)
 }
 
 const norm = (s: string) =>
@@ -690,7 +688,13 @@ export function productScreen(p: Product) {
         img: t.img ?? '',
         initial: t.initial,
         tone: t.tone,
-        exp: p.expiryDate ? (t.tone === 'expired' ? `Périmé depuis le ${exp}` : `À consommer avant le ${exp}`) : '',
+        exp: (() => {
+          const st = expiryStatus(p)
+          if (st === 'none' || !p.expiryDate) return ''
+          if (st === 'expired') return `Périmé depuis le ${exp}`
+          if (st === 'still-good') return `Date dépassée (${exp}), encore bon`
+          return `${p.dateType === 'ddm' ? 'De préférence avant le' : 'À consommer avant le'} ${exp}`
+        })(),
       },
     },
   }

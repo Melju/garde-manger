@@ -1158,6 +1158,148 @@ function chosenIconSlug(imageUrl) {
   return imageUrl && imageUrl.startsWith(CHOSEN) ? imageUrl.slice(CHOSEN.length) : null;
 }
 
+// src/lib/dryStaple.ts
+var WORDS = [
+  "pates",
+  "pate seche",
+  "spaghetti",
+  "spaghettis",
+  "fusilli",
+  "penne",
+  "macaroni",
+  "macaronis",
+  "tagliatelle",
+  "tagliatelles",
+  "farfalle",
+  "coquillettes",
+  "linguine",
+  "capellini",
+  "torsades",
+  "coquillages",
+  "vermicelle",
+  "vermicelles",
+  "lasagne seche",
+  "nouilles",
+  "noodles",
+  "ramen",
+  "udon",
+  "soba",
+  "riz",
+  "semoule",
+  "couscous",
+  "quinoa",
+  "boulgour",
+  "ebly",
+  "polenta",
+  "lentilles",
+  "pois casses",
+  "haricots secs",
+  "farine",
+  "sucre",
+  "cassonade",
+  "sel",
+  "gros sel",
+  "flocons d avoine",
+  "avoine",
+  "maizena",
+  "fecule",
+  "chapelure",
+  "tapioca"
+];
+var norm = (s) => " " + s.normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase().replace(/[^a-z0-9]+/g, " ").trim() + " ";
+function isDryStaple(name, category) {
+  if (category === "conserves") return true;
+  if (category && category !== "epicerie") return false;
+  const n = norm(name);
+  if (/ (feuillet|bris|sabl|pizza|a tartiner|fraiche)/.test(n)) return false;
+  return WORDS.some((w) => n.includes(` ${w} `));
+}
+
+// src/lib/expiry.ts
+var MS_PER_DAY = 1e3 * 60 * 60 * 24;
+var FROZEN_GRACE_DAYS = 30;
+var GRACE_VEGETAL = ["vegan", "veggie", "tofu", "seitan", "tempeh", "falafel", "falafels", "soja"];
+var GRACE_PREPARED = ["hache", "hachee", "marine", "marines", "nugget", "nuggets", "pane", "panes", "cordon", "saucisse", "saucisses", "merguez", "chipolata", "burger", "boulette", "boulettes", "tex", "plat", "pizza", "lasagne", "lasagnes", "quiche", "gratin", "cuisine", "cuisinee"];
+function frozenGraceDays(product) {
+  const words = normalize(product.name).split(/[^a-z0-9]+/).filter(Boolean);
+  const has = (list) => words.some((w) => list.includes(w));
+  if (has(GRACE_VEGETAL) || words.some((w) => w.startsWith("veget"))) return 90;
+  if (has(GRACE_PREPARED)) return 30;
+  switch (product.category) {
+    case "viandes":
+    case "viandes-vg":
+      return 90;
+    case "poissons":
+      return 60;
+    case "legumes":
+    case "fruits":
+      return 180;
+    default:
+      return FROZEN_GRACE_DAYS;
+  }
+}
+function isFrozen(product) {
+  return product.location === "Cong\xE9lateur" || product.category === "surgeles";
+}
+function daysUntilExpiry(product, now = /* @__PURE__ */ new Date()) {
+  if (!product.expiryDate) return null;
+  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  const expiry = /* @__PURE__ */ new Date(product.expiryDate + "T00:00:00");
+  return Math.round((expiry.getTime() - today.getTime()) / MS_PER_DAY);
+}
+function expiryStatus(product, now = /* @__PURE__ */ new Date()) {
+  const days = daysUntilExpiry(product, now);
+  if (days === null) return "none";
+  if (isFrozen(product)) {
+    if (days < -frozenGraceDays(product)) return "expired";
+    if (days < 0) return "still-good";
+    if (days <= 14) return "soon";
+    return "ok";
+  }
+  if (product.dateType !== "dlc" && days < 0 && isDryStaple(product.name, product.category)) return "none";
+  if (product.dateType === "ddm") {
+    if (days < 0) return "still-good";
+    if (days <= 3) return "soon";
+    if (days <= 14) return "soon";
+    return "ok";
+  }
+  if (days < 0) return "expired";
+  if (days <= 3) return "urgent";
+  if (days <= 14) return "soon";
+  return "ok";
+}
+function expiryLabel(product, now = /* @__PURE__ */ new Date()) {
+  const days = daysUntilExpiry(product, now);
+  if (days === null) return "\u2014";
+  if (product.dateType !== "dlc" && days < 0 && isDryStaple(product.name, product.category)) return "\u2014";
+  if (isFrozen(product) && days < 0) {
+    return days >= -frozenGraceDays(product) ? `Encore bon (${Math.abs(days)}j)` : `P\xE9rim\xE9 (${Math.abs(days)}j)`;
+  }
+  if (days < 0) return product.dateType === "ddm" ? "Encore bon" : `P\xE9rim\xE9 (${Math.abs(days)}j)`;
+  if (days === 0) return "Aujourd'hui";
+  if (days === 1) return "Demain";
+  if (days <= 30) return `${days} jours`;
+  const months = Math.round(days / 30);
+  return `${months} mois`;
+}
+function priorityProducts(products, now = /* @__PURE__ */ new Date()) {
+  return products.filter((p) => {
+    const s = expiryStatus(p, now);
+    if (isFrozen(p)) return s === "expired";
+    return s === "urgent" || s === "soon" || s === "expired";
+  }).sort((a, b) => {
+    const da = daysUntilExpiry(a, now) ?? Infinity;
+    const db = daysUntilExpiry(b, now) ?? Infinity;
+    return da - db;
+  });
+}
+function urgentCount(products, now = /* @__PURE__ */ new Date()) {
+  return products.filter((p) => {
+    const s = expiryStatus(p, now);
+    return s === "urgent" || s === "expired";
+  }).length;
+}
+
 // server/alexa-apl.ts
 var SITE = "https://food.graphikeo.com";
 var C = {
@@ -1173,49 +1315,43 @@ var C = {
   danger: "#e23439",
   dangerSoft: "#fdeeee"
 };
-var today = () => (/* @__PURE__ */ new Date()).toLocaleDateString("sv-SE", { timeZone: "Europe/Paris" });
-var dayDiff = (iso) => Math.round((Date.parse(iso) - Date.parse(today())) / 864e5);
 function imageFor(name, imageUrl, _category) {
   const slug = chosenIconSlug(imageUrl) ?? productImageSlug(name);
   return slug ? `${SITE}/icons-png/${slug}.png` : void 0;
 }
-function expiryText(iso) {
-  if (!iso) return { tone: "ok" };
-  const d = dayDiff(iso);
-  if (d < 0) return { sub: "P\xE9rim\xE9", tone: "expired" };
-  if (d === 0) return { sub: "Aujourd\u2019hui", tone: "soon" };
-  if (d === 1) return { sub: "Demain", tone: "soon" };
-  if (d <= 3) return { sub: `Dans ${d} jours`, tone: "soon" };
-  const s = (/* @__PURE__ */ new Date(iso + "T12:00:00")).toLocaleDateString("fr-FR", { day: "numeric", month: "short", timeZone: "Europe/Paris" });
-  return { sub: s, tone: "ok" };
-}
 function productTile(p) {
-  const e = expiryText(p.expiryDate);
+  const st = expiryStatus(p);
+  const label = expiryLabel(p);
+  let sub;
+  if (st === "expired" || st === "urgent" || st === "soon" || st === "still-good") sub = label;
+  else if (st === "ok" && p.expiryDate)
+    sub = (/* @__PURE__ */ new Date(p.expiryDate + "T12:00:00")).toLocaleDateString("fr-FR", { day: "numeric", month: "short", timeZone: "Europe/Paris" });
   const qty = p.quantity > 1 ? `\xD7${p.quantity}` : p.size || "";
   return {
     id: p.id,
     name: p.name,
-    sub: [e.sub, qty].filter(Boolean).join(" \xB7 ") || void 0,
+    sub: [sub, qty].filter(Boolean).join(" \xB7 ") || void 0,
     img: imageFor(p.name, p.imageUrl, p.category),
     initial: p.name.trim().charAt(0).toUpperCase() || "?",
-    tone: e.tone
+    tone: st === "expired" ? "expired" : st === "urgent" ? "soon" : "ok"
   };
 }
 function nameTile(name, sub) {
   return { name, sub, img: imageFor(name), initial: name.trim().charAt(0).toUpperCase() || "?", tone: "ok" };
 }
 function byExpiry(products) {
-  return [...products].sort((a, b) => (a.expiryDate ?? "9999").localeCompare(b.expiryDate ?? "9999") || a.name.localeCompare(b.name));
+  const key = (p) => expiryStatus(p) === "none" ? Infinity : daysUntilExpiry(p) ?? Infinity;
+  return [...products].sort((a, b) => key(a) - key(b) || a.name.localeCompare(b.name));
 }
 function urgent(products, n = 8) {
-  return byExpiry(products.filter((p) => p.expiryDate)).slice(0, n);
+  return priorityProducts(products).slice(0, n);
 }
-var norm = (s) => s.toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "").replace(/œ/g, "oe");
+var norm2 = (s) => s.toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "").replace(/œ/g, "oe");
 function matching(products, query) {
   const stop = /* @__PURE__ */ new Set(["reste", "encore", "combien", "quoi", "dans", "avec", "est-ce", "quil", "cest", "question", "avons", "tout", "tous", "quelle", "quelles", "quel", "quels"]);
-  const words = norm(query).split(/[^a-z0-9]+/).map((w) => w.replace(/s$/, "")).filter((w) => w.length >= 4 && !stop.has(w));
+  const words = norm2(query).split(/[^a-z0-9]+/).map((w) => w.replace(/s$/, "")).filter((w) => w.length >= 4 && !stop.has(w));
   if (!words.length) return [];
-  return byExpiry(products.filter((p) => words.some((w) => norm(p.name).includes(w)))).slice(0, 12);
+  return byExpiry(products.filter((p) => words.some((w) => norm2(p.name).includes(w)))).slice(0, 12);
 }
 var check = {
   type: "AVG",
@@ -1804,7 +1940,13 @@ function productScreen(p) {
         img: t.img ?? "",
         initial: t.initial,
         tone: t.tone,
-        exp: p.expiryDate ? t.tone === "expired" ? `P\xE9rim\xE9 depuis le ${exp}` : `\xC0 consommer avant le ${exp}` : ""
+        exp: (() => {
+          const st = expiryStatus(p);
+          if (st === "none" || !p.expiryDate) return "";
+          if (st === "expired") return `P\xE9rim\xE9 depuis le ${exp}`;
+          if (st === "still-good") return `Date d\xE9pass\xE9e (${exp}), encore bon`;
+          return `${p.dateType === "ddm" ? "De pr\xE9f\xE9rence avant le" : "\xC0 consommer avant le"} ${exp}`;
+        })()
       }
     }
   };
@@ -1955,13 +2097,12 @@ async function handleHome(link, apl, text) {
   const r = text ? say(text(name), { end: false, reprompt: "Que veux-tu faire ?" }) : { version: "1.0", response: {} };
   if (!apl) return r;
   const [products, shopping] = await Promise.all([repo.listProducts(), repo.listShopping()]);
-  const limit = new Date(Date.now() + 3 * 864e5).toISOString().slice(0, 10);
   return attach(
     r,
     homeScreen({
       name,
       total: products.length,
-      soon: products.filter((p) => p.expiryDate && p.expiryDate <= limit).length,
+      soon: urgentCount(products),
       shop: shopping.filter((s) => !s.checked).length,
       urgent: urgent(products).map(productTile)
     }),
@@ -2005,8 +2146,8 @@ async function handleCommand(text, link, alexaUser, ui = { apl: false }) {
     const r2 = say(reply || "Je n\u2019ai pas compris. Tu peux reformuler ?", { end: false, reprompt: "Que veux-tu faire ?" });
     if (!ui.apl || !reply) return r2;
     if (ui.view === "grid") {
-      const l = ui.lieu ? norm2(ui.lieu) : "";
-      const list = byExpiry(l ? products.filter((p) => norm2(p.location ?? "").includes(l)) : products);
+      const l = ui.lieu ? norm3(ui.lieu) : "";
+      const list = byExpiry(l ? products.filter((p) => norm3(p.location ?? "").includes(l)) : products);
       const title = ui.lieu ? ui.lieu.charAt(0).toUpperCase() + ui.lieu.slice(1) : "Tout le stock";
       const nav = l.startsWith("refri") ? "frigo" : l.startsWith("congel") ? "congel" : l ? "" : "stock";
       return attach(r2, gridScreen(title, `${list.length} produit${list.length > 1 ? "s" : ""}`, list.slice(0, 90).map(productTile), nav), true);
@@ -2050,7 +2191,7 @@ async function handleCommand(text, link, alexaUser, ui = { apl: false }) {
   }
   return attach(say(reply || "C\u2019est fait.", { card: actions.map((a) => a.label).join("\n") }), doneScreen(reply || "C\u2019est fait.", tiles), ui.apl);
 }
-var norm2 = (s) => s.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+var norm3 = (s) => s.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
 var quiet = (screen, apl, attrs = {}) => attach({ version: "1.0", sessionAttributes: attrs, response: {} }, screen, apl);
 async function handleNav(key, link, alexaUser, apl) {
   if (key === "home") return handleHome(link, apl, null);
@@ -2060,13 +2201,12 @@ async function handleNav(key, link, alexaUser, apl) {
   const products = await repo.listProducts();
   const count = (n) => `${n} produit${n > 1 ? "s" : ""}`;
   if (key === "urgent") {
-    const limit = new Date(Date.now() + 7 * 864e5).toISOString().slice(0, 10);
-    const list2 = byExpiry(products.filter((p) => p.expiryDate && p.expiryDate <= limit));
+    const list2 = priorityProducts(products);
     return quiet(gridScreen("\xC0 consommer vite", count(list2.length), list2.map(productTile), "urgent"), apl);
   }
   if (key === "frigo" || key === "congel") {
     const want = key === "frigo" ? ["refrigerateur", "frigo"] : ["congel"];
-    const list2 = byExpiry(products.filter((p) => want.some((w) => norm2(p.location ?? "").includes(w))));
+    const list2 = byExpiry(products.filter((p) => want.some((w) => norm3(p.location ?? "").includes(w))));
     return quiet(gridScreen(key === "frigo" ? "R\xE9frig\xE9rateur" : "Cong\xE9lateur", count(list2.length), list2.slice(0, 90).map(productTile), key), apl);
   }
   const list = byExpiry(products);

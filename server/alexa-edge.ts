@@ -12,7 +12,7 @@ import { SupabaseRepository } from '../src/data/supabaseRepository'
 import { consumeAmount, parseContenance } from '../src/lib/contenance'
 import { openShelfDays } from '../src/lib/openShelf'
 import { defaultConservation, type Category, type Product } from '../src/types'
-import { answerScreen, byExpiry, doneScreen, gridScreen, homeScreen, listScreen, matching, nameTile, productScreen, productTile, urgent, type Tile } from './alexa-apl'
+import { answerScreen, byExpiry, doneScreen, gridScreen, homeScreen, listScreen, matching, nameTile, priorityProducts, productScreen, productTile, urgent, urgentCount, type Tile } from './alexa-apl'
 
 declare const Deno: any
 const env = (k: string) => Deno.env.get(k) ?? ''
@@ -201,13 +201,12 @@ async function handleHome(link: any, apl: boolean, text: ((name: string) => stri
   const r: any = text ? say(text(name), { end: false, reprompt: 'Que veux-tu faire ?' }) : { version: '1.0', response: {} }
   if (!apl) return r
   const [products, shopping] = await Promise.all([repo.listProducts(), repo.listShopping()])
-  const limit = new Date(Date.now() + 3 * 86400_000).toISOString().slice(0, 10)
   return attach(
     r,
     homeScreen({
       name,
       total: products.length,
-      soon: products.filter((p) => p.expiryDate && p.expiryDate <= limit).length,
+      soon: urgentCount(products),
       shop: shopping.filter((s) => !s.checked).length,
       urgent: urgent(products).map(productTile),
     }),
@@ -328,8 +327,7 @@ async function handleNav(key: string, link: any, alexaUser: string, apl: boolean
   const products = await repo.listProducts()
   const count = (n: number) => `${n} produit${n > 1 ? 's' : ''}`
   if (key === 'urgent') {
-    const limit = new Date(Date.now() + 7 * 86400_000).toISOString().slice(0, 10)
-    const list = byExpiry(products.filter((p) => p.expiryDate && p.expiryDate <= limit))
+    const list = priorityProducts(products)
     return quiet(gridScreen('À consommer vite', count(list.length), list.map(productTile), 'urgent'), apl)
   }
   if (key === 'frigo' || key === 'congel') {
