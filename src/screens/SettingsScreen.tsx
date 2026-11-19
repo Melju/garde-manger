@@ -1,4 +1,5 @@
 import { useConfirm } from '../components/Confirm'
+import { AlexaLink } from '../components/AlexaLink'
 import { useEffect, useState } from 'react'
 import { useStore } from '../data/store'
 import { useToast } from '../components/Toast'
@@ -271,6 +272,11 @@ export function SettingsScreen({ onBack }: SettingsScreenProps) {
             Envoyer une notification test
           </button>
         )}
+      </div>
+
+      <div className="form-section">
+        <label className="form-label">Alexa</label>
+        <AlexaLink />
       </div>
 
       <div className="form-section">

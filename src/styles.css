@@ -3482,3 +3482,7 @@ html.kiosk .product-list.tiles .product-icon > svg { width: 32cqw !important; ma
 .scan-known-price-row .form-input { flex: 1; font-size: 18px; font-weight: 700; }
 .scan-known-price-row span { font-weight: 700; color: var(--fg-2); }
 .scan-known-price-hint { font-size: 12px; color: var(--muted); margin-top: 4px; }
+.alexa-link { display: flex; flex-direction: column; gap: 10px; }
+.alexa-row { display: flex; gap: 8px; }
+.alexa-row .form-input { flex: 1; font-size: 18px; letter-spacing: 3px; }
+.alexa-linked { display: flex; align-items: center; justify-content: space-between; gap: 10px; font-size: 14px; padding: 8px 12px; border-radius: 12px; background: var(--accent-soft); }
