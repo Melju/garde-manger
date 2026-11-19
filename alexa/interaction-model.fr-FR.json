@@ -3,15 +3,38 @@
     "languageModel": {
       "invocationName": "miam miam",
       "intents": [
-        { "name": "AMAZON.CancelIntent", "samples": [] },
-        { "name": "AMAZON.HelpIntent", "samples": [] },
-        { "name": "AMAZON.StopIntent", "samples": [] },
-        { "name": "AMAZON.NoIntent", "samples": [] },
-        { "name": "AMAZON.NavigateHomeIntent", "samples": [] },
-        { "name": "AMAZON.FallbackIntent", "samples": [] },
+        {
+          "name": "AMAZON.CancelIntent",
+          "samples": []
+        },
+        {
+          "name": "AMAZON.HelpIntent",
+          "samples": []
+        },
+        {
+          "name": "AMAZON.StopIntent",
+          "samples": []
+        },
+        {
+          "name": "AMAZON.NoIntent",
+          "samples": []
+        },
+        {
+          "name": "AMAZON.NavigateHomeIntent",
+          "samples": []
+        },
+        {
+          "name": "AMAZON.FallbackIntent",
+          "samples": []
+        },
         {
           "name": "AjouterIntent",
-          "slots": [{ "name": "phrase", "type": "AMAZON.SearchQuery" }],
+          "slots": [
+            {
+              "name": "phrase",
+              "type": "AMAZON.SearchQuery"
+            }
+          ],
           "samples": [
             "ajoute {phrase}",
             "ajouter {phrase}",
@@ -23,12 +46,39 @@
             "note {phrase}",
             "de noter {phrase}",
             "il faut {phrase}",
-            "il faudrait {phrase}"
+            "il faudrait {phrase}",
+            "achète {phrase}",
+            "d'acheter {phrase}",
+            "il me faut {phrase}",
+            "il nous faut {phrase}",
+            "qu'il faut {phrase}",
+            "qu'il me faut {phrase}",
+            "on a besoin {phrase}",
+            "j'ai besoin {phrase}",
+            "qu'on a besoin {phrase}",
+            "que j'ai besoin {phrase}",
+            "pense à {phrase}",
+            "de penser à {phrase}",
+            "ajoute moi {phrase}",
+            "rajoute moi {phrase}",
+            "mets moi {phrase}",
+            "ajoute à la liste {phrase}",
+            "ajoute aux courses {phrase}",
+            "prends {phrase}",
+            "de prendre {phrase}",
+            "faut {phrase}",
+            "n'oublie pas {phrase}",
+            "d'acheter aussi {phrase}"
           ]
         },
         {
           "name": "EnleverIntent",
-          "slots": [{ "name": "phrase", "type": "AMAZON.SearchQuery" }],
+          "slots": [
+            {
+              "name": "phrase",
+              "type": "AMAZON.SearchQuery"
+            }
+          ],
           "samples": [
             "enlève {phrase}",
             "d'enlever {phrase}",
@@ -36,23 +86,64 @@
             "de retirer {phrase}",
             "supprime {phrase}",
             "de supprimer {phrase}",
-            "barre {phrase}"
+            "barre {phrase}",
+            "enlève de la liste {phrase}",
+            "retire de la liste {phrase}",
+            "efface {phrase}",
+            "d'effacer {phrase}",
+            "raye {phrase}",
+            "de rayer {phrase}",
+            "coche {phrase}",
+            "de cocher {phrase}",
+            "plus besoin {phrase}",
+            "on n'a plus besoin {phrase}",
+            "je n'ai plus besoin {phrase}"
           ]
         },
         {
           "name": "JaiIntent",
-          "slots": [{ "name": "phrase", "type": "AMAZON.SearchQuery" }],
+          "slots": [
+            {
+              "name": "phrase",
+              "type": "AMAZON.SearchQuery"
+            }
+          ],
           "samples": [
             "j'ai {phrase}",
             "que j'ai {phrase}",
             "on a {phrase}",
             "qu'on a {phrase}",
-            "nous avons {phrase}"
+            "nous avons {phrase}",
+            "j'ai fini {phrase}",
+            "on a fini {phrase}",
+            "qu'on a fini {phrase}",
+            "que j'ai fini {phrase}",
+            "j'ai terminé {phrase}",
+            "j'ai ouvert {phrase}",
+            "on a ouvert {phrase}",
+            "j'ai jeté {phrase}",
+            "on a jeté {phrase}",
+            "j'ai acheté {phrase}",
+            "on a acheté {phrase}",
+            "j'ai mangé {phrase}",
+            "on a mangé {phrase}",
+            "j'ai utilisé {phrase}",
+            "j'ai pris {phrase} dans le frigo",
+            "j'ai rangé {phrase}",
+            "je range {phrase}",
+            "je mets {phrase} au frigo",
+            "je viens d'acheter {phrase}",
+            "je viens de finir {phrase}"
           ]
         },
         {
           "name": "QuestionIntent",
-          "slots": [{ "name": "phrase", "type": "AMAZON.SearchQuery" }],
+          "slots": [
+            {
+              "name": "phrase",
+              "type": "AMAZON.SearchQuery"
+            }
+          ],
           "samples": [
             "est-ce que {phrase}",
             "si {phrase}",
@@ -64,13 +155,63 @@
             "qu'est-ce qui {phrase}",
             "ce qui {phrase}",
             "où est {phrase}",
-            "où sont {phrase}"
+            "où sont {phrase}",
+            "est-ce qu'on a {phrase}",
+            "est-ce que j'ai {phrase}",
+            "est-ce qu'il y a {phrase}",
+            "il y a {phrase}",
+            "y a-t-il {phrase}",
+            "on a encore {phrase}",
+            "j'ai encore {phrase}",
+            "reste-t-il {phrase}",
+            "qu'est-ce qu'il y a {phrase}",
+            "qu'est-ce qu'on {phrase}",
+            "qu'est-ce que je {phrase}",
+            "que {phrase}",
+            "quoi {phrase}",
+            "quel {phrase}",
+            "quelle {phrase}",
+            "quels {phrase}",
+            "quelles {phrase}",
+            "lis {phrase}",
+            "de lire {phrase}",
+            "dis moi {phrase}",
+            "de me dire {phrase}",
+            "donne moi {phrase}",
+            "c'est quoi {phrase}",
+            "comment {phrase}",
+            "quand {phrase}",
+            "propose {phrase}",
+            "de proposer {phrase}",
+            "suggère {phrase}",
+            "une idée {phrase}"
           ]
         },
         {
           "name": "CommandeIntent",
-          "slots": [{ "name": "phrase", "type": "AMAZON.SearchQuery" }],
-          "samples": ["le {phrase}", "la {phrase}", "les {phrase}", "c'est {phrase}", "plutôt {phrase}"]
+          "slots": [
+            {
+              "name": "phrase",
+              "type": "AMAZON.SearchQuery"
+            }
+          ],
+          "samples": [
+            "le {phrase}",
+            "la {phrase}",
+            "les {phrase}",
+            "c'est {phrase}",
+            "plutôt {phrase}",
+            "du {phrase}",
+            "de la {phrase}",
+            "des {phrase}",
+            "un {phrase}",
+            "une {phrase}",
+            "deux {phrase}",
+            "trois {phrase}",
+            "celui {phrase}",
+            "celle {phrase}",
+            "oui {phrase}"
+          ]
         },
         {
           "name": "AssocierIntent",
@@ -88,10 +229,156 @@
         },
         {
           "name": "AnnulerIntent",
-          "samples": ["annule", "d'annuler", "annuler", "annule la dernière action", "reviens en arrière", "de revenir en arrière", "oups annule"]
+          "samples": [
+            "annule",
+            "d'annuler",
+            "annuler",
+            "annule la dernière action",
+            "reviens en arrière",
+            "de revenir en arrière",
+            "oups annule"
+          ]
+        },
+        {
+          "name": "PlusIntent",
+          "slots": [
+            {
+              "name": "phrase",
+              "type": "AMAZON.SearchQuery"
+            }
+          ],
+          "samples": [
+            "on n'a plus {phrase}",
+            "qu'on n'a plus {phrase}",
+            "il n'y a plus {phrase}",
+            "qu'il n'y a plus {phrase}",
+            "y a plus {phrase}",
+            "je n'ai plus {phrase}",
+            "que je n'ai plus {phrase}",
+            "plus de {phrase}",
+            "il manque {phrase}",
+            "qu'il manque {phrase}",
+            "on est à court {phrase}"
+          ]
+        },
+        {
+          "name": "ContenuIntent",
+          "slots": [
+            {
+              "name": "lieu",
+              "type": "LIEU"
+            }
+          ],
+          "samples": [
+            "qu'est-ce qu'il y a dans le {lieu}",
+            "qu'est-ce qu'il y a au {lieu}",
+            "ce qu'il y a dans le {lieu}",
+            "ce qu'il y a au {lieu}",
+            "qu'est-ce qu'on a dans le {lieu}",
+            "qu'est-ce que j'ai dans le {lieu}",
+            "qu'est-ce qui reste dans le {lieu}",
+            "ce qui reste dans le {lieu}",
+            "qu'est-ce qu'il reste dans le {lieu}",
+            "qu'est-ce qu'on a",
+            "qu'est-ce que j'ai",
+            "qu'est-ce qu'il reste",
+            "ce qu'il reste",
+            "ce qu'on a",
+            "qu'est-ce qui périme bientôt",
+            "ce qui périme bientôt",
+            "qu'est-ce qui va périmer",
+            "ce qui va périmer"
+          ]
+        },
+        {
+          "name": "RecetteIntent",
+          "samples": [
+            "qu'est-ce que je peux cuisiner",
+            "qu'est-ce qu'on peut cuisiner",
+            "qu'est-ce que je peux faire à manger",
+            "qu'est-ce qu'on peut faire à manger",
+            "qu'est-ce qu'on mange",
+            "qu'est-ce qu'on mange ce soir",
+            "qu'est-ce qu'on mange ce midi",
+            "qu'est-ce que je fais à manger",
+            "ce que je peux cuisiner",
+            "ce qu'on mange ce soir",
+            "une idée de repas",
+            "une idée de recette",
+            "propose moi une recette",
+            "de me proposer une recette",
+            "je ne sais pas quoi manger",
+            "on mange quoi",
+            "on mange quoi ce soir"
+          ]
+        },
+        {
+          "name": "ListeIntent",
+          "samples": [
+            "qu'est-ce qu'il y a sur la liste de courses",
+            "qu'est-ce qu'il y a sur la liste",
+            "ce qu'il y a sur la liste de courses",
+            "ce qu'il y a sur la liste",
+            "lis la liste de courses",
+            "lis la liste",
+            "de lire la liste de courses",
+            "de lire la liste",
+            "lis moi la liste",
+            "la liste de courses",
+            "ma liste de courses",
+            "qu'est-ce qu'il faut acheter",
+            "ce qu'il faut acheter",
+            "qu'est-ce que je dois acheter",
+            "ce que je dois acheter",
+            "qu'est-ce qui manque",
+            "ce qui manque"
+          ]
         }
       ],
-      "types": []
+      "types": [
+        {
+          "name": "LIEU",
+          "values": [
+            {
+              "name": {
+                "value": "réfrigérateur",
+                "synonyms": [
+                  "frigo",
+                  "frigidaire"
+                ]
+              }
+            },
+            {
+              "name": {
+                "value": "congélateur",
+                "synonyms": [
+                  "congel",
+                  "surgélateur"
+                ]
+              }
+            },
+            {
+              "name": {
+                "value": "placard",
+                "synonyms": [
+                  "placards",
+                  "armoire"
+                ]
+              }
+            },
+            {
+              "name": {
+                "value": "cellier",
+                "synonyms": [
+                  "garde-manger",
+                  "réserve",
+                  "cave"
+                ]
+              }
+            }
+          ]
+        }
+      ]
     }
   }
 }

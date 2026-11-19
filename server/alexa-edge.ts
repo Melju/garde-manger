@@ -337,8 +337,19 @@ const VERBS: Record<string, string> = {
   AjouterIntent: 'ajoute',
   EnleverIntent: 'enlève',
   JaiIntent: 'j’ai',
-  QuestionIntent: '',
+  QuestionIntent: 'Question :',
+  PlusIntent: 'on n’a plus',
   CommandeIntent: '',
+}
+
+// Questions courantes, sans texte libre : Alexa les reconnaît mieux en phrases entières.
+const FIXED: Record<string, (lieu?: string) => string> = {
+  ContenuIntent: (lieu) =>
+    lieu
+      ? `Qu’est-ce qu’il y a dans le ${lieu} ? Ne cite que les produits dont l’emplacement est « ${lieu} » (sans tenir compte des majuscules), et résume en quelques mots.`
+      : 'Qu’est-ce que j’ai en stock ? Résume en quelques mots, en citant d’abord ce qui périme bientôt.',
+  RecetteIntent: () => 'Qu’est-ce que je peux cuisiner avec ce que j’ai, en priorité ce qui périme bientôt ? Propose une ou deux idées courtes.',
+  ListeIntent: () => 'Qu’est-ce qu’il y a sur la liste de courses ? Lis-la simplement.',
 }
 
 const out = (status: number, o: unknown) =>
@@ -415,12 +426,18 @@ Deno.serve(async (req: Request) => {
       const text = `${pending.question} Réponse : ${phrase}. (Action : ${pending.then}${pending.then === 'stock_remove' ? ` ${pending.amount} ${pending.unit}` : ''})`
       return send(await handleCommand(text, link, alexaUser))
     }
+    if (intent in FIXED) return send(await handleCommand(FIXED[intent](rq.intent?.slots?.lieu?.resolutions?.resolutionsPerAuthority?.[0]?.values?.[0]?.value?.name ?? rq.intent?.slots?.lieu?.value), link, alexaUser))
     if (intent in VERBS && phrase) {
       const verb = VERBS[intent]
       return send(await handleCommand(verb ? `${verb} ${phrase}` : phrase, link, alexaUser))
     }
     if (intent === 'AMAZON.FallbackIntent' || intent in VERBS)
-      return send(say('Je n’ai pas bien compris. Tu peux répéter ?', { end: false, reprompt: 'Que veux-tu faire ?' }))
+      return send(
+        say('Je n’ai pas saisi. Commence par un verbe, par exemple : ajoute du lait, j’ai fini le beurre, ou est-ce qu’il reste des œufs.', {
+          end: false,
+          reprompt: 'Que veux-tu faire ?',
+        }),
+      )
     return send(say('Je n’ai pas compris.', { end: false, reprompt: 'Que veux-tu faire ?' }))
   } catch (e) {
     await note(`erreur : ${e instanceof Error ? `${e.message} ${e.stack ?? ''}` : String(e)}`)

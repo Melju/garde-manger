@@ -849,8 +849,14 @@ var VERBS = {
   AjouterIntent: "ajoute",
   EnleverIntent: "enl\xE8ve",
   JaiIntent: "j\u2019ai",
-  QuestionIntent: "",
+  QuestionIntent: "Question :",
+  PlusIntent: "on n\u2019a plus",
   CommandeIntent: ""
+};
+var FIXED = {
+  ContenuIntent: (lieu) => lieu ? `Qu\u2019est-ce qu\u2019il y a dans le ${lieu} ? Ne cite que les produits dont l\u2019emplacement est \xAB ${lieu} \xBB (sans tenir compte des majuscules), et r\xE9sume en quelques mots.` : "Qu\u2019est-ce que j\u2019ai en stock ? R\xE9sume en quelques mots, en citant d\u2019abord ce qui p\xE9rime bient\xF4t.",
+  RecetteIntent: () => "Qu\u2019est-ce que je peux cuisiner avec ce que j\u2019ai, en priorit\xE9 ce qui p\xE9rime bient\xF4t ? Propose une ou deux id\xE9es courtes.",
+  ListeIntent: () => "Qu\u2019est-ce qu\u2019il y a sur la liste de courses ? Lis-la simplement."
 };
 var out = (status, o) => new Response(JSON.stringify(o), { status, headers: { "content-type": "application/json;charset=UTF-8" } });
 Deno.serve(async (req) => {
@@ -923,12 +929,18 @@ Deno.serve(async (req) => {
       const text = `${pending.question} R\xE9ponse : ${phrase}. (Action : ${pending.then}${pending.then === "stock_remove" ? ` ${pending.amount} ${pending.unit}` : ""})`;
       return send(await handleCommand(text, link, alexaUser));
     }
+    if (intent in FIXED) return send(await handleCommand(FIXED[intent](rq.intent?.slots?.lieu?.resolutions?.resolutionsPerAuthority?.[0]?.values?.[0]?.value?.name ?? rq.intent?.slots?.lieu?.value), link, alexaUser));
     if (intent in VERBS && phrase) {
       const verb = VERBS[intent];
       return send(await handleCommand(verb ? `${verb} ${phrase}` : phrase, link, alexaUser));
     }
     if (intent === "AMAZON.FallbackIntent" || intent in VERBS)
-      return send(say("Je n\u2019ai pas bien compris. Tu peux r\xE9p\xE9ter ?", { end: false, reprompt: "Que veux-tu faire ?" }));
+      return send(
+        say("Je n\u2019ai pas saisi. Commence par un verbe, par exemple : ajoute du lait, j\u2019ai fini le beurre, ou est-ce qu\u2019il reste des \u0153ufs.", {
+          end: false,
+          reprompt: "Que veux-tu faire ?"
+        })
+      );
     return send(say("Je n\u2019ai pas compris.", { end: false, reprompt: "Que veux-tu faire ?" }));
   } catch (e) {
     await note(`erreur : ${e instanceof Error ? `${e.message} ${e.stack ?? ""}` : String(e)}`);
