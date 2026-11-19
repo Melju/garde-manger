@@ -1356,8 +1356,6 @@ var layouts = {
     parameters: ["label", "action", "pid", "danger"],
     item: {
       type: "TouchWrapper",
-      grow: 1,
-      spacing: 20,
       onPress: [{ type: "SendEvent", arguments: ["act", "${action}", "${pid}"] }],
       item: {
         type: "Frame",
@@ -1391,7 +1389,6 @@ var layouts = {
       paddingRight: 26,
       paddingTop: 12,
       paddingBottom: 12,
-      spacing: 16,
       item: { type: "Text", text: "${label}", fontSize: 25, fontWeight: "600", color: C.strong }
     }
   }
@@ -1507,9 +1504,9 @@ function homeScreen(o) {
         alignItems: "center",
         items: [
           { type: "Text", text: "\xC0 dire :", fontSize: 25, color: C.muted, fontWeight: "600" },
-          { type: "Chip", label: "\xAB Alexa, ajoute du lait \xBB" },
-          { type: "Chip", label: "\xAB Alexa, j\u2019ai fini le beurre \xBB" },
-          { type: "Chip", label: "\xAB Alexa, il reste des \u0153ufs ? \xBB" },
+          { type: "Chip", spacing: 16, label: "\xAB Alexa, ajoute du lait \xBB" },
+          { type: "Chip", spacing: 16, label: "\xAB Alexa, j\u2019ai fini le beurre \xBB" },
+          { type: "Chip", spacing: 16, label: "\xAB Alexa, il reste des \u0153ufs ? \xBB" },
           { type: "Text", text: "Touche un produit pour agir dessus.", fontSize: 25, color: C.muted, spacing: 24 }
         ]
       }
@@ -1799,10 +1796,10 @@ function productScreen(p) {
           width: "100%",
           spacing: 24,
           items: [
-            { type: "BigButton", label: "J\u2019ai fini", action: "finish", pid: p.id, danger: false, spacing: 0 },
-            { type: "BigButton", label: p.openedAt ? "D\xE9j\xE0 entam\xE9" : "Entam\xE9", action: "open", pid: p.id, danger: false },
-            { type: "BigButton", label: "Ajouter aux courses", action: "shop", pid: p.id, danger: false },
-            { type: "BigButton", label: "Jet\xE9", action: "waste", pid: p.id, danger: true }
+            { type: "BigButton", label: "J\u2019ai fini", action: "finish", pid: p.id, danger: false, grow: 1 },
+            { type: "BigButton", label: p.openedAt ? "D\xE9j\xE0 entam\xE9" : "Entam\xE9", action: "open", pid: p.id, grow: 1, spacing: 20, danger: false },
+            { type: "BigButton", label: "Ajouter aux courses", action: "shop", pid: p.id, grow: 1, spacing: 20, danger: false },
+            { type: "BigButton", label: "Jet\xE9", action: "waste", pid: p.id, grow: 1, spacing: 20, danger: true }
           ]
         }
       ],
