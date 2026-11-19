@@ -1157,9 +1157,6 @@ var CHOSEN = "icon:";
 function chosenIconSlug(imageUrl) {
   return imageUrl && imageUrl.startsWith(CHOSEN) ? imageUrl.slice(CHOSEN.length) : null;
 }
-function realPhotoUrl(imageUrl) {
-  return imageUrl && !imageUrl.startsWith(CHOSEN) ? imageUrl : void 0;
-}
 
 // server/alexa-apl.ts
 var SITE = "https://food.graphikeo.com";
@@ -1178,12 +1175,8 @@ var C = {
 };
 var today = () => (/* @__PURE__ */ new Date()).toLocaleDateString("sv-SE", { timeZone: "Europe/Paris" });
 var dayDiff = (iso) => Math.round((Date.parse(iso) - Date.parse(today())) / 864e5);
-function imageFor(name, imageUrl) {
-  const chosen = chosenIconSlug(imageUrl);
-  if (chosen) return `${SITE}/icons-png/${chosen}.png`;
-  const photo = realPhotoUrl(imageUrl);
-  if (photo && photo.startsWith("https://")) return photo;
-  const slug = productImageSlug(name);
+function imageFor(name, imageUrl, _category) {
+  const slug = chosenIconSlug(imageUrl) ?? productImageSlug(name);
   return slug ? `${SITE}/icons-png/${slug}.png` : void 0;
 }
 function expiryText(iso) {
@@ -1203,7 +1196,7 @@ function productTile(p) {
     id: p.id,
     name: p.name,
     sub: [e.sub, qty].filter(Boolean).join(" \xB7 ") || void 0,
-    img: imageFor(p.name, p.imageUrl),
+    img: imageFor(p.name, p.imageUrl, p.category),
     initial: p.name.trim().charAt(0).toUpperCase() || "?",
     tone: e.tone
   };
@@ -1538,7 +1531,7 @@ function listScreen(items) {
     id: s.id,
     name: s.name,
     qty: s.unit ? `${s.quantity} ${s.unit}` : s.quantity > 1 ? `\xD7${s.quantity}` : "",
-    img: imageFor(s.name) ?? "",
+    img: imageFor(s.name, void 0, s.category) ?? "",
     initial: s.name.trim().charAt(0).toUpperCase() || "?",
     checked: s.checked
   }));

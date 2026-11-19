@@ -1,6 +1,6 @@
 // Écrans de la skill Alexa « Miam miam » pour les Echo à écran (APL), aux couleurs de l'app.
 // Pensés d'abord pour l'Echo Show 15 (1920 × 1080), et lisibles sur les écrans plus petits.
-import { productImageSlug, chosenIconSlug, realPhotoUrl } from '../src/lib/productImage'
+import { productImageSlug, chosenIconSlug } from '../src/lib/productImage'
 import type { Product, ShoppingItem } from '../src/types'
 
 const SITE = 'https://food.graphikeo.com'
@@ -24,12 +24,9 @@ export type Tile = { id?: string; name: string; sub?: string; img?: string; init
 const today = () => new Date().toLocaleDateString('sv-SE', { timeZone: 'Europe/Paris' })
 const dayDiff = (iso: string) => Math.round((Date.parse(iso) - Date.parse(today())) / 86400_000)
 
-export function imageFor(name: string, imageUrl?: string): string | undefined {
-  const chosen = chosenIconSlug(imageUrl)
-  if (chosen) return `${SITE}/icons-png/${chosen}.png`
-  const photo = realPhotoUrl(imageUrl)
-  if (photo && photo.startsWith('https://')) return photo
-  const slug = productImageSlug(name)
+/** Comme dans l'app : icône choisie, sinon illustration devinée du nom, jamais la photo du produit (sinon : initiale). */
+export function imageFor(name: string, imageUrl?: string, _category?: string): string | undefined {
+  const slug = chosenIconSlug(imageUrl) ?? productImageSlug(name)
   return slug ? `${SITE}/icons-png/${slug}.png` : undefined
 }
 
@@ -51,7 +48,7 @@ export function productTile(p: Product): Tile {
     id: p.id,
     name: p.name,
     sub: [e.sub, qty].filter(Boolean).join(' · ') || undefined,
-    img: imageFor(p.name, p.imageUrl),
+    img: imageFor(p.name, p.imageUrl, p.category),
     initial: p.name.trim().charAt(0).toUpperCase() || '?',
     tone: e.tone,
   }
@@ -415,7 +412,7 @@ export function listScreen(items: ShoppingItem[]) {
     id: s.id,
     name: s.name,
     qty: s.unit ? `${s.quantity} ${s.unit}` : s.quantity > 1 ? `×${s.quantity}` : '',
-    img: imageFor(s.name) ?? '',
+    img: imageFor(s.name, undefined, s.category) ?? '',
     initial: s.name.trim().charAt(0).toUpperCase() || '?',
     checked: s.checked,
   }))
