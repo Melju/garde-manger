@@ -101,6 +101,18 @@ async function secret() {
   pushSecret = ((await r.json()) as { value: string }[])[0]?.value ?? ''
   return pushSecret
 }
+async function setConfig(key: string, value: string) {
+  try {
+    const k = env('SUPABASE_SERVICE_ROLE_KEY')
+    await fetch(`${env('SUPABASE_URL')}/rest/v1/push_config`, {
+      method: 'POST',
+      headers: { apikey: k, authorization: `Bearer ${k}`, 'content-type': 'application/json', prefer: 'resolution=merge-duplicates' },
+      body: JSON.stringify({ key, value: value.slice(0, 900) }),
+    })
+  } catch {
+    /* rien */
+  }
+}
 /** Trace la dernière erreur (table push_config, clé alexa_last_error) pour le diagnostic. */
 async function note(msg: string) {
   try {
@@ -608,6 +620,8 @@ Deno.serve(async (req: Request) => {
   const rq = body.request ?? {}
   const alexaUser: string = body?.session?.user?.userId ?? body?.context?.System?.user?.userId ?? ''
   const apl = !!body?.context?.System?.device?.supportedInterfaces?.['Alexa.Presentation.APL']
+  // Trace de la dernière requête (diagnostic) : type, intention, début de l'identifiant Alexa.
+  void setConfig('alexa_last_req', `${new Date().toISOString()} ${rq.type} ${rq.intent?.name ?? ''} ${alexaUser.slice(0, 40)} ${JSON.stringify(rq.error ?? rq.reason ?? '')}`)
   try {
     if (rq.type === 'SessionEndedRequest') return send({ version: '1.0', response: {} })
     const intent: string = rq.intent?.name ?? ''

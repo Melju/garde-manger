@@ -2488,6 +2488,17 @@ async function secret() {
   pushSecret = (await r.json())[0]?.value ?? "";
   return pushSecret;
 }
+async function setConfig(key, value) {
+  try {
+    const k = env("SUPABASE_SERVICE_ROLE_KEY");
+    await fetch(`${env("SUPABASE_URL")}/rest/v1/push_config`, {
+      method: "POST",
+      headers: { apikey: k, authorization: `Bearer ${k}`, "content-type": "application/json", prefer: "resolution=merge-duplicates" },
+      body: JSON.stringify({ key, value: value.slice(0, 900) })
+    });
+  } catch {
+  }
+}
 async function note(msg) {
   try {
     const k = env("SUPABASE_SERVICE_ROLE_KEY");
@@ -2930,6 +2941,7 @@ Deno.serve(async (req) => {
   const rq = body.request ?? {};
   const alexaUser = body?.session?.user?.userId ?? body?.context?.System?.user?.userId ?? "";
   const apl = !!body?.context?.System?.device?.supportedInterfaces?.["Alexa.Presentation.APL"];
+  void setConfig("alexa_last_req", `${(/* @__PURE__ */ new Date()).toISOString()} ${rq.type} ${rq.intent?.name ?? ""} ${alexaUser.slice(0, 40)} ${JSON.stringify(rq.error ?? rq.reason ?? "")}`);
   try {
     if (rq.type === "SessionEndedRequest") return send({ version: "1.0", response: {} });
     const intent = rq.intent?.name ?? "";
