@@ -12,6 +12,7 @@ import { SupabaseRepository } from '../src/data/supabaseRepository'
 import { consumeAmount, parseContenance } from '../src/lib/contenance'
 import { openShelfDays } from '../src/lib/openShelf'
 import { defaultConservation, type Category, type Product } from '../src/types'
+import { answerScreen, byExpiry, doneScreen, gridScreen, homeScreen, listScreen, matching, nameTile, productTile, urgent, type Tile } from './alexa-apl'
 
 declare const Deno: any
 const env = (k: string) => Deno.env.get(k) ?? ''
@@ -74,6 +75,18 @@ function say(text: string, opts: { end?: boolean; reprompt?: string; attrs?: Rec
     },
   }
 }
+
+type Screen = { document: unknown; data: unknown }
+/** Ajoute l'écran (Echo Show) à la réponse ; la session reste ouverte, micro fermé, pour pouvoir toucher l'écran. */
+function attach(r: any, screen: Screen | null, apl: boolean) {
+  if (!apl || !screen) return r
+  r.response.directives = [
+    { type: 'Alexa.Presentation.APL.RenderDocument', token: 'miam', document: screen.document, datasources: screen.data },
+  ]
+  if (r.response.shouldEndSession === true) delete r.response.shouldEndSession
+  return r
+}
+type UI = { apl: boolean; view?: 'grid' | 'recipe'; lieu?: string; query?: string }
 
 // ---------- Supabase ----------
 // Le secret partagé est relu dans la base (table push_config) avec la clé de service, disponible sur le NAS.
@@ -158,13 +171,65 @@ type Undo =
   | { t: 'prod_del'; id: string }
   | { t: 'prod_restore'; snap: Product }
 
-async function handleCommand(text: string, link: { user_id: string; household_id: string; name: string }, alexaUser: string) {
+function open(link: { user_id: string; household_id: string }) {
   const jwt = userJwt(link.user_id)
   const sb = createClient(env('SUPABASE_URL'), env('SUPABASE_ANON_KEY'), {
     global: { headers: { Authorization: `Bearer ${jwt}` } },
     auth: { persistSession: false, autoRefreshToken: false },
   })
-  const repo = new SupabaseRepository(sb as any, link.household_id)
+  return { jwt, sb, repo: new SupabaseRepository(sb as any, link.household_id) }
+}
+
+const firstName = (n?: string) => {
+  const w = (n ?? '').split(/[.\s@_\d]/)[0]
+  return w.length >= 3 ? w.charAt(0).toUpperCase() + w.slice(1) : ''
+}
+/** Prénom à afficher : le nom de profil, sinon le seul membre de la famille qui commence par la même lettre. */
+async function displayName(link: any, repo: SupabaseRepository) {
+  const f = firstName(link.name)
+  if (f) return f
+  const initial = (link.name ?? '').trim().charAt(0).toLowerCase()
+  if (!initial) return ''
+  const fam = await repo.getFamily().catch(() => [])
+  const hits = fam.filter((m: any) => (m.name ?? '').trim().toLowerCase().startsWith(initial))
+  return hits.length === 1 ? String(hits[0].name).split(' ')[0] : ''
+}
+
+async function handleHome(link: any, apl: boolean, text: (name: string) => string) {
+  const { repo } = open(link)
+  const name = await displayName(link, repo)
+  const r = say(text(name), { end: false, reprompt: 'Que veux-tu faire ?' })
+  if (!apl) return r
+  const [products, shopping] = await Promise.all([repo.listProducts(), repo.listShopping()])
+  const limit = new Date(Date.now() + 3 * 86400_000).toISOString().slice(0, 10)
+  return attach(
+    r,
+    homeScreen({
+      name,
+      total: products.length,
+      soon: products.filter((p) => p.expiryDate && p.expiryDate <= limit).length,
+      shop: shopping.filter((s) => !s.checked).length,
+      urgent: urgent(products).map(productTile),
+    }),
+    apl,
+  )
+}
+
+async function handleList(link: any, apl: boolean) {
+  const { repo } = open(link)
+  const shopping = await repo.listShopping()
+  const left = shopping.filter((s) => !s.checked)
+  const names = left.map((s) => s.name)
+  const speech = !names.length
+    ? 'La liste de courses est vide.'
+    : names.length <= 12
+      ? `Sur la liste : ${names.slice(0, -1).join(', ')}${names.length > 1 ? ' et ' : ''}${names[names.length - 1]}.`
+      : `Il y a ${names.length} articles, dont ${names.slice(0, 8).join(', ')}.`
+  return attach(say(speech), listScreen(shopping), apl)
+}
+
+async function handleCommand(text: string, link: { user_id: string; household_id: string; name: string }, alexaUser: string, ui: UI = { apl: false }) {
+  const { jwt, sb, repo } = open(link)
   const [products, shopping] = await Promise.all([repo.listProducts(), repo.listShopping()])
 
   // Compréhension : la même fonction que l'assistant vocal de l'app.
@@ -192,17 +257,31 @@ async function handleCommand(text: string, link: { user_id: string; household_id
   if (!r.ok) return say(data?.error ? `Désolé, ${data.error}` : 'Désolé, je n’ai pas pu comprendre pour l’instant.')
   const reply: string = data.reply || ''
   const actions: any[] = Array.isArray(data.actions) ? data.actions : []
-  if (!actions.length) return say(reply || 'Je n’ai pas compris. Tu peux reformuler ?', { end: false, reprompt: 'Que veux-tu faire ?' })
+  if (!actions.length) {
+    const r = say(reply || 'Je n’ai pas compris. Tu peux reformuler ?', { end: false, reprompt: 'Que veux-tu faire ?' })
+    if (!ui.apl || !reply) return r
+    if (ui.view === 'grid') {
+      const l = ui.lieu ? norm(ui.lieu) : ''
+      const list = byExpiry(l ? products.filter((p) => norm(p.location ?? '').includes(l)) : products)
+      const title = ui.lieu ? ui.lieu.charAt(0).toUpperCase() + ui.lieu.slice(1) : 'Tout le stock'
+      return attach(r, gridScreen(title, `${list.length} produit${list.length > 1 ? 's' : ''}`, list.slice(0, 90).map(productTile)), true)
+    }
+    if (ui.view === 'recipe')
+      return attach(r, answerScreen(reply, { title: 'Idées de repas', tiles: urgent(products, 12).map(productTile), tilesTitle: 'À utiliser en priorité' }), true)
+    return attach(r, answerScreen(reply, { tiles: matching(products, ui.query || text).map(productTile), tilesTitle: 'Dans ton stock' }), true)
+  }
 
   const ask = actions.find((a) => a.type === 'ask')
   if (ask) {
     // Choix à faire : Alexa pose la question, la réponse revient dans la même session.
     const names = (ask.options as { id: string; label: string }[]).map((o) => o.label).join(', ou ')
-    return say(`${ask.question} ${names} ?`, {
+    const r = say(`${ask.question} ${names} ?`, {
       end: false,
       reprompt: ask.question,
       attrs: { pending: ask },
     })
+    const labels = (ask.options as { label: string }[]).map((o) => o.label)
+    return attach(r, answerScreen(ask.question, { title: 'Une précision', options: labels }), ui.apl)
   }
 
   const undo: Undo[] = []
@@ -214,8 +293,27 @@ async function handleCommand(text: string, link: { user_id: string; household_id
     }
   }
   await rpc('alexa_set_undo', { p_alexa: alexaUser, p_undo: { at: Date.now(), ops: undo } }).catch(() => {})
-  return say(reply || 'C’est fait.', { card: actions.map((a) => a.label).join('\n') })
+  const tiles: Tile[] = []
+  for (const a of actions) {
+    if (a.type === 'shop_add') tiles.push(nameTile(a.name, 'Ajouté aux courses'))
+    else if (a.type === 'stock_add') tiles.push(nameTile(a.name, 'Ajouté au stock'))
+    else if (a.type === 'shop_remove') {
+      const it = shopping.find((s) => s.id === a.id)
+      if (it) tiles.push(nameTile(it.name, 'Retiré des courses'))
+    } else {
+      const p = products.find((x) => x.id === a.id)
+      const verb = { stock_finish: 'Terminé', stock_waste: 'Jeté', stock_open: 'Ouvert', stock_remove: 'Entamé' }[a.type as string]
+      if (p) tiles.push({ ...productTile(p), sub: verb ?? productTile(p).sub, tone: 'ok' })
+    }
+  }
+  return attach(say(reply || 'C’est fait.', { card: actions.map((a) => a.label).join('\n') }), doneScreen(reply || 'C’est fait.', tiles), ui.apl)
 }
+
+const norm = (s: string) =>
+  s
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
 
 async function logHistory(sb: any, hid: string, kind: string, label: string, meta: Record<string, unknown>) {
   const now = new Date()
@@ -304,7 +402,7 @@ async function applyOne(a: any, repo: SupabaseRepository, sb: any, products: Pro
   }
 }
 
-async function handleUndo(link: { user_id: string; household_id: string; last_undo?: any }, alexaUser: string) {
+async function handleUndo(link: { user_id: string; household_id: string; last_undo?: any }, alexaUser: string, apl = false) {
   const u = link.last_undo
   if (!u?.ops?.length || Date.now() - (u.at ?? 0) > 3600_000) return say('Il n’y a rien à annuler.')
   const jwt = userJwt(link.user_id)
@@ -329,7 +427,7 @@ async function handleUndo(link: { user_id: string; household_id: string; last_un
     }
   }
   await rpc('alexa_set_undo', { p_alexa: alexaUser, p_undo: null }).catch(() => {})
-  return say('C’est annulé, tout est revenu comme avant.')
+  return attach(say('C’est annulé, tout est revenu comme avant.'), doneScreen('C’est annulé, tout est revenu comme avant.', [], false), apl)
 }
 
 // ---------- Point d'entrée ----------
@@ -378,6 +476,7 @@ Deno.serve(async (req: Request) => {
   const send = (o: unknown) => out(200, o)
   const rq = body.request ?? {}
   const alexaUser: string = body?.session?.user?.userId ?? body?.context?.System?.user?.userId ?? ''
+  const apl = !!body?.context?.System?.device?.supportedInterfaces?.['Alexa.Presentation.APL']
   try {
     if (rq.type === 'SessionEndedRequest') return send({ version: '1.0', response: {} })
     const intent: string = rq.intent?.name ?? ''
@@ -403,33 +502,54 @@ Deno.serve(async (req: Request) => {
     }
 
     if (rq.type === 'LaunchRequest')
+      return send(await handleHome(link, apl, (n) => `Salut${n ? ` ${n}` : ''} ! Qu’est-ce que je fais ?`))
+    if (intent === 'AMAZON.HelpIntent' || intent === 'AMAZON.NavigateHomeIntent')
       return send(
-        say(`Salut ${link.name ? link.name.split(/[.\s]/)[0] : ''} ! Qu’est-ce que je fais ? Par exemple : ajoute du lait aux courses.`, {
-          end: false,
-          reprompt: 'Que veux-tu faire ?',
-        }),
-      )
-    if (intent === 'AMAZON.HelpIntent')
-      return send(
-        say(
-          'Tu peux me dire : ajoute du pain aux courses, enlève deux cents grammes de comté, j’ai fini les yaourts, ou est-ce qu’il reste du beurre. Pour revenir en arrière, dis : annule.',
-          { end: false, reprompt: 'Que veux-tu faire ?' },
+        await handleHome(
+          link,
+          apl,
+          () =>
+            'Tu peux me dire : ajoute du pain aux courses, enlève deux cents grammes de comté, j’ai fini les yaourts, ou est-ce qu’il reste du beurre. Pour revenir en arrière, dis : annule.',
         ),
       )
     if (intent === 'AMAZON.StopIntent' || intent === 'AMAZON.CancelIntent' || intent === 'AMAZON.NoIntent') return send(say('À plus tard !'))
-    if (intent === 'AnnulerIntent') return send(await handleUndo(link, alexaUser))
+    if (intent === 'AnnulerIntent') return send(await handleUndo(link, alexaUser, apl))
+
+    // Touches sur l'écran (Echo Show).
+    if (rq.type === 'Alexa.Presentation.APL.UserEvent') {
+      const [kind, value] = (rq.arguments ?? []) as string[]
+      if (kind === 'toggle' && value) {
+        const { repo } = open(link)
+        await repo.toggleShoppingItem(value)
+        const shopping = await repo.listShopping()
+        return send(attach({ version: '1.0', sessionAttributes: body?.session?.attributes ?? {}, response: {} }, listScreen(shopping), apl))
+      }
+      if (kind === 'answer' && value) {
+        const pend = body?.session?.attributes?.pending
+        const text = pend
+          ? `${pend.question} Réponse : ${value}. (Action : ${pend.then}${pend.then === 'stock_remove' ? ` ${pend.amount} ${pend.unit}` : ''})`
+          : value
+        return send(await handleCommand(text, link, alexaUser, { apl }))
+      }
+      return send({ version: '1.0', response: {} })
+    }
 
     // Réponse à une question de choix (« le comté »).
     const pending = body?.session?.attributes?.pending
     const phrase: string = rq.intent?.slots?.phrase?.value ?? ''
     if (pending && phrase) {
       const text = `${pending.question} Réponse : ${phrase}. (Action : ${pending.then}${pending.then === 'stock_remove' ? ` ${pending.amount} ${pending.unit}` : ''})`
-      return send(await handleCommand(text, link, alexaUser))
+      return send(await handleCommand(text, link, alexaUser, { apl, query: phrase }))
     }
-    if (intent in FIXED) return send(await handleCommand(FIXED[intent](rq.intent?.slots?.lieu?.resolutions?.resolutionsPerAuthority?.[0]?.values?.[0]?.value?.name ?? rq.intent?.slots?.lieu?.value), link, alexaUser))
+    if (intent === 'ListeIntent') return send(await handleList(link, apl))
+    if (intent in FIXED) {
+      const lieu = rq.intent?.slots?.lieu?.resolutions?.resolutionsPerAuthority?.[0]?.values?.[0]?.value?.name ?? rq.intent?.slots?.lieu?.value
+      const view = intent === 'ContenuIntent' ? 'grid' : intent === 'RecetteIntent' ? 'recipe' : undefined
+      return send(await handleCommand(FIXED[intent](lieu), link, alexaUser, { apl, view, lieu }))
+    }
     if (intent in VERBS && phrase) {
       const verb = VERBS[intent]
-      return send(await handleCommand(verb ? `${verb} ${phrase}` : phrase, link, alexaUser))
+      return send(await handleCommand(verb ? `${verb} ${phrase}` : phrase, link, alexaUser, { apl, query: phrase }))
     }
     if (intent === 'AMAZON.FallbackIntent' || intent in VERBS)
       return send(

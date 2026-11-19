@@ -1,0 +1,496 @@
+// Écrans de la skill Alexa « Miam miam » pour les Echo à écran (APL), aux couleurs de l'app.
+// Pensés d'abord pour l'Echo Show 15 (1920 × 1080), et lisibles sur les écrans plus petits.
+import { productImageSlug, chosenIconSlug, realPhotoUrl } from '../src/lib/productImage'
+import type { Product, ShoppingItem } from '../src/types'
+
+const SITE = 'https://food.graphikeo.com'
+const C = {
+  bg: '#f3f8f9',
+  surface: '#ffffff',
+  fg: '#142226',
+  muted: '#7b8588',
+  border: '#dfe6e8',
+  brand: '#009d9e',
+  strong: '#008183',
+  soft: '#d1f7f7',
+  warn: '#c9861a',
+  danger: '#e23439',
+  dangerSoft: '#fdeeee',
+}
+
+export type Tile = { id?: string; name: string; sub?: string; img?: string; initial: string; tone: 'ok' | 'soon' | 'expired' }
+
+// ---------- Données ----------
+const today = () => new Date().toLocaleDateString('sv-SE', { timeZone: 'Europe/Paris' })
+const dayDiff = (iso: string) => Math.round((Date.parse(iso) - Date.parse(today())) / 86400_000)
+
+export function imageFor(name: string, imageUrl?: string): string | undefined {
+  const chosen = chosenIconSlug(imageUrl)
+  if (chosen) return `${SITE}/icons-png/${chosen}.png`
+  const photo = realPhotoUrl(imageUrl)
+  if (photo && photo.startsWith('https://')) return photo
+  const slug = productImageSlug(name)
+  return slug ? `${SITE}/icons-png/${slug}.png` : undefined
+}
+
+function expiryText(iso?: string): { sub?: string; tone: Tile['tone'] } {
+  if (!iso) return { tone: 'ok' }
+  const d = dayDiff(iso)
+  if (d < 0) return { sub: 'Périmé', tone: 'expired' }
+  if (d === 0) return { sub: 'Aujourd’hui', tone: 'soon' }
+  if (d === 1) return { sub: 'Demain', tone: 'soon' }
+  if (d <= 3) return { sub: `Dans ${d} jours`, tone: 'soon' }
+  const s = new Date(iso + 'T12:00:00').toLocaleDateString('fr-FR', { day: 'numeric', month: 'short', timeZone: 'Europe/Paris' })
+  return { sub: s, tone: 'ok' }
+}
+
+export function productTile(p: Product): Tile {
+  const e = expiryText(p.expiryDate)
+  const qty = p.quantity > 1 ? `×${p.quantity}` : p.size || ''
+  return {
+    id: p.id,
+    name: p.name,
+    sub: [e.sub, qty].filter(Boolean).join(' · ') || undefined,
+    img: imageFor(p.name, p.imageUrl),
+    initial: p.name.trim().charAt(0).toUpperCase() || '?',
+    tone: e.tone,
+  }
+}
+
+export function nameTile(name: string, sub?: string): Tile {
+  return { name, sub, img: imageFor(name), initial: name.trim().charAt(0).toUpperCase() || '?', tone: 'ok' }
+}
+
+/** Produits triés par date de péremption (les sans date à la fin). */
+export function byExpiry(products: Product[]): Product[] {
+  return [...products].sort((a, b) => (a.expiryDate ?? '9999').localeCompare(b.expiryDate ?? '9999') || a.name.localeCompare(b.name))
+}
+
+export function urgent(products: Product[], n = 8): Product[] {
+  return byExpiry(products.filter((p) => p.expiryDate)).slice(0, n)
+}
+
+const norm = (s: string) =>
+  s
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[̀-ͯ]/g, '')
+    .replace(/œ/g, 'oe')
+
+/** Produits dont le nom contient un mot (4 lettres et plus) de la question. */
+export function matching(products: Product[], query: string): Product[] {
+  const stop = new Set(['reste', 'encore', 'combien', 'quoi', 'dans', 'avec', 'est-ce', 'quil', 'cest', 'question', 'avons', 'tout', 'tous', 'quelle', 'quelles', 'quel', 'quels'])
+  const words = norm(query)
+    .split(/[^a-z0-9]+/)
+    .map((w) => w.replace(/s$/, ''))
+    .filter((w) => w.length >= 4 && !stop.has(w))
+  if (!words.length) return []
+  return byExpiry(products.filter((p) => words.some((w) => norm(p.name).includes(w)))).slice(0, 12)
+}
+
+// ---------- Document ----------
+const check = {
+  type: 'AVG',
+  version: '1.2',
+  width: 24,
+  height: 24,
+  parameters: ['color'],
+  items: [{ type: 'path', pathData: 'M5 12.5l4.5 4.5L19 7.5', stroke: '${color}', strokeWidth: 3, strokeLineCap: 'round', strokeLineJoin: 'round', fill: 'transparent' }],
+}
+
+const layouts = {
+  Header: {
+    parameters: ['title', 'hint'],
+    item: {
+      type: 'Container',
+      direction: 'row',
+      alignItems: 'center',
+      width: '100%',
+      items: [
+        { type: 'Image', source: `${SITE}/logo.png`, width: 72, height: 72, scale: 'best-fit' },
+        { type: 'Text', text: 'Miam miam', fontSize: 38, fontWeight: 800, color: C.strong, spacing: 18 },
+        { type: 'Text', when: '${title}', text: '${title}', fontSize: 34, fontWeight: 600, color: C.fg, spacing: 28, grow: 1, maxLines: 1 },
+        { type: 'Text', when: '${!title}', text: ' ', grow: 1 },
+        { type: 'Text', text: '${hint}', fontSize: 24, color: C.muted, textAlign: 'right' },
+      ],
+    },
+  },
+  Tile: {
+    parameters: ['tile'],
+    item: {
+      type: 'Container',
+      width: '100%',
+      height: '100%',
+      paddingRight: 20,
+      paddingBottom: 20,
+      items: [
+        {
+          type: 'Frame',
+          width: '100%',
+          height: '100%',
+          borderRadius: 28,
+          borderWidth: 2,
+          backgroundColor: `\${tile.tone == 'expired' ? '${C.dangerSoft}' : '${C.surface}'}`,
+          borderColor: `\${tile.tone == 'expired' ? '#f4b8b8' : '${C.border}'}`,
+          item: {
+            type: 'Container',
+            width: '100%',
+            height: '100%',
+            alignItems: 'center',
+            justifyContent: 'center',
+            paddingLeft: 16,
+            paddingRight: 16,
+            items: [
+              { type: 'Image', when: '${tile.img}', source: '${tile.img}', width: '62%', height: '52%', scale: 'best-fit' },
+              {
+                type: 'Frame',
+                when: '${!tile.img}',
+                width: 110,
+                height: 110,
+                borderRadius: 55,
+                backgroundColor: C.soft,
+                item: { type: 'Text', text: '${tile.initial}', width: 110, height: 110, textAlign: 'center', textAlignVertical: 'center', fontSize: 52, fontWeight: 800, color: C.strong },
+              },
+              { type: 'Text', text: '${tile.name}', spacing: 12, fontSize: 26, fontWeight: 700, color: C.fg, textAlign: 'center', maxLines: 2 },
+              {
+                type: 'Text',
+                when: '${tile.sub}',
+                text: '${tile.sub}',
+                spacing: 4,
+                fontSize: 22,
+                fontWeight: 600,
+                textAlign: 'center',
+                maxLines: 1,
+                color: `\${tile.tone == 'expired' ? '${C.danger}' : tile.tone == 'soon' ? '${C.warn}' : '${C.muted}'}`,
+              },
+            ],
+          },
+        },
+      ],
+    },
+  },
+  Chip: {
+    parameters: ['label'],
+    item: {
+      type: 'Frame',
+      backgroundColor: C.soft,
+      borderRadius: 40,
+      paddingLeft: 26,
+      paddingRight: 26,
+      paddingTop: 12,
+      paddingBottom: 12,
+      spacing: 16,
+      item: { type: 'Text', text: '${label}', fontSize: 25, fontWeight: 600, color: C.strong },
+    },
+  },
+}
+
+const cols = "${viewport.width >= 1500 ? '16.66%' : viewport.width >= 1000 ? '20%' : '33.33%'}"
+const tileH = '${viewport.width >= 1500 ? 290 : 230}'
+
+function grid(dataPath: string, extra: Record<string, unknown> = {}) {
+  return {
+    type: 'GridSequence',
+    width: '100%',
+    grow: 1,
+    shrink: 1,
+    spacing: 24,
+    childWidth: cols,
+    childHeight: tileH,
+    data: dataPath,
+    item: { type: 'Tile', tile: '${data}' },
+    ...extra,
+  }
+}
+
+function row(dataPath: string) {
+  return {
+    type: 'Sequence',
+    scrollDirection: 'horizontal',
+    width: '100%',
+    height: tileH,
+    spacing: 24,
+    data: dataPath,
+    item: { type: 'Container', width: '${viewport.width >= 1500 ? 260 : 210}', height: '100%', item: { type: 'Tile', tile: '${data}' } },
+  }
+}
+
+function page(items: unknown[]) {
+  return {
+    type: 'APL',
+    version: '2023.3',
+    theme: 'light',
+    settings: { idleTimeout: 180000 },
+    graphics: { check },
+    layouts,
+    mainTemplate: {
+      parameters: ['payload'],
+      item: {
+        type: 'Container',
+        width: '100vw',
+        height: '100vh',
+        backgroundColor: C.bg,
+        paddingLeft: '${viewport.width >= 1500 ? 64 : 32}',
+        paddingRight: '${viewport.width >= 1500 ? 64 : 32}',
+        paddingTop: '${viewport.width >= 1500 ? 44 : 24}',
+        paddingBottom: 24,
+        items,
+      },
+    },
+  }
+}
+
+const hintDefault = 'Dis « Alexa, … » pour me parler'
+
+// ---------- Écrans ----------
+export function homeScreen(o: { name: string; total: number; soon: number; shop: number; urgent: Tile[] }) {
+  const stat = (value: string, label: string, color: string) => ({
+    type: 'Frame',
+    grow: 1,
+    spacing: 24,
+    backgroundColor: C.surface,
+    borderRadius: 28,
+    borderWidth: 2,
+    borderColor: C.border,
+    item: {
+      type: 'Container',
+      paddingLeft: 32,
+      paddingTop: 24,
+      paddingBottom: 24,
+      items: [
+        { type: 'Text', text: value, fontSize: 68, fontWeight: 800, color },
+        { type: 'Text', text: label, fontSize: 26, color: C.muted, fontWeight: 600 },
+      ],
+    },
+  })
+  return {
+    document: page([
+      { type: 'Header', title: '', hint: '${payload.date}' },
+      { type: 'Text', text: '${payload.hello}', spacing: 28, fontSize: 60, fontWeight: 800, color: C.fg },
+      {
+        type: 'Container',
+        direction: 'row',
+        spacing: 24,
+        width: '100%',
+        items: [
+          stat('${payload.total}', 'produits en stock', C.strong),
+          stat('${payload.soon}', 'à consommer vite', o.soon ? C.warn : C.strong),
+          stat('${payload.shop}', 'articles à acheter', C.strong),
+        ],
+      },
+      { type: 'Text', when: '${payload.urgent.length > 0}', text: 'À consommer en priorité', spacing: 32, fontSize: 32, fontWeight: 800, color: C.fg },
+      { type: 'Container', when: '${payload.urgent.length > 0}', spacing: 16, width: '100%', items: [row('${payload.urgent}')] },
+      {
+        type: 'Container',
+        direction: 'row',
+        wrap: 'wrap',
+        spacing: 28,
+        alignItems: 'center',
+        items: [
+          { type: 'Text', text: 'Essaie :', fontSize: 25, color: C.muted, fontWeight: 600 },
+          { type: 'Chip', label: '« ajoute du lait »' },
+          { type: 'Chip', label: '« j’ai fini le beurre »' },
+          { type: 'Chip', label: '« qu’est-ce qu’on mange ce soir »' },
+          { type: 'Chip', label: '« la liste de courses »' },
+        ],
+      },
+    ]),
+    data: {
+      payload: {
+        hello: o.name ? `Salut ${o.name} !` : 'Salut !',
+        date: new Date().toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long', timeZone: 'Europe/Paris' }),
+        total: String(o.total),
+        soon: String(o.soon),
+        shop: String(o.shop),
+        urgent: o.urgent,
+      },
+    },
+  }
+}
+
+export function gridScreen(title: string, count: string, tiles: Tile[]) {
+  return {
+    document: page([
+      { type: 'Header', title: '${payload.title}', hint: '${payload.count}' },
+      tiles.length
+        ? { type: 'Container', spacing: 28, width: '100%', grow: 1, shrink: 1, items: [grid('${payload.tiles}')] }
+        : { type: 'Text', text: 'Rien ici pour l’instant.', spacing: 60, fontSize: 40, color: C.muted, textAlign: 'center', width: '100%' },
+    ]),
+    data: { payload: { title, count, tiles } },
+  }
+}
+
+export function listScreen(items: ShoppingItem[]) {
+  const sorted = [...items].sort((a, b) => Number(a.checked) - Number(b.checked) || a.name.localeCompare(b.name))
+  const rows = sorted.map((s) => ({
+    id: s.id,
+    name: s.name,
+    qty: s.unit ? `${s.quantity} ${s.unit}` : s.quantity > 1 ? `×${s.quantity}` : '',
+    img: imageFor(s.name) ?? '',
+    initial: s.name.trim().charAt(0).toUpperCase() || '?',
+    checked: s.checked,
+  }))
+  const left = items.filter((s) => !s.checked).length
+  const rowItem = {
+    type: 'Container',
+    width: '100%',
+    height: '100%',
+    paddingRight: 20,
+    paddingBottom: 18,
+    items: [
+      {
+        type: 'TouchWrapper',
+        width: '100%',
+        height: '100%',
+        onPress: [{ type: 'SendEvent', arguments: ['toggle', '${data.id}'] }],
+        item: {
+          type: 'Frame',
+          width: '100%',
+          height: '100%',
+          borderRadius: 24,
+          borderWidth: 2,
+          borderColor: C.border,
+          backgroundColor: `\${data.checked ? '${C.bg}' : '${C.surface}'}`,
+          item: {
+            type: 'Container',
+            direction: 'row',
+            alignItems: 'center',
+            height: '100%',
+            paddingLeft: 24,
+            paddingRight: 24,
+            opacity: '${data.checked ? 0.5 : 1}',
+            items: [
+              {
+                type: 'Frame',
+                width: 48,
+                height: 48,
+                borderRadius: 24,
+                borderWidth: 3,
+                borderColor: C.brand,
+                backgroundColor: `\${data.checked ? '${C.brand}' : 'transparent'}`,
+                item: { type: 'VectorGraphic', when: '${data.checked}', source: 'check', color: '#ffffff', width: 42, height: 42, scale: 'best-fit' },
+              },
+              { type: 'Image', when: '${data.img}', source: '${data.img}', width: 72, height: 72, scale: 'best-fit', spacing: 20 },
+              {
+                type: 'Frame',
+                when: '${!data.img}',
+                width: 72,
+                height: 72,
+                borderRadius: 36,
+                spacing: 20,
+                backgroundColor: C.soft,
+                item: { type: 'Text', text: '${data.initial}', width: 72, height: 72, textAlign: 'center', textAlignVertical: 'center', fontSize: 34, fontWeight: 800, color: C.strong },
+              },
+              { type: 'Text', text: '${data.name}', spacing: 20, grow: 1, shrink: 1, fontSize: 30, fontWeight: 700, color: C.fg, maxLines: 1 },
+              { type: 'Text', text: '${data.qty}', fontSize: 24, color: C.muted, fontWeight: 600 },
+            ],
+          },
+        },
+      },
+    ],
+  }
+  return {
+    document: page([
+      { type: 'Header', title: 'Liste de courses', hint: '${payload.count}' },
+      rows.length
+        ? {
+            type: 'GridSequence',
+            spacing: 28,
+            width: '100%',
+            grow: 1,
+            shrink: 1,
+            childWidth: "${viewport.width >= 1500 ? '33.33%' : '50%'}",
+            childHeight: 116,
+            data: '${payload.rows}',
+            item: rowItem,
+          }
+        : { type: 'Text', text: 'La liste est vide. Dis « Alexa, ajoute du pain ».', spacing: 60, fontSize: 40, color: C.muted, textAlign: 'center', width: '100%' },
+      { type: 'Text', when: '${payload.rows.length > 0}', text: 'Touche un article pour le cocher.', spacing: 8, fontSize: 24, color: C.muted },
+    ]),
+    data: { payload: { rows, count: left ? `${left} à acheter` : 'Tout est pris' } },
+  }
+}
+
+export function doneScreen(text: string, tiles: Tile[], undoHint = true) {
+  return {
+    document: page([
+      { type: 'Header', title: '', hint: '' },
+      {
+        type: 'Container',
+        grow: 1,
+        width: '100%',
+        alignItems: 'center',
+        justifyContent: 'center',
+        items: [
+          {
+            type: 'Frame',
+            width: 128,
+            height: 128,
+            borderRadius: 64,
+            backgroundColor: C.brand,
+            item: { type: 'VectorGraphic', source: 'check', color: '#ffffff', width: 128, height: 128, scale: 'best-fit' },
+          },
+          { type: 'Text', text: '${payload.text}', spacing: 28, fontSize: 44, fontWeight: 800, color: C.fg, textAlign: 'center', width: '80%', maxLines: 3 },
+          {
+            type: 'Container',
+            when: '${payload.tiles.length > 0}',
+            spacing: 36,
+            direction: 'row',
+            justifyContent: 'center',
+            width: '100%',
+            height: tileH,
+            data: '${payload.tiles}',
+            item: { type: 'Container', width: '${viewport.width >= 1500 ? 260 : 210}', height: '100%', item: { type: 'Tile', tile: '${data}' } },
+          },
+          { type: 'Text', when: '${payload.undo}', text: 'Pour revenir en arrière : « Alexa, annule »', spacing: 28, fontSize: 25, color: C.muted },
+        ],
+      },
+    ]),
+    data: { payload: { text, tiles: tiles.slice(0, 6), undo: undoHint } },
+  }
+}
+
+export function answerScreen(text: string, o: { tiles?: Tile[]; tilesTitle?: string; options?: string[]; title?: string } = {}) {
+  const tiles = o.tiles ?? []
+  return {
+    document: page([
+      { type: 'Header', title: '${payload.title}', hint: hintDefault },
+      {
+        type: 'Frame',
+        spacing: 28,
+        width: '100%',
+        backgroundColor: C.surface,
+        borderRadius: 32,
+        borderWidth: 2,
+        borderColor: C.border,
+        item: {
+          type: 'Container',
+          paddingLeft: 40,
+          paddingRight: 40,
+          paddingTop: 32,
+          paddingBottom: 32,
+          items: [
+            { type: 'Text', text: '${payload.text}', fontSize: 36, fontWeight: 600, color: C.fg, lineHeight: 1.3, maxLines: 7 },
+            {
+              type: 'Container',
+              when: '${payload.options.length > 0}',
+              direction: 'row',
+              wrap: 'wrap',
+              spacing: 24,
+              data: '${payload.options}',
+              item: {
+                type: 'TouchWrapper',
+                spacing: 16,
+                onPress: [{ type: 'SendEvent', arguments: ['answer', '${data}'] }],
+                item: { type: 'Chip', label: '${data}' },
+              },
+            },
+          ],
+        },
+      },
+      { type: 'Text', when: '${payload.tiles.length > 0}', text: '${payload.tilesTitle}', spacing: 32, fontSize: 30, fontWeight: 800, color: C.fg },
+      { type: 'Container', when: '${payload.tiles.length > 0}', spacing: 16, width: '100%', grow: 1, shrink: 1, items: [grid('${payload.tiles}')] },
+    ]),
+    data: { payload: { text, title: o.title ?? '', tiles, tilesTitle: o.tilesTitle ?? '', options: o.options ?? [] } },
+  }
+}

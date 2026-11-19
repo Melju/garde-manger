@@ -119,27 +119,27 @@ var SupabaseRepository = class {
     return toProduct(data);
   }
   async updateProduct(id, patch) {
-    const row = { updated_at: (/* @__PURE__ */ new Date()).toISOString() };
+    const row2 = { updated_at: (/* @__PURE__ */ new Date()).toISOString() };
     const has = (k) => Object.prototype.hasOwnProperty.call(patch, k);
-    if (has("name") && patch.name !== void 0) row.name = patch.name;
-    if (has("category") && patch.category !== void 0) row.category = patch.category;
-    if (has("quantity") && patch.quantity !== void 0) row.quantity = patch.quantity;
-    if (has("unit")) row.unit = patch.unit ?? null;
-    if (has("size")) row.size = patch.size ?? null;
-    if (has("brand")) row.brand = patch.brand ?? null;
-    if (has("expiryDate")) row.expiry_date = patch.expiryDate ?? null;
-    if (has("price")) row.price = patch.price ?? null;
-    if (has("barcode")) row.barcode = patch.barcode ?? null;
-    if (has("conservation")) row.conservation = patch.conservation ?? null;
-    if (has("dateType")) row.date_type = patch.dateType ?? null;
-    if (has("location")) row.location = patch.location ?? null;
-    if (has("openedAt")) row.opened_at = patch.openedAt ?? null;
-    if (has("imageUrl")) row.image_url = patch.imageUrl ?? null;
-    if (has("nutriscore")) row.nutriscore = patch.nutriscore ?? null;
-    if (has("nova")) row.nova = patch.nova ?? null;
-    if (has("kcal")) row.kcal = patch.kcal ?? null;
-    if (has("allergens")) row.allergens = patch.allergens ?? null;
-    const { data, error } = await this.sb.from("products").update(row).eq("id", id).select().single();
+    if (has("name") && patch.name !== void 0) row2.name = patch.name;
+    if (has("category") && patch.category !== void 0) row2.category = patch.category;
+    if (has("quantity") && patch.quantity !== void 0) row2.quantity = patch.quantity;
+    if (has("unit")) row2.unit = patch.unit ?? null;
+    if (has("size")) row2.size = patch.size ?? null;
+    if (has("brand")) row2.brand = patch.brand ?? null;
+    if (has("expiryDate")) row2.expiry_date = patch.expiryDate ?? null;
+    if (has("price")) row2.price = patch.price ?? null;
+    if (has("barcode")) row2.barcode = patch.barcode ?? null;
+    if (has("conservation")) row2.conservation = patch.conservation ?? null;
+    if (has("dateType")) row2.date_type = patch.dateType ?? null;
+    if (has("location")) row2.location = patch.location ?? null;
+    if (has("openedAt")) row2.opened_at = patch.openedAt ?? null;
+    if (has("imageUrl")) row2.image_url = patch.imageUrl ?? null;
+    if (has("nutriscore")) row2.nutriscore = patch.nutriscore ?? null;
+    if (has("nova")) row2.nova = patch.nova ?? null;
+    if (has("kcal")) row2.kcal = patch.kcal ?? null;
+    if (has("allergens")) row2.allergens = patch.allergens ?? null;
+    const { data, error } = await this.sb.from("products").update(row2).eq("id", id).select().single();
     if (error) throw error;
     return toProduct(data);
   }
@@ -177,13 +177,13 @@ var SupabaseRepository = class {
     return toShopping(data);
   }
   async updateShoppingItem(id, patch) {
-    const row = {};
-    if (patch.name !== void 0) row.name = patch.name;
-    if (patch.category !== void 0) row.category = patch.category;
-    if (patch.quantity !== void 0) row.quantity = patch.quantity;
-    if (patch.unit !== void 0) row.unit = patch.unit ?? null;
-    if (patch.source !== void 0) row.source = patch.source;
-    const { error } = await this.sb.from("shopping_items").update(row).eq("id", id).eq("household_id", this.hid);
+    const row2 = {};
+    if (patch.name !== void 0) row2.name = patch.name;
+    if (patch.category !== void 0) row2.category = patch.category;
+    if (patch.quantity !== void 0) row2.quantity = patch.quantity;
+    if (patch.unit !== void 0) row2.unit = patch.unit ?? null;
+    if (patch.source !== void 0) row2.source = patch.source;
+    const { error } = await this.sb.from("shopping_items").update(row2).eq("id", id).eq("household_id", this.hid);
     if (error) throw error;
   }
   async toggleShoppingItem(id) {
@@ -572,6 +572,1048 @@ function defaultConservation(category) {
   return "frais";
 }
 
+// src/lib/productImage.ts
+var RULES = [
+  [["gousse de vanille", "gousses de vanille", "gousse vanille", "vanille en gousse", "vanille bourbon gousse"], "gousses-vanille"],
+  [["arome vanille", "arome de vanille", "extrait de vanille", "vanille liquide", "essence de vanille", "arome naturel vanille"], "arome-vanille"],
+  [["bicarbonate", "bicarbonate de soude", "bicarbonate alimentaire", "bicarbonate de sodium"], "bicarbonate"],
+  [["levure chimique", "levure boulangere", "levure de boulanger", "levure patissiere", "sachet de levure", "sachets de levure", "levure en sachet", "levure seche"], "levure-sachets"],
+  [["freeze pop", "freeze pops", "freezer pops", "freezer pop", "mocktails freeze", "glacons a sucer", "ice pops", "ice pop"], "freeze-pops"],
+  [["the glace peche", "the glace a la peche", "ice tea peche", "fuzete", "fuze tea", "pesca e rosa", "the pesche", "eistee pfirsich"], "the-glace-peche"],
+  [["gelatine", "gelatine alimentaire", "gelatine en feuilles", "feuilles de gelatine", "feuille de gelatine"], "gelatine-feuilles"],
+  [["mini canape", "mini canapes", "canape", "canapes", "toasts apero", "mini toasts"], "mini-canapes"],
+  [["peches en conserve", "peche en conserve", "peches au sirop", "peche au sirop", "peches en boite", "pfirsich", "pfirsiche", "demi peches", "moities de peches"], "peches-conserve"],
+  [["gingembre marine", "gingembre confit", "gingembre rose", "sushi ginger", "gari", "ginger", "mindestens ginger"], "gingembre-pot"],
+  [["liant", "liant pour sauces", "liant sauces blanches", "liant sauce blanche", "epaississant sauce", "roux instantane", "sauce binder"], "liant-sauces"],
+  [["feuille de brick", "feuilles de brick", "pate de brick", "pates de brick", "galette de brick", "galettes de brick", "brick pastry"], "feuilles-brick"],
+  [["wasabi", "pate de wasabi", "raifort japonais"], "wasabi"],
+  [["oignon frit", "oignons frits", "oignons fris", "oignon fris", "oignons croustillants", "oignons crispy", "oignons crispys", "crispy onions", "oignons rissoles"], "oignons-frits"],
+  [["oignon au vinaigre", "oignons au vinaigre", "oignon vinaigre", "oignons vinaigre", "oignon grelot", "oignons grelots", "petits oignons au vinaigre", "petit oignon au vinaigre", "petits oignons vinaigre", "oignons blancs au vinaigre", "pickles oignons"], "oignons-vinaigre"],
+  [["supreme de tomate", "supreme de potiron", "supreme de legumes", "supreme de champignons", "supreme de poireaux", "supreme de carottes", "supreme de courgettes", "cup a soup", "soupe en sachet", "soupes en sachet", "soupe sachet", "sachet de soupe", "sachets de soupe", "soupe instantanee", "soupe deshydratee", "soupe minute"], "soupe-sachet"],
+  [["banana bread", "cake banane", "cake a la banane", "gateau banane"], "banana-bread"],
+  [["bowl cake", "mug cake", "gateau mug", "gateau tasse"], "mug-cake"],
+  [["cake sale", "cakes sales", "cake tomates", "cakes tomates", "cake aux olives", "cake jambon olives", "cake lardons"], "cake-sale"],
+  [["quatre quarts", "quatre-quarts"], "quatre-quarts"],
+  [["overnight oats", "overnight porridge"], "overnight-oats"],
+  [["granola maison", "bol de granola", "bowl granola"], "granola-bol"],
+  [["poelee tex mex", "poelee texmex", "poelee mexicaine"], "poelee-tex-mex"],
+  [["burrito bowl", "bowl mexicain", "buddha bowl mexicain"], "burrito-bowl"],
+  [["fajitas", "fajita"], "fajitas"],
+  [["tarte aux pommes", "tarte pommes", "tarte normande", "tarte tatin", "apple pie"], "tarte-pommes"],
+  [["tarte au citron", "tarte citron", "tarte au citron meringuee"], "tarte-citron"],
+  [["crumble", "crumble aux pommes", "crumble aux fruits", "crumble aux fruits rouges"], "crumble"],
+  [["mousse au chocolat", "mousse chocolat"], "mousse-chocolat"],
+  [["tiramisu"], "tiramisu"],
+  [["panna cotta", "pannacotta"], "panna-cotta"],
+  [["creme brulee"], "creme-brulee"],
+  [["riz au lait"], "riz-au-lait"],
+  [["gateau au chocolat", "gateau chocolat", "fondant au chocolat", "moelleux au chocolat"], "gateau-chocolat"],
+  [["cheesecake", "cheese cake"], "cheesecake"],
+  [["clafoutis"], "clafoutis"],
+  [["ile flottante", "oeufs a la neige"], "ile-flottante"],
+  [["mac and cheese", "mac n cheese", "macaroni and cheese", "macaroni au fromage", "mac cheese"], "mac-cheese"],
+  [["riz cantonais", "riz saute", "riz frit", "nasi goreng"], "riz-cantonais"],
+  [["pates aux legumes", "pates legumes", "pates primavera"], "pates-legumes"],
+  [["tortilla espagnole", "tortilla de patatas", "omelette espagnole"], "tortilla"],
+  [["oeufs brouilles", "oeuf brouille"], "oeufs-brouilles"],
+  [["gratin de chou fleur", "gratin chou fleur", "chou fleur gratine"], "gratin-chou-fleur"],
+  [["galette complete", "galette de sarrasin", "galette sarrasin", "crepe de sarrasin"], "galette-complete"],
+  [["tarte aux legumes", "tarte salee", "tarte salee aux legumes", "tarte legumes", "tarte provencale"], "tarte-salee-legumes"],
+  [["soupe de legumes", "soupe aux legumes", "soupe legumes", "minestrone"], "soupe-legumes"],
+  [["veloute de legumes", "veloute de potiron", "veloute de champignons", "veloute de carottes", "veloute de courgettes", "veloute maison", "creme de legumes", "soupe de potiron", "soupe de courge"], "veloute"],
+  [["salade de pates"], "salade-pates"],
+  [["legumes rotis", "legumes roti", "legumes au four", "roasted vegetables"], "legumes-rotis"],
+  [["couscous royal", "couscous merguez", "couscous poulet", "couscous complet"], "couscous-royal"],
+  [["osso buco", "ossobuco", "osso bucco", "jarret de veau"], "osso-buco"],
+  [["roti de porc", "roti de porc aux legumes", "roti de porc au four", "filet de porc roti"], "roti-porc"],
+  [["boeuf stroganoff", "beef stroganoff", "stroganoff"], "stroganoff"],
+  [["saucisses aux lentilles", "saucisses lentilles", "saucisse lentilles", "petit sale aux lentilles"], "saucisses-lentilles"],
+  [["poulet au curry", "poulet curry", "curry de poulet", "chicken curry", "butter chicken", "poulet tikka"], "poulet-curry-riz"],
+  [["poisson en papillote", "papillote de poisson", "papillote", "saumon en papillote", "cabillaud en papillote"], "poisson-papillote"],
+  [["saumon grille", "saumon poele", "saumon et legumes"], "saumon-grille"],
+  [["gambas a l ail", "gambas ail", "crevettes a l ail", "crevettes ail"], "gambas-ail"],
+  [["fish and chips", "fish n chips", "fish chips"], "fish-and-chips"],
+  [["cabillaud sauce", "cabillaud a la creme", "cabillaud beurre blanc", "poisson sauce blanche"], "cabillaud-sauce"],
+  [["bar au four", "bar entier", "dorade au four", "dorade entiere", "daurade", "poisson entier", "poisson au four", "loup de mer au four", "truite au four"], "bar-four"],
+  [["soupe en brique", "soupe brique", "brique de soupe", "briques de soupe", "veloute en brique", "veloute brique"], "soupe-brique"],
+  [["soupe en conserve", "soupe en boite", "soupe boite", "soupe conserve", "conserve de soupe", "boite de soupe"], "soupe-conserve"],
+  [["parmesan rape", "parmesan en poudre", "parmigiano rape", "grana padano rape", "parmesan rap\xE9"], "parmesan-rape"],
+  [["pain pita", "pain pitta", "pains pita", "pains pitta", "pita", "pitta"], "pain-pitta"],
+  [["naan", "naans", "pain naan", "garlic naan", "pain indien"], "pain-naan"],
+  [["pain burger", "pains burger", "pain hamburger", "pains hamburger", "pain a burger", "pains a burger", "bun", "buns", "burger buns"], "pain-burger"],
+  [["pain hot dog", "pains hot dog", "pain hotdog", "pains hotdog", "pain a hot dog", "pains a hot dog", "pain pour hot dog", "pains pour hot dog", "pain pour hot dogs"], "pain-hotdog"],
+  [["fraises surgelees", "fraise surgelee", "fraises congelees", "fraise congelee", "sachet de fraises"], "fraises-surgelees"],
+  [["fruits rouges surgeles", "fruit rouge surgele", "fruits rouges congeles", "fruits rouges", "fruits des bois", "fruits surgeles", "fruit surgele", "fruits congeles", "fruit congele", "sachet de fruits", "framboises surgelees", "framboises congelees", "myrtilles surgelees", "melange de fruits rouges"], "fruits-rouges-surgeles"],
+  [["glace vanille", "glace a la vanille", "pot de glace", "pots de glace", "creme glacee vanille", "glace vanille bac"], "glace-vanille"],
+  [["fricadelle", "fricadelles", "frikadelle", "fricadel"], "fricadelle"],
+  [["curly fries", "curly"], "frites-surgelees"],
+  [["fruit des bois", "fruit rouge", "fruits rouges"], "fruits-rouges-surgeles"],
+  [["padano", "grand padano", "padano dop"], "parmesan-rape"],
+  [["latte macchiato", "macchiato"], "cafe-froid"],
+  [["mozarella", "mozzarela"], "mozzarella"],
+  [["cereal", "cereals", "multigrain cereal"], "cereales"],
+  [["orzo", "risoni"], "pates"],
+  [["panache", "panaches"], "biere"],
+  [["pick up", "pickup"], "biscuit-chocolat"],
+  [["popz"], "pop-corn"],
+  [["ringlings", "ring lings"], "chips"],
+  [["tonno", "tonijn", "tonijnfilets", "thunfisch"], "thon"],
+  [["salsina", "salsa", "pomodoro"], "sauce-tomate"],
+  [["stokbroodje", "stokbroodjes", "stokbrood", "witte stokbroodjes"], "baguette"],
+  [["bruschetta", "bruschetta spread"], "olive"],
+  [["poivre noir", "poivre moulu", "poivre en grains", "grains de poivre", "poivre blanc", "moulin a poivre", "poivre du moulin", "poivre mignonnette", "poivre sauvage"], "poivre-noir-pot"],
+  [["5 baies", "cinq baies", "poivre 5 baies", "melange 5 baies"], "cinq-baies-pot"],
+  [["paprika fume", "paprika fumee", "pimenton fume"], "paprika-fume-pot"],
+  [["paprika", "paprika doux", "paprika moulu", "pimenton"], "paprika-pot"],
+  [["cumin", "cumin moulu", "cumin en grains", "graines de cumin"], "cumin-pot"],
+  [["curcuma", "turmeric"], "curcuma-pot"],
+  [["cannelle", "cannelle moulue", "baton de cannelle", "batons de cannelle"], "cannelle-pot"],
+  [["muscade", "noix de muscade"], "muscade-pot"],
+  [["piment en poudre", "piment moulu", "piment d espelette", "piment espelette", "espelette", "cayenne", "piment de cayenne", "poivre de cayenne"], "piment-poudre-pot"],
+  [["curry en poudre", "poudre de curry", "curry madras", "curry doux", "curry fort", "curry moulu"], "curry-pot"],
+  [["gingembre moulu", "gingembre en poudre", "poudre de gingembre"], "gingembre-moulu-pot"],
+  [["ail en poudre", "ail semoule", "ail granule", "ail granules", "ail deshydrate", "poudre d ail"], "ail-poudre-pot"],
+  [["oignon en poudre", "oignon deshydrate", "oignons deshydrates", "oignon granule", "poudre d oignon"], "oignon-poudre-pot"],
+  [["herbes de provence"], "herbes-provence-pot"],
+  [["thym", "thym seche", "thym sechee"], "thym-pot"],
+  [["origan", "oregan", "oregano", "origan seche"], "origan-pot"],
+  [["basilic seche", "basilic sechee", "basilic deshydrate"], "basilic-pot"],
+  [["persil seche", "persil sechee", "persil deshydrate"], "persil-pot"],
+  [["ciboulette sechee", "ciboulette seche", "ciboulette deshydratee"], "ciboulette-pot"],
+  [["laurier", "feuille de laurier", "feuilles de laurier"], "laurier-pot"],
+  [["romarin", "romarin seche"], "romarin-pot"],
+  [["coriandre moulue", "coriandre sechee", "coriandre seche", "graines de coriandre"], "coriandre-pot"],
+  [["estragon", "estragon seche"], "estragon-pot"],
+  [["sauge", "sauge sechee"], "sauge-pot"],
+  [["aneth", "aneth seche"], "aneth-pot"],
+  [["menthe", "menthe sechee", "menthe seche"], "menthe-pot"],
+  [["cardamome", "cardamome verte"], "cardamome-pot"],
+  [["clou de girofle", "clous de girofle", "girofle", "girofles"], "girofle-pot"],
+  [["safran", "filaments de safran"], "safran-pot"],
+  [["garam masala"], "garam-masala-pot"],
+  [["ras el hanout", "ras el-hanout"], "ras-el-hanout-pot"],
+  [["graines de fenouil", "fenouil graines", "fenouil en graines"], "fenouil-pot"],
+  [["graines de moutarde", "moutarde en graines"], "moutarde-grains-pot"],
+  [["graines de sesame", "sesame grille", "sesame blanc"], "sesame-pot"],
+  [["old bay", "cajun", "slap ya mama", "epices barbecue", "mix barbecue", "bbq rub", "rub barbecue", "assaisonnement barbecue", "assaisonnement cajun"], "barbecue-pot"],
+  [["sel fin", "sel de table"], "sel-pot"],
+  [["seasoning", "old bay", "slap ya mama", "assaisonnement", "cajun"], "epices"],
+  [["estragon"], "coriandre"],
+  [["frites surgelees", "frite surgelee", "frites congelees", "sachet de frites", "frites au four", "frites four"], "frites-surgelees"],
+  [["gaufre de pomme de terre", "gaufres de pomme de terre", "gaufres de pommes de terre", "gaufre pomme de terre", "gaufres pomme de terre", "gaufres pommes de terre", "gaufre de patate", "gaufres de patate", "pomme de terre gaufre", "pommes de terre gaufres"], "gaufres-pdt"],
+  [["puree surgelee", "puree congelee", "puree en barquette", "galets de puree", "boulettes de puree", "palets de puree"], "puree-surgelee"],
+  [["croquette de pomme de terre", "croquette de pommes de terre", "croquette pomme de terre", "croquette pommes de terre", "croquette pdt", "croquettes surgelees", "croquette surgelee", "croquettes de patate"], "croquettes-pdt"],
+  [["pomme dauphine", "pommes dauphines", "dauphine", "dauphines"], "pommes-dauphines"],
+  [["rosti", "roesti", "galette de rosti"], "rosti"],
+  [["noisette de pomme de terre", "noisettes de pomme de terre", "noisettes de pommes de terre", "pomme noisette", "pommes noisette", "pommes noisettes"], "noisettes-pdt"],
+  [["pomme duchesse", "pommes duchesse", "duchesse de pomme de terre"], "pommes-duchesse"],
+  [["quartier de pomme de terre", "quartiers de pomme de terre", "quartiers de pommes de terre", "quartiers de patate", "pommes quartiers", "pomme quartier", "potatoes", "potato wedges", "wedges", "pommes wedges", "pomme wedges"], "quartiers-pdt"],
+  [["grenaille", "grenailles", "pomme de terre grenaille", "pommes de terre grenailles", "pommes grenailles", "pomme grenaille"], "grenailles"],
+  [["puree de pomme de terre", "puree de pommes de terre", "puree de patate", "puree maison", "mousline", "flocons de puree", "puree en flocons"], "puree"],
+  [["hash brown", "hash browns", "hashbrown", "hashbrowns", "galette de pomme de terre", "galettes de pomme de terre", "galettes de pommes de terre", "galette pomme de terre", "galette de patate"], "hash-brown"],
+  [["liquide vaisselle", "produit vaisselle", "lave vaisselle", "tablettes lave vaisselle", "pastilles lave vaisselle"], "liquide-vaisselle"],
+  [["lessive", "lessives", "adoucissant", "detachant", "capsules lessive"], "lessive"],
+  [["javel", "eau de javel", "desinfectant", "destop", "deboucheur"], "javel"],
+  [["nettoyant", "nettoyant multi usage", "multi usage", "multi surfaces", "nettoyant vitres", "produit vitres", "mr propre", "degraissant", "detartrant", "antical", "desodorisant", "produit menager"], "nettoyant-multi-usage"],
+  [["eponge", "eponges", "grattoir", "tampon a recurer"], "eponge"],
+  [["sac poubelle", "sacs poubelle", "sac a dechets", "sacs a dechets"], "sacs-poubelle"],
+  [["papier toilette", "papier wc", "papier hygienique"], "papier-toilette"],
+  [["essuie tout", "sopalin", "papier absorbant", "rouleaux de cuisine"], "essuie-tout"],
+  [["film alimentaire", "film etirable", "film plastique", "scellofrais"], "film-alimentaire"],
+  [["papier alu", "papier aluminium", "feuille alu", "rouleau alu"], "papier-alu"],
+  [["papier cuisson", "papier sulfurise", "papier four"], "papier-cuisson"],
+  [["mouchoir", "mouchoirs", "kleenex", "boite de mouchoirs"], "mouchoirs"],
+  [["savon", "savons"], "savon"],
+  [["gel douche", "gels douche", "creme de douche", "bain moussant", "lait corporel"], "gel-douche"],
+  [["shampoing", "shampooing", "apres shampoing", "savon liquide", "savon main", "savon mains", "lotion"], "shampoing"],
+  [["dentifrice", "brosse a dents", "brosse dents", "bain de bouche", "fil dentaire"], "dentifrice"],
+  [["deodorant", "deodorants", "anti transpirant", "antitranspirant"], "deodorant"],
+  [["coton", "cotons", "disques demaquillants", "demaquillant", "coton tige", "cotons tiges"], "coton"],
+  [["couche", "couches", "couche culotte", "couches culottes", "change bebe"], "couches"],
+  [["croquettes chien", "croquette chien", "croquettes pour chien", "nourriture chien", "pate chien", "friandises chien", "os a macher"], "croquettes-chien"],
+  [["croquettes chat", "croquette chat", "croquettes pour chat", "nourriture chat", "pate chat", "friandises chat", "sachets chat"], "croquettes-chat"],
+  [["croquette", "croquettes"], "croquettes-pdt"],
+  [["litiere", "litieres"], "litiere"],
+  [["pile", "piles", "pile aa", "piles aa", "piles aaa", "pile bouton"], "piles"],
+  [["ampoule", "ampoules"], "ampoule"],
+  [["cracottes au chocolat", "cracotte au chocolat", "cracottes chocolat", "cracotte chocolat", "cracotte", "cracottes", "craquottes"], "cracottes-chocolat"],
+  [["biscotte", "biscottes"], "biscottes"],
+  [["pate feuilletee", "pates feuilletees", "feuilletee", "feuilletees"], "pate-feuilletee"],
+  [["pate brisee", "pates brisees", "pate sablee", "pates sablees", "pate a tarte", "pates a tarte"], "pate-brisee"],
+  [["beurre en barquette", "beurre barquette", "beurre tendre", "beurre tartinable", "beurre doux tendre", "margarine"], "beurre-barquette"],
+  [["cassoulet en conserve", "cassoulet en boite", "cassoulet boite", "boite de cassoulet", "conserve de cassoulet", "cassoulet conserve"], "cassoulet-conserve"],
+  [["petit suisse", "petits suisses", "dessert lacte", "desserts lactes", "creme dessert", "danette", "danonino"], "dessert-lacte"],
+  [["flan", "flans", "flan patissier", "flan nature"], "flan"],
+  [["chapelure", "panure", "pain rape"], "chapelure"],
+  [["herbes de provence", "herbes aromatiques", "herbes sechees", "herbes seches"], "herbes-provence"],
+  [["anchois", "filets d anchois", "filet d anchois"], "anchois"],
+  [["chorizo", "chorizos"], "chorizo"],
+  [["terrine", "pate de campagne", "foie gras", "rillettes", "pate de foie", "mousse de canard", "bloc de foie gras"], "terrine"],
+  [["chantilly", "creme chantilly", "bombe chantilly", "creme en bombe"], "chantilly"],
+  [["cidre", "cidres", "cidre brut", "cidre doux"], "cidre"],
+  [["guacamole", "guacamoles"], "guacamole"],
+  [["coriandre", "menthe", "aneth", "cerfeuil", "herbes fraiches"], "coriandre"],
+  [["tortilla", "tortillas"], "tortillas"],
+  [["filet de poulet marine", "filets de poulet marines", "filet poulet marine", "filets poulet marines", "poulet marine", "poulets marines", "blanc de poulet marine", "blancs de poulet marines"], "filet-poulet-marine"],
+  [["emince tex mex", "eminces tex mex", "emince de poulet tex mex", "eminces de poulet tex mex", "poulet tex mex", "tex mex", "texmex"], "emince-tex-mex"],
+  [["boulettes vegetales", "boulette vegetale", "boulettes vegetariennes", "boulette vegetarienne", "boulettes vegan", "boulettes veggie", "boulettes vege", "falafel", "falafels"], "boulettes-vegetales"],
+  [["emince de poulet", "eminces de poulet", "emince poulet", "eminces poulet", "emince de volaille", "eminces de volaille", "aiguillettes de poulet", "aiguillette de poulet"], "emince-poulet"],
+  [["ministars", "mini stars", "ministar", "biscuit etoile", "biscuits etoiles", "etoiles chocolat"], "biscuit-etoile"],
+  [["dinosaurus", "dinosaure", "dinosaures", "biscuit dinosaure"], "biscuit-dinosaure"],
+  [["biscuit animaux", "biscuits animaux", "animaux biscuit"], "biscuit-animaux"],
+  [["prince", "prince chocolat", "mini biscuit chocolat", "mini biscuits chocolat", "pims", "pim s", "chocolat au lait biscuit"], "biscuit-mini-chocolat"],
+  [["speculoos", "biscuit caramelise", "biscoff"], "speculoos"],
+  [["petit beurre", "petits beurre", "petit-beurre", "biscuit sec", "biscuits secs"], "petit-beurre"],
+  [["cookie", "cookies"], "cookie"],
+  [["pepites de chocolat", "pepite de chocolat", "pepites chocolat", "pepites", "chocolate chips", "chocolate chip", "chocolat chips", "choc chips", "drops chocolat", "chunks", "gouttes de chocolat", "perles de chocolat"], "pepites-chocolat"],
+  [["oreo", "biscuit fourre", "biscuits fourres", "biscuit creme", "sandwich cookie"], "biscuit-fourre"],
+  [["palet breton", "palets bretons", "galette bretonne"], "palet-breton"],
+  [["confiture sable", "sable confiture", "sable fourre", "biscuit confiture", "linzer"], "sable-confiture"],
+  [["sable", "sables", "shortbread"], "sable"],
+  [["madeleine", "madeleines"], "madeleine"],
+  [["gaufrette", "gaufrettes", "wafer"], "gaufrette"],
+  [["biscuit chocolat", "biscuits chocolat", "barre chocolatee", "kitkat", "kit kat", "twix", "bounty", "snickers"], "biscuit-chocolat"],
+  [["macaron", "macarons"], "macaron"],
+  [["cigarette russe", "cigarettes russes", "cigarette", "tuile", "tuiles", "langue de chat", "langues de chat"], "cigarettes-russes"],
+  [["gaufre", "gaufres", "gaufre de liege"], "gaufre-liege"],
+  [["pain d epices", "pain depices", "speculaas"], "pain-epices"],
+  [["financier", "financiers"], "financier"],
+  [["canele", "caneles", "cannele", "canneles"], "caneles"],
+  [["brownie", "brownies"], "brownie"],
+  [["muffin", "muffins", "cupcake"], "muffin"],
+  [["barre de cereales", "barres de cereales", "barre cereales", "barre muesli", "barre proteinee"], "barre-cereales"],
+  [["boite metal", "boite de biscuits metal", "biscuits danois", "danish cookies", "butter cookies"], "boite-biscuits-metal"],
+  [["sachets de biscuits", "biscuits sachets", "sachet de biscuits", "boite de sachets", "boite sachets", "biscuits en sachets"], "boite-sachets"],
+  [["sachet biscuit", "biscuit individuel", "biscuits individuels"], "sachet-biscuit"],
+  [["assortiment", "assortiment de biscuits", "biscuits assortis", "mixed biscuits"], "assortiment-biscuits"],
+  [["boite biscuits", "boite de biscuits", "coffret biscuits"], "boite-biscuits-carton"],
+  [["cracker sesame", "crackers sesame", "ritz", "tuc", "biscuit aperitif", "biscuits aperitif"], "cracker-sesame"],
+  [["pates pesto", "pates au pesto"], "pates-pesto"],
+  // Viandes précises
+  [["blanc de poulet", "blancs de poulet", "filet de poulet", "filets de poulet", "poitrine de poulet"], "blanc-poulet"],
+  [["cuisse de poulet", "cuisses de poulet", "pilon", "pilons", "hauts de cuisse"], "cuisse-poulet"],
+  [["poulet entier", "poulet fermier", "chapon", "dinde entiere"], "poulet-entier"],
+  [["escalope de dinde", "escalopes de dinde", "escalope de poulet", "escalopes de poulet", "escalope de veau", "escalope"], "escalope-dinde"],
+  [["escalope panee", "escalopes panees", "poulet pane", "schnitzel"], "escalope-panee"],
+  [["cordon bleu", "cordons bleus"], "cordon-bleu"],
+  [["jurassienne", "jurasienne", "jurassiennes"], "jurassienne"],
+  [["roulade ardennaise", "roulades ardennaises", "roulade", "roulades"], "roulade-ardennaise"],
+  [["chipolata", "chipolatas", "saucisses chipolata", "saucisse chipolata"], "chipolata"],
+  [["merguez"], "merguez"],
+  [["saucisse de toulouse", "saucisses de toulouse", "saucisse toulouse", "saucisse a rouler"], "saucisse-toulouse"],
+  [["boudin blanc", "boudins blancs"], "boudin-blanc"],
+  [["steak hache", "steaks haches", "hamburger", "hamburgers", "burger boeuf"], "steak-hache"],
+  [["viande hachee", "hache", "boeuf hache", "porc hache", "hach\xE9 pur boeuf"], "viande-hachee"],
+  [["brochette", "brochettes"], "brochette"],
+  [["cote de porc", "cotes de porc", "cotelette de porc", "cotelettes de porc", "carre de porc", "cote de veau"], "cote-porc"],
+  [["cote de boeuf", "cotes de boeuf", "entrecote", "entrecotes", "cote a l os"], "cote-boeuf"],
+  [["roti de boeuf", "roti de porc", "roti de veau", "rosbif", "rumsteck", "bavette", "onglet"], "roti-boeuf"],
+  [["filet mignon", "filets mignons", "medaillon", "medaillons", "tournedos"], "filet-mignon"],
+  [["gigot", "gigot d agneau", "epaule d agneau", "souris d agneau"], "gigot-agneau"],
+  [["cotelette d agneau", "cotelettes d agneau", "cotelettes agneau", "carre d agneau"], "cotelettes-agneau"],
+  [["paupiette", "paupiettes"], "paupiette"],
+  [["poitrine de porc", "poitrine fraiche", "lard", "poitrine salee"], "poitrine-porc"],
+  [["magret", "magrets", "canard", "cuisse de canard", "confit de canard"], "magret-canard"],
+  [["viande a bourguignon", "blanquette", "saut\xE9 de boeuf", "saute de boeuf", "saute de veau", "viande a ragout", "cubes de boeuf", "osso buco"], "viande-cubes"],
+  // Boissons précises
+  [["bombonne", "bonbonne", "fontaine a eau", "eau 8l", "eau 8 l", "eau 10l", "eau 19l"], "bombonne-eau"],
+  [["cafe froid", "cafe glace", "iced coffee", "cafe frappe", "latte glace"], "cafe-froid"],
+  [["eau petillante", "eau gazeuse", "eau p\xE9tillante", "badoit", "perrier", "san pellegrino"], "eau-petillante"],
+  [["lait brique", "brique de lait", "lait uht", "lait demi ecreme", "lait ecreme", "lait entier"], "lait-brique"],
+  [["coca zero", "cola zero", "pepsi max", "soda zero", "coca cola zero", "coca sans sucre"], "soda-zero"],
+  [["cola canette", "coca canette", "canette de cola", "canette de coca"], "cola"],
+  [["coca", "coca cola", "cola", "pepsi"], "cola-bouteille"],
+  [["soda orange", "orangina", "fanta"], "soda-orange"],
+  [["the glace", "ice tea", "icetea", "lipton"], "the-glace"],
+  [["tonic", "schweppes", "ginger ale", "ginger beer"], "tonic"],
+  [["energisante", "red bull", "redbull", "monster"], "energisante"],
+  [["pack d eau", "pack eau", "pack de bouteilles d eau", "eau 6x"], "pack-eau"],
+  [["eau aromatisee", "eau citron", "eau a la menthe"], "eau-aromatisee"],
+  [["grande bouteille d eau", "eau 1 5l", "eau 1 5 l"], "eau-grande"],
+  [["jus d orange", "jus orange"], "jus-orange"],
+  [["jus de pomme", "jus pomme"], "jus-pomme"],
+  [["jus multifruits", "jus multifruit", "multifruits", "multifruit", "jus de fruits"], "jus-multifruits"],
+  [["jus de raisin", "jus raisin"], "jus-raisin"],
+  [["jus de tomate", "jus tomate"], "jus-tomate"],
+  [["jus d ananas", "jus ananas"], "jus-ananas"],
+  [["smoothie", "smoothies"], "smoothie"],
+  [["milkshake", "milk shake"], "milkshake"],
+  [["lait chocolate", "lait au chocolat", "chocolat au lait boisson", "cacolac", "candia choco"], "lait-chocolate"],
+  [["chocolat chaud", "cacao", "nesquik", "ovomaltine", "poudre chocolatee"], "chocolat-chaud"],
+  [["cafe moulu", "cafe moulue", "cafe en poudre"], "cafe-moulu"],
+  [["cafe en grains", "cafe grains", "grains de cafe"], "cafe-grains"],
+  [["capsule", "capsules", "dosette", "dosettes", "nespresso", "senseo"], "capsules-cafe"],
+  [["tisane", "tisanes", "infusion", "infusions", "verveine", "camomille"], "tisane"],
+  // Condiments et sauces
+  [["mayonnaise tube", "tube de mayonnaise"], "mayonnaise"],
+  [["mayonnaise", "mayo"], "mayonnaise-pot"],
+  [["sauce cocktail", "cocktail sauce"], "sauce-cocktail"],
+  [["sauce barbecue", "barbecue", "bbq"], "sauce-barbecue"],
+  [["sauce samourai", "samourai"], "sauce-samourai"],
+  [["sauce andalouse", "andalouse"], "sauce-andalouse"],
+  [["sauce algerienne", "algerienne"], "sauce-algerienne"],
+  [["sauce curry"], "sauce-curry"],
+  [["sauce tartare", "tartare"], "sauce-tartare"],
+  [["sauce blanche", "sauce a l ail", "sauce ail"], "sauce-blanche"],
+  [["sauce burger"], "sauce-burger"],
+  [["sauce piquante", "tabasco"], "sauce-piquante"],
+  [["sriracha"], "sriracha"],
+  [["sauce soja", "kikkoman"], "sauce-soja"],
+  [["worcestershire", "worcester"], "worcestershire"],
+  [["sauce tomate", "coulis", "passata", "sauce napolitaine"], "sauce-tomate"],
+  [["pesto"], "pesto"],
+  [["vinaigrette", "sauce salade"], "vinaigrette"],
+  [["moutarde a l ancienne", "moutarde ancienne", "moutarde en grains", "moutarde grains"], "moutarde-ancienne"],
+  [["cornichon", "cornichons"], "cornichons"],
+  [["capre", "capres"], "capres"],
+  [["tapenade"], "tapenade"],
+  [["harissa"], "harissa"],
+  [["concentre de tomate", "concentre tomate", "double concentre"], "concentre-tomate"],
+  [["bouillon cube", "bouillon cubes", "cube de bouillon", "cubes de bouillon", "knorr", "maggi"], "bouillon-cube"],
+  [["tzatziki"], "tzatziki"],
+  // Plats
+  [["feuilles de lasagne", "feuille de lasagne", "plaques de lasagne", "plaque de lasagne", "pates a lasagne"], "lasagne-feuilles"],
+  [["lasagne legumes", "lasagnes legumes", "lasagnes aux legumes", "lasagne aux legumes"], "lasagnes-legumes"],
+  [["burger vegetarien", "burger veggie", "burger vegetal", "burger vegan"], "burger-vegetarien"],
+  [["pates pesto", "pates au pesto"], "pates-pesto"],
+  [["pates saumon", "pates au saumon"], "pates-saumon"],
+  [["gnocchi sauce tomate", "gnocchis sauce tomate", "gnocchi tomate"], "gnocchi-tomate"],
+  [["curry de legumes", "curry legumes", "curry vegetarien"], "curry-legumes"],
+  [["wrap falafel"], "wrap-falafel"],
+  [["steak frites"], "steak-frites"],
+  [["moules frites"], "moules-frites"],
+  [["saucisse puree", "saucisses puree"], "saucisse-puree"],
+  [["boeuf bourguignon", "bourguignon"], "boeuf-bourguignon"],
+  [["blanquette"], "blanquette"],
+  [["pot au feu"], "pot-au-feu"],
+  [["hachis parmentier", "parmentier"], "hachis-parmentier"],
+  [["tartiflette"], "tartiflette"],
+  [["cassoulet"], "cassoulet"],
+  [["gratin dauphinois", "dauphinois"], "gratin-dauphinois"],
+  [["choucroute"], "choucroute"],
+  [["welsh"], "welsh"],
+  [["poule au pot"], "poule-au-pot"],
+  [["endives au jambon", "endive au jambon"], "endives-jambon"],
+  [["quenelle", "quenelles"], "quenelles"],
+  [["pate en croute"], "pate-en-croute"],
+  [["crepe jambon fromage", "crepe jambon"], "crepe-jambon-fromage"],
+  [["galette bretonne", "galette complete", "galette sarrasin"], "galette-bretonne"],
+  [["flammekueche", "flammekuche", "tarte flambee"], "flammekueche"],
+  [["brandade"], "brandade"],
+  [["poulet basquaise", "basquaise"], "poulet-basquaise"],
+  [["soupe a l oignon", "soupe oignon"], "soupe-oignon"],
+  [["salade de chevre", "salade chevre chaud", "chevre chaud"], "salade-chevre-chaud"],
+  [["tomate farcie", "tomates farcies"], "tomates-farcies"],
+  [["pad thai"], "pad-thai"],
+  [["ramen"], "ramen"],
+  [["paella"], "paella"],
+  [["nem", "nems"], "nems"],
+  [["bo bun", "bobun"], "bo-bun"],
+  [["poke bowl", "poke"], "poke-bowl"],
+  [["buddha bowl"], "buddha-bowl"],
+  [["shakshuka", "chakchouka"], "shakshuka"],
+  [["dal", "dahl", "daal"], "dal"],
+  [["chili con carne", "chili"], "chili-con-carne"],
+  [["tajine"], "tajine"],
+  [["taboule", "tabouleh"], "taboule"],
+  [["gyoza", "gyozas"], "gyoza"],
+  [["pho"], "pho"],
+  [["bibimbap"], "bibimbap"],
+  [["enchiladas", "enchilada"], "enchiladas"],
+  [["nachos"], "nachos"],
+  [["quesadilla", "quesadillas"], "quesadilla"],
+  [["nuggets vegetaux", "nuggets vegetariens", "nuggets vegetal", "nuggets vegan"], "nuggets-vegetaux"],
+  [["saucisse vegetale", "saucisses vegetales", "saucisse vegetarienne", "saucisse vegan"], "saucisse-vegetale"],
+  [["steak vegetal", "steak de soja", "steak vegetarien", "steak vegan", "galette de soja"], "steak-vegetal"],
+  [["galette de legumes", "galettes de legumes", "galette legumes", "galette veggie"], "galette-legumes"],
+  [["tofu"], "tofu"],
+  [["tempeh"], "tempeh"],
+  [["seitan"], "seitan"],
+  [["falafel", "falafels"], "falafel"],
+  [["houmous", "hummus"], "houmous"],
+  [["proteines de soja", "proteine de soja", "soja texture", "pvt"], "proteines-soja"],
+  [["edamame", "edamames"], "edamame"],
+  [["carbonara"], "carbonara"],
+  [["bolognaise", "bolo"], "bolognaise"],
+  [["lasagne", "lasagnes"], "lasagnes"],
+  [["pizza"], "pizza"],
+  [["burger", "hamburger", "cheeseburger"], "burger"],
+  [["croque madame"], "croque-madame"],
+  [["croque monsieur"], "croque-monsieur"],
+  [["hot dog", "hotdog"], "hot-dog"],
+  [["sandwich", "panini"], "sandwich"],
+  [["wrap"], "wrap"],
+  [["tacos", "taco", "fajita"], "tacos"],
+  [["kebab", "doner", "gyros"], "kebab"],
+  [["sushi", "maki"], "sushi"],
+  [["quiche"], "quiche"],
+  [["tarte", "tourte"], "tarte"],
+  [["soupe", "potage", "veloute", "bouillon"], "soupe"],
+  [["salade composee", "salade mixte", "salade repas"], "salade-composee"],
+  [["gratin"], "gratin"],
+  [["omelette"], "omelette"],
+  [["risotto"], "risotto"],
+  [["curry"], "curry"],
+  [["poulet roti", "poulet rotie"], "poulet-roti"],
+  [["frite", "frites"], "frites"],
+  [["nuggets", "nugget"], "nuggets"],
+  [["raclette"], "raclette"],
+  [["fondue"], "fondue"],
+  [["ratatouille"], "ratatouille"],
+  [["couscous"], "couscous"],
+  [["boulette", "boulettes", "kefta"], "boulettes"],
+  [["pancake", "pancakes"], "pancakes"],
+  [["crepe", "crepes"], "crepes"],
+  // Surgelés
+  [["poisson pane", "poissons panes", "fish sticks"], "poisson-pane"],
+  [["legumes surgeles", "legume surgele", "poelee"], "legumes-surgeles"],
+  [["glace en bac", "glace bac", "creme glacee bac"], "glace-bac"],
+  // Boissons
+  [["lait d avoine", "lait avoine", "boisson avoine", "boisson a l avoine"], "lait-avoine"],
+  [["lait de soja", "lait soja", "boisson soja", "boisson au soja"], "lait-soja"],
+  [["lait d amande", "lait amande", "boisson amande", "boisson a l amande"], "lait-amande"],
+  [["lait vegetal", "lait de coco", "lait de riz", "lait de noisette", "boisson vegetale"], "lait-vegetal"],
+  [["eau gazeuse", "perrier", "badoit", "san pellegrino", "saint yorre"], "eau-gazeuse"],
+  [["eau", "evian", "volvic", "vittel", "cristaline"], "eau"],
+  [["jus", "smoothie"], "jus"],
+  [["sirop", "grenadine"], "sirop"],
+  [["soda", "cola", "limonade", "orangina", "fanta", "sprite", "ice tea"], "soda"],
+  [["biere", "bieres"], "biere"],
+  [["champagne", "cremant", "prosecco"], "champagne"],
+  [["vin", "vins", "rose", "ros\xE9"], "vin"],
+  [["whisky", "rhum", "vodka", "gin", "cognac", "pastis", "tequila", "digestif"], "whisky"],
+  [["cafe", "espresso"], "cafe"],
+  [["the"], "the"],
+  // Laitiers et oeufs
+  [["yaourt vegetal", "yaourt soja", "yaourt coco", "yaourt amande", "dessert vegetal", "yaourt vegan"], "yaourt-vegetal"],
+  [["yaourt", "yaourts", "yogourt", "skyr", "fromage blanc", "danette"], "yaourt"],
+  [["lait"], "lait"],
+  [["creme vegetale", "creme de soja", "creme d avoine", "creme de coco", "creme de riz"], "creme-vegetale"],
+  [["creme", "creme fraiche"], "creme"],
+  [["beurre de cacahuete", "beurre cacahuete", "peanut butter", "puree de cacahuete"], "beurre-cacahuete"],
+  [["beurre", "margarine"], "beurre"],
+  [["oeuf", "oeufs"], "oeuf"],
+  [["fromage vegetal", "fromage vegan", "fromage vegetalien"], "fromage-vegetal"],
+  [["mozzarella", "burrata"], "mozzarella"],
+  [["fromage", "comte", "emmental", "chevre", "camembert", "brie", "parmesan", "gruyere", "feta", "cheddar", "roquefort", "boursin", "maroilles"], "fromage"],
+  // Viandes et poissons
+  [["saucisson"], "saucisson"],
+  [["poulet", "dinde", "volaille", "canard", "cuisse", "cuisses", "pilon", "pilons"], "poulet"],
+  [["steak", "boeuf", "viande", "hache", "porc", "veau", "cote", "escalope", "rosbif"], "steak"],
+  [["jambon", "agneau", "roti", "charcuterie", "rillettes"], "jambon"],
+  [["lardon", "lardons", "bacon"], "lardons"],
+  [["saucisse", "saucisses", "merguez", "chipolata", "knacki"], "saucisse"],
+  [["crevette", "crevettes", "gambas", "homard", "langoustine", "crabe"], "crevettes"],
+  [["moule", "moules", "huitre", "huitres", "coquillage", "coquillages"], "moules"],
+  [["saumon"], "saumon"],
+  [["thon"], "thon"],
+  [["poisson", "cabillaud", "colin", "sardine", "sardines", "truite", "maquereau", "dorade", "merlu", "surimi"], "poisson"],
+  // Féculents et épicerie
+  [["farfalle", "farfalles"], "farfalle"],
+  [["fusilli", "torsade", "torsades", "spirale", "spirales"], "fusilli"],
+  [["capellini", "cheveux d ange"], "capellini"],
+  [["penne"], "penne"],
+  [["spaghetti", "spaghettis"], "spaghetti"],
+  [["tagliatelle", "tagliatelles", "tagliolini", "fettuccine"], "tagliatelles"],
+  [["macaroni", "macaronis"], "macaroni"],
+  [["coquillette", "coquillettes"], "coquillettes"],
+  [["ravioli", "raviolis"], "ravioli"],
+  [["gnocchi", "gnocchis"], "gnocchi"],
+  [["rigatoni"], "rigatoni"],
+  [["linguine", "linguines"], "linguine"],
+  [["orecchiette", "orecchiettes"], "orecchiette"],
+  [["vermicelle de riz", "vermicelles de riz", "nouilles de riz", "nouille de riz"], "nouilles-riz"],
+  [["vermicelle", "vermicelles"], "vermicelles"],
+  [["conchiglie", "conchiglioni", "coquillage pates"], "conchiglie"],
+  [["tortellini", "tortellinis"], "tortellini"],
+  [["pates a soupe", "pates etoiles", "etoiles", "alphabet", "lettres"], "pates-etoiles"],
+  [["soba"], "soba"],
+  [["udon"], "udon"],
+  [["nouille", "nouilles", "noodles", "ramen nouilles"], "nouilles"],
+  [["pates", "pasta"], "pates"],
+  [["semoule"], "semoule"],
+  [["quinoa"], "quinoa"],
+  [["polenta"], "polenta"],
+  [["riz", "basmati", "boulgour", "ble"], "riz"],
+  [["cereales", "muesli", "granola", "flocons", "avoine"], "cereales"],
+  [["levure nutritionnelle", "levure maltee"], "levure-nutritionnelle"],
+  [["farine", "maizena", "levure"], "farine"],
+  [["pain de mie", "brioche", "biscotte", "biscottes", "toast", "toasts"], "pain-de-mie"],
+  [["baguette"], "baguette"],
+  [["croissant", "croissants", "pain au chocolat", "viennoiserie"], "croissant"],
+  [["pain"], "pain"],
+  [["patate douce", "patates douces"], "patate-douce"],
+  [["pomme de terre", "pommes de terre", "patate", "patates"], "pomme-de-terre"],
+  [["chips"], "chips"],
+  [["tahini", "tahin", "puree de sesame"], "tahini"],
+  [["puree"], "puree"],
+  [["noix de cajou", "cajou", "cajous"], "noix-cajou"],
+  [["graine", "graines", "chia", "sesame", "lin", "tournesol"], "graines"],
+  [["pistache", "pistaches", "pistachio", "pistachios"], "pistaches"],
+  [["cacahuete", "cacahuetes", "noix", "amande", "amandes", "noisette", "noisettes", "cajou"], "cacahuetes"],
+  [["cracker", "crackers", "bretzel", "bretzels"], "crackers"],
+  [["pop corn", "popcorn"], "pop-corn"],
+  [["compote"], "compote"],
+  [["gateau", "gateaux", "cake", "fondant", "brownie", "muffin"], "gateau"],
+  [["donut", "beignet"], "donut"],
+  [["biscuit", "biscuits", "cookie", "cookies", "sable", "speculoos"], "biscuits"],
+  [["pate a tartiner", "nutella"], "pate-a-tartiner"],
+  [["chocolat", "chocolats"], "chocolat"],
+  [["bonbon", "bonbons", "sucette", "guimauve", "haribo"], "bonbons"],
+  [["creme glacee", "glace", "sorbet"], "glace"],
+  [["confiture"], "confiture"],
+  [["miel"], "miel"],
+  [["sucre", "sucres"], "sucre"],
+  [["sel", "poivre"], "sel"],
+  [["huile", "huile d olive"], "huile"],
+  [["vinaigre"], "vinaigre"],
+  [["ketchup"], "ketchup"],
+  [["moutarde"], "moutarde"],
+  [["mayonnaise"], "mayonnaise"],
+  [["epice", "epices", "paprika", "cumin", "cannelle"], "epices"],
+  [["lentille", "lentilles"], "lentilles"],
+  [["haricot rouge", "haricots rouges"], "haricots-rouges"],
+  [["haricot blanc", "haricots blancs", "lingot", "lingots", "coco de paimpol"], "haricots-blancs"],
+  [["feve", "feves"], "feves"],
+  [["pois chiche", "pois chiches"], "pois-chiches"],
+  [["bocal", "bocaux"], "bocal"],
+  [["conserve", "conserves", "boite"], "conserve"],
+  [["surgele", "surgeles", "congele", "congeles"], "sac-surgele"],
+  // Légumes
+  [["tomate", "tomates"], "tomate"],
+  [["carotte", "carottes"], "carotte"],
+  [["chou fleur"], "chou-fleur"],
+  [["chou rouge"], "chou-rouge"],
+  [["chou de bruxelles", "choux de bruxelles"], "chou-de-bruxelles"],
+  [["chou", "choux", "chou blanc", "chou vert"], "chou"],
+  [["brocoli", "brocolis"], "brocoli"],
+  [["salade", "laitue", "mache", "roquette", "batavia"], "salade"],
+  [["epinard", "epinards"], "epinards"],
+  [["poireau", "poireaux"], "poireau"],
+  [["courgette", "courgettes"], "courgette"],
+  [["concombre", "concombres"], "concombre"],
+  [["oignon", "oignons", "echalote", "echalotes"], "oignon"],
+  [["ail"], "ail"],
+  [["poivron", "poivrons"], "poivron"],
+  [["champignon", "champignons", "cepe", "cepes"], "champignon"],
+  [["mais"], "mais"],
+  [["aubergine", "aubergines"], "aubergine"],
+  [["avocat", "avocats"], "avocat"],
+  [["potiron", "courge", "citrouille", "butternut"], "potiron"],
+  [["haricot vert", "haricots verts"], "haricots-verts"],
+  [["petit pois", "petits pois"], "petits-pois"],
+  [["olive", "olives"], "olive"],
+  [["radis"], "radis"],
+  [["betterave", "betteraves"], "betterave"],
+  [["celeri", "celeri rave"], "celeri"],
+  [["asperge", "asperges"], "asperge"],
+  [["fenouil"], "fenouil"],
+  [["navet", "navets"], "navet"],
+  [["endive", "endives"], "endive"],
+  [["artichaut", "artichauts"], "artichaut"],
+  [["gingembre"], "gingembre"],
+  [["persil"], "persil"],
+  [["basilic"], "basilic"],
+  [["ciboulette"], "ciboulette"],
+  [["piment", "piments"], "piment"],
+  // Fruits
+  [["pomme", "pommes"], "pomme"],
+  [["poire", "poires"], "poire"],
+  [["banane", "bananes"], "banane"],
+  [["clementine", "clementines", "mandarine", "mandarines", "satsuma"], "clementine"],
+  [["pamplemousse", "pamplemousses"], "pamplemousse"],
+  [["orange", "oranges"], "orange"],
+  [["citron vert", "citrons verts", "lime", "limes"], "citron-vert"],
+  [["citron", "citrons"], "citron"],
+  [["fraise", "fraises"], "fraise"],
+  [["framboise", "framboises"], "framboise"],
+  [["myrtille", "myrtilles", "mure", "mures", "cassis"], "myrtille"],
+  [["raisin", "raisins"], "raisin"],
+  [["peche", "peches", "nectarine", "nectarines"], "peche"],
+  [["abricot", "abricots"], "abricot"],
+  [["prune", "prunes"], "prune"],
+  [["figue", "figues"], "figue"],
+  [["datte", "dattes"], "datte"],
+  [["grenade", "grenades"], "grenade"],
+  [["cerise", "cerises"], "cerise"],
+  [["ananas"], "ananas"],
+  [["mangue", "mangues"], "mangue"],
+  [["kiwi", "kiwis"], "kiwi"],
+  [["melon", "melons"], "melon"],
+  [["pasteque", "pasteques"], "pasteque"],
+  [["noix de coco", "coco"], "coco"]
+];
+function productImageSlug(name) {
+  const padded = ` ${normalize(name)} `;
+  if (padded.trim() === "") return null;
+  for (const [words, slug] of RULES) {
+    for (const w of words) {
+      if (padded.includes(` ${w} `) || padded.includes(` ${w}s `) || padded.includes(` ${w}x `)) return slug;
+    }
+  }
+  return null;
+}
+var CHOSEN = "icon:";
+function chosenIconSlug(imageUrl) {
+  return imageUrl && imageUrl.startsWith(CHOSEN) ? imageUrl.slice(CHOSEN.length) : null;
+}
+function realPhotoUrl(imageUrl) {
+  return imageUrl && !imageUrl.startsWith(CHOSEN) ? imageUrl : void 0;
+}
+
+// server/alexa-apl.ts
+var SITE = "https://food.graphikeo.com";
+var C = {
+  bg: "#f3f8f9",
+  surface: "#ffffff",
+  fg: "#142226",
+  muted: "#7b8588",
+  border: "#dfe6e8",
+  brand: "#009d9e",
+  strong: "#008183",
+  soft: "#d1f7f7",
+  warn: "#c9861a",
+  danger: "#e23439",
+  dangerSoft: "#fdeeee"
+};
+var today = () => (/* @__PURE__ */ new Date()).toLocaleDateString("sv-SE", { timeZone: "Europe/Paris" });
+var dayDiff = (iso) => Math.round((Date.parse(iso) - Date.parse(today())) / 864e5);
+function imageFor(name, imageUrl) {
+  const chosen = chosenIconSlug(imageUrl);
+  if (chosen) return `${SITE}/icons-png/${chosen}.png`;
+  const photo = realPhotoUrl(imageUrl);
+  if (photo && photo.startsWith("https://")) return photo;
+  const slug = productImageSlug(name);
+  return slug ? `${SITE}/icons-png/${slug}.png` : void 0;
+}
+function expiryText(iso) {
+  if (!iso) return { tone: "ok" };
+  const d = dayDiff(iso);
+  if (d < 0) return { sub: "P\xE9rim\xE9", tone: "expired" };
+  if (d === 0) return { sub: "Aujourd\u2019hui", tone: "soon" };
+  if (d === 1) return { sub: "Demain", tone: "soon" };
+  if (d <= 3) return { sub: `Dans ${d} jours`, tone: "soon" };
+  const s = (/* @__PURE__ */ new Date(iso + "T12:00:00")).toLocaleDateString("fr-FR", { day: "numeric", month: "short", timeZone: "Europe/Paris" });
+  return { sub: s, tone: "ok" };
+}
+function productTile(p) {
+  const e = expiryText(p.expiryDate);
+  const qty = p.quantity > 1 ? `\xD7${p.quantity}` : p.size || "";
+  return {
+    id: p.id,
+    name: p.name,
+    sub: [e.sub, qty].filter(Boolean).join(" \xB7 ") || void 0,
+    img: imageFor(p.name, p.imageUrl),
+    initial: p.name.trim().charAt(0).toUpperCase() || "?",
+    tone: e.tone
+  };
+}
+function nameTile(name, sub) {
+  return { name, sub, img: imageFor(name), initial: name.trim().charAt(0).toUpperCase() || "?", tone: "ok" };
+}
+function byExpiry(products) {
+  return [...products].sort((a, b) => (a.expiryDate ?? "9999").localeCompare(b.expiryDate ?? "9999") || a.name.localeCompare(b.name));
+}
+function urgent(products, n = 8) {
+  return byExpiry(products.filter((p) => p.expiryDate)).slice(0, n);
+}
+var norm = (s) => s.toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "").replace(/œ/g, "oe");
+function matching(products, query) {
+  const stop = /* @__PURE__ */ new Set(["reste", "encore", "combien", "quoi", "dans", "avec", "est-ce", "quil", "cest", "question", "avons", "tout", "tous", "quelle", "quelles", "quel", "quels"]);
+  const words = norm(query).split(/[^a-z0-9]+/).map((w) => w.replace(/s$/, "")).filter((w) => w.length >= 4 && !stop.has(w));
+  if (!words.length) return [];
+  return byExpiry(products.filter((p) => words.some((w) => norm(p.name).includes(w)))).slice(0, 12);
+}
+var check = {
+  type: "AVG",
+  version: "1.2",
+  width: 24,
+  height: 24,
+  parameters: ["color"],
+  items: [{ type: "path", pathData: "M5 12.5l4.5 4.5L19 7.5", stroke: "${color}", strokeWidth: 3, strokeLineCap: "round", strokeLineJoin: "round", fill: "transparent" }]
+};
+var layouts = {
+  Header: {
+    parameters: ["title", "hint"],
+    item: {
+      type: "Container",
+      direction: "row",
+      alignItems: "center",
+      width: "100%",
+      items: [
+        { type: "Image", source: `${SITE}/logo.png`, width: 72, height: 72, scale: "best-fit" },
+        { type: "Text", text: "Miam miam", fontSize: 38, fontWeight: 800, color: C.strong, spacing: 18 },
+        { type: "Text", when: "${title}", text: "${title}", fontSize: 34, fontWeight: 600, color: C.fg, spacing: 28, grow: 1, maxLines: 1 },
+        { type: "Text", when: "${!title}", text: " ", grow: 1 },
+        { type: "Text", text: "${hint}", fontSize: 24, color: C.muted, textAlign: "right" }
+      ]
+    }
+  },
+  Tile: {
+    parameters: ["tile"],
+    item: {
+      type: "Container",
+      width: "100%",
+      height: "100%",
+      paddingRight: 20,
+      paddingBottom: 20,
+      items: [
+        {
+          type: "Frame",
+          width: "100%",
+          height: "100%",
+          borderRadius: 28,
+          borderWidth: 2,
+          backgroundColor: `\${tile.tone == 'expired' ? '${C.dangerSoft}' : '${C.surface}'}`,
+          borderColor: `\${tile.tone == 'expired' ? '#f4b8b8' : '${C.border}'}`,
+          item: {
+            type: "Container",
+            width: "100%",
+            height: "100%",
+            alignItems: "center",
+            justifyContent: "center",
+            paddingLeft: 16,
+            paddingRight: 16,
+            items: [
+              { type: "Image", when: "${tile.img}", source: "${tile.img}", width: "62%", height: "52%", scale: "best-fit" },
+              {
+                type: "Frame",
+                when: "${!tile.img}",
+                width: 110,
+                height: 110,
+                borderRadius: 55,
+                backgroundColor: C.soft,
+                item: { type: "Text", text: "${tile.initial}", width: 110, height: 110, textAlign: "center", textAlignVertical: "center", fontSize: 52, fontWeight: 800, color: C.strong }
+              },
+              { type: "Text", text: "${tile.name}", spacing: 12, fontSize: 26, fontWeight: 700, color: C.fg, textAlign: "center", maxLines: 2 },
+              {
+                type: "Text",
+                when: "${tile.sub}",
+                text: "${tile.sub}",
+                spacing: 4,
+                fontSize: 22,
+                fontWeight: 600,
+                textAlign: "center",
+                maxLines: 1,
+                color: `\${tile.tone == 'expired' ? '${C.danger}' : tile.tone == 'soon' ? '${C.warn}' : '${C.muted}'}`
+              }
+            ]
+          }
+        }
+      ]
+    }
+  },
+  Chip: {
+    parameters: ["label"],
+    item: {
+      type: "Frame",
+      backgroundColor: C.soft,
+      borderRadius: 40,
+      paddingLeft: 26,
+      paddingRight: 26,
+      paddingTop: 12,
+      paddingBottom: 12,
+      spacing: 16,
+      item: { type: "Text", text: "${label}", fontSize: 25, fontWeight: 600, color: C.strong }
+    }
+  }
+};
+var cols = "${viewport.width >= 1500 ? '16.66%' : viewport.width >= 1000 ? '20%' : '33.33%'}";
+var tileH = "${viewport.width >= 1500 ? 290 : 230}";
+function grid(dataPath, extra = {}) {
+  return {
+    type: "GridSequence",
+    width: "100%",
+    grow: 1,
+    shrink: 1,
+    spacing: 24,
+    childWidth: cols,
+    childHeight: tileH,
+    data: dataPath,
+    item: { type: "Tile", tile: "${data}" },
+    ...extra
+  };
+}
+function row(dataPath) {
+  return {
+    type: "Sequence",
+    scrollDirection: "horizontal",
+    width: "100%",
+    height: tileH,
+    spacing: 24,
+    data: dataPath,
+    item: { type: "Container", width: "${viewport.width >= 1500 ? 260 : 210}", height: "100%", item: { type: "Tile", tile: "${data}" } }
+  };
+}
+function page(items) {
+  return {
+    type: "APL",
+    version: "2023.3",
+    theme: "light",
+    settings: { idleTimeout: 18e4 },
+    graphics: { check },
+    layouts,
+    mainTemplate: {
+      parameters: ["payload"],
+      item: {
+        type: "Container",
+        width: "100vw",
+        height: "100vh",
+        backgroundColor: C.bg,
+        paddingLeft: "${viewport.width >= 1500 ? 64 : 32}",
+        paddingRight: "${viewport.width >= 1500 ? 64 : 32}",
+        paddingTop: "${viewport.width >= 1500 ? 44 : 24}",
+        paddingBottom: 24,
+        items
+      }
+    }
+  };
+}
+var hintDefault = "Dis \xAB Alexa, \u2026 \xBB pour me parler";
+function homeScreen(o) {
+  const stat = (value, label, color) => ({
+    type: "Frame",
+    grow: 1,
+    spacing: 24,
+    backgroundColor: C.surface,
+    borderRadius: 28,
+    borderWidth: 2,
+    borderColor: C.border,
+    item: {
+      type: "Container",
+      paddingLeft: 32,
+      paddingTop: 24,
+      paddingBottom: 24,
+      items: [
+        { type: "Text", text: value, fontSize: 68, fontWeight: 800, color },
+        { type: "Text", text: label, fontSize: 26, color: C.muted, fontWeight: 600 }
+      ]
+    }
+  });
+  return {
+    document: page([
+      { type: "Header", title: "", hint: "${payload.date}" },
+      { type: "Text", text: "${payload.hello}", spacing: 28, fontSize: 60, fontWeight: 800, color: C.fg },
+      {
+        type: "Container",
+        direction: "row",
+        spacing: 24,
+        width: "100%",
+        items: [
+          stat("${payload.total}", "produits en stock", C.strong),
+          stat("${payload.soon}", "\xE0 consommer vite", o.soon ? C.warn : C.strong),
+          stat("${payload.shop}", "articles \xE0 acheter", C.strong)
+        ]
+      },
+      { type: "Text", when: "${payload.urgent.length > 0}", text: "\xC0 consommer en priorit\xE9", spacing: 32, fontSize: 32, fontWeight: 800, color: C.fg },
+      { type: "Container", when: "${payload.urgent.length > 0}", spacing: 16, width: "100%", items: [row("${payload.urgent}")] },
+      {
+        type: "Container",
+        direction: "row",
+        wrap: "wrap",
+        spacing: 28,
+        alignItems: "center",
+        items: [
+          { type: "Text", text: "Essaie :", fontSize: 25, color: C.muted, fontWeight: 600 },
+          { type: "Chip", label: "\xAB ajoute du lait \xBB" },
+          { type: "Chip", label: "\xAB j\u2019ai fini le beurre \xBB" },
+          { type: "Chip", label: "\xAB qu\u2019est-ce qu\u2019on mange ce soir \xBB" },
+          { type: "Chip", label: "\xAB la liste de courses \xBB" }
+        ]
+      }
+    ]),
+    data: {
+      payload: {
+        hello: o.name ? `Salut ${o.name} !` : "Salut !",
+        date: (/* @__PURE__ */ new Date()).toLocaleDateString("fr-FR", { weekday: "long", day: "numeric", month: "long", timeZone: "Europe/Paris" }),
+        total: String(o.total),
+        soon: String(o.soon),
+        shop: String(o.shop),
+        urgent: o.urgent
+      }
+    }
+  };
+}
+function gridScreen(title, count, tiles) {
+  return {
+    document: page([
+      { type: "Header", title: "${payload.title}", hint: "${payload.count}" },
+      tiles.length ? { type: "Container", spacing: 28, width: "100%", grow: 1, shrink: 1, items: [grid("${payload.tiles}")] } : { type: "Text", text: "Rien ici pour l\u2019instant.", spacing: 60, fontSize: 40, color: C.muted, textAlign: "center", width: "100%" }
+    ]),
+    data: { payload: { title, count, tiles } }
+  };
+}
+function listScreen(items) {
+  const sorted = [...items].sort((a, b) => Number(a.checked) - Number(b.checked) || a.name.localeCompare(b.name));
+  const rows = sorted.map((s) => ({
+    id: s.id,
+    name: s.name,
+    qty: s.unit ? `${s.quantity} ${s.unit}` : s.quantity > 1 ? `\xD7${s.quantity}` : "",
+    img: imageFor(s.name) ?? "",
+    initial: s.name.trim().charAt(0).toUpperCase() || "?",
+    checked: s.checked
+  }));
+  const left = items.filter((s) => !s.checked).length;
+  const rowItem = {
+    type: "Container",
+    width: "100%",
+    height: "100%",
+    paddingRight: 20,
+    paddingBottom: 18,
+    items: [
+      {
+        type: "TouchWrapper",
+        width: "100%",
+        height: "100%",
+        onPress: [{ type: "SendEvent", arguments: ["toggle", "${data.id}"] }],
+        item: {
+          type: "Frame",
+          width: "100%",
+          height: "100%",
+          borderRadius: 24,
+          borderWidth: 2,
+          borderColor: C.border,
+          backgroundColor: `\${data.checked ? '${C.bg}' : '${C.surface}'}`,
+          item: {
+            type: "Container",
+            direction: "row",
+            alignItems: "center",
+            height: "100%",
+            paddingLeft: 24,
+            paddingRight: 24,
+            opacity: "${data.checked ? 0.5 : 1}",
+            items: [
+              {
+                type: "Frame",
+                width: 48,
+                height: 48,
+                borderRadius: 24,
+                borderWidth: 3,
+                borderColor: C.brand,
+                backgroundColor: `\${data.checked ? '${C.brand}' : 'transparent'}`,
+                item: { type: "VectorGraphic", when: "${data.checked}", source: "check", color: "#ffffff", width: 42, height: 42, scale: "best-fit" }
+              },
+              { type: "Image", when: "${data.img}", source: "${data.img}", width: 72, height: 72, scale: "best-fit", spacing: 20 },
+              {
+                type: "Frame",
+                when: "${!data.img}",
+                width: 72,
+                height: 72,
+                borderRadius: 36,
+                spacing: 20,
+                backgroundColor: C.soft,
+                item: { type: "Text", text: "${data.initial}", width: 72, height: 72, textAlign: "center", textAlignVertical: "center", fontSize: 34, fontWeight: 800, color: C.strong }
+              },
+              { type: "Text", text: "${data.name}", spacing: 20, grow: 1, shrink: 1, fontSize: 30, fontWeight: 700, color: C.fg, maxLines: 1 },
+              { type: "Text", text: "${data.qty}", fontSize: 24, color: C.muted, fontWeight: 600 }
+            ]
+          }
+        }
+      }
+    ]
+  };
+  return {
+    document: page([
+      { type: "Header", title: "Liste de courses", hint: "${payload.count}" },
+      rows.length ? {
+        type: "GridSequence",
+        spacing: 28,
+        width: "100%",
+        grow: 1,
+        shrink: 1,
+        childWidth: "${viewport.width >= 1500 ? '33.33%' : '50%'}",
+        childHeight: 116,
+        data: "${payload.rows}",
+        item: rowItem
+      } : { type: "Text", text: "La liste est vide. Dis \xAB Alexa, ajoute du pain \xBB.", spacing: 60, fontSize: 40, color: C.muted, textAlign: "center", width: "100%" },
+      { type: "Text", when: "${payload.rows.length > 0}", text: "Touche un article pour le cocher.", spacing: 8, fontSize: 24, color: C.muted }
+    ]),
+    data: { payload: { rows, count: left ? `${left} \xE0 acheter` : "Tout est pris" } }
+  };
+}
+function doneScreen(text, tiles, undoHint = true) {
+  return {
+    document: page([
+      { type: "Header", title: "", hint: "" },
+      {
+        type: "Container",
+        grow: 1,
+        width: "100%",
+        alignItems: "center",
+        justifyContent: "center",
+        items: [
+          {
+            type: "Frame",
+            width: 128,
+            height: 128,
+            borderRadius: 64,
+            backgroundColor: C.brand,
+            item: { type: "VectorGraphic", source: "check", color: "#ffffff", width: 128, height: 128, scale: "best-fit" }
+          },
+          { type: "Text", text: "${payload.text}", spacing: 28, fontSize: 44, fontWeight: 800, color: C.fg, textAlign: "center", width: "80%", maxLines: 3 },
+          {
+            type: "Container",
+            when: "${payload.tiles.length > 0}",
+            spacing: 36,
+            direction: "row",
+            justifyContent: "center",
+            width: "100%",
+            height: tileH,
+            data: "${payload.tiles}",
+            item: { type: "Container", width: "${viewport.width >= 1500 ? 260 : 210}", height: "100%", item: { type: "Tile", tile: "${data}" } }
+          },
+          { type: "Text", when: "${payload.undo}", text: "Pour revenir en arri\xE8re : \xAB Alexa, annule \xBB", spacing: 28, fontSize: 25, color: C.muted }
+        ]
+      }
+    ]),
+    data: { payload: { text, tiles: tiles.slice(0, 6), undo: undoHint } }
+  };
+}
+function answerScreen(text, o = {}) {
+  const tiles = o.tiles ?? [];
+  return {
+    document: page([
+      { type: "Header", title: "${payload.title}", hint: hintDefault },
+      {
+        type: "Frame",
+        spacing: 28,
+        width: "100%",
+        backgroundColor: C.surface,
+        borderRadius: 32,
+        borderWidth: 2,
+        borderColor: C.border,
+        item: {
+          type: "Container",
+          paddingLeft: 40,
+          paddingRight: 40,
+          paddingTop: 32,
+          paddingBottom: 32,
+          items: [
+            { type: "Text", text: "${payload.text}", fontSize: 36, fontWeight: 600, color: C.fg, lineHeight: 1.3, maxLines: 7 },
+            {
+              type: "Container",
+              when: "${payload.options.length > 0}",
+              direction: "row",
+              wrap: "wrap",
+              spacing: 24,
+              data: "${payload.options}",
+              item: {
+                type: "TouchWrapper",
+                spacing: 16,
+                onPress: [{ type: "SendEvent", arguments: ["answer", "${data}"] }],
+                item: { type: "Chip", label: "${data}" }
+              }
+            }
+          ]
+        }
+      },
+      { type: "Text", when: "${payload.tiles.length > 0}", text: "${payload.tilesTitle}", spacing: 32, fontSize: 30, fontWeight: 800, color: C.fg },
+      { type: "Container", when: "${payload.tiles.length > 0}", spacing: 16, width: "100%", grow: 1, shrink: 1, items: [grid("${payload.tiles}")] }
+    ]),
+    data: { payload: { text, title: o.title ?? "", tiles, tilesTitle: o.tilesTitle ?? "", options: o.options ?? [] } }
+  };
+}
+
 // server/alexa-edge.ts
 var env = (k) => Deno.env.get(k) ?? "";
 var certCache = /* @__PURE__ */ new Map();
@@ -618,6 +1660,14 @@ function say(text, opts = {}) {
       shouldEndSession: opts.end ?? true
     }
   };
+}
+function attach(r, screen, apl) {
+  if (!apl || !screen) return r;
+  r.response.directives = [
+    { type: "Alexa.Presentation.APL.RenderDocument", token: "miam", document: screen.document, datasources: screen.data }
+  ];
+  if (r.response.shouldEndSession === true) delete r.response.shouldEndSession;
+  return r;
 }
 var pushSecret = "";
 async function secret() {
@@ -682,13 +1732,56 @@ var baseUnit = (u) => {
   const l = u.toLowerCase();
   return l === "kg" || l === "g" ? "g" : l === "l" || l === "cl" || l === "ml" ? "mL" : "";
 };
-async function handleCommand(text, link, alexaUser) {
+function open(link) {
   const jwt = userJwt(link.user_id);
   const sb = createClient(env("SUPABASE_URL"), env("SUPABASE_ANON_KEY"), {
     global: { headers: { Authorization: `Bearer ${jwt}` } },
     auth: { persistSession: false, autoRefreshToken: false }
   });
-  const repo = new SupabaseRepository(sb, link.household_id);
+  return { jwt, sb, repo: new SupabaseRepository(sb, link.household_id) };
+}
+var firstName = (n) => {
+  const w = (n ?? "").split(/[.\s@_\d]/)[0];
+  return w.length >= 3 ? w.charAt(0).toUpperCase() + w.slice(1) : "";
+};
+async function displayName(link, repo) {
+  const f = firstName(link.name);
+  if (f) return f;
+  const initial = (link.name ?? "").trim().charAt(0).toLowerCase();
+  if (!initial) return "";
+  const fam = await repo.getFamily().catch(() => []);
+  const hits = fam.filter((m) => (m.name ?? "").trim().toLowerCase().startsWith(initial));
+  return hits.length === 1 ? String(hits[0].name).split(" ")[0] : "";
+}
+async function handleHome(link, apl, text) {
+  const { repo } = open(link);
+  const name = await displayName(link, repo);
+  const r = say(text(name), { end: false, reprompt: "Que veux-tu faire ?" });
+  if (!apl) return r;
+  const [products, shopping] = await Promise.all([repo.listProducts(), repo.listShopping()]);
+  const limit = new Date(Date.now() + 3 * 864e5).toISOString().slice(0, 10);
+  return attach(
+    r,
+    homeScreen({
+      name,
+      total: products.length,
+      soon: products.filter((p) => p.expiryDate && p.expiryDate <= limit).length,
+      shop: shopping.filter((s) => !s.checked).length,
+      urgent: urgent(products).map(productTile)
+    }),
+    apl
+  );
+}
+async function handleList(link, apl) {
+  const { repo } = open(link);
+  const shopping = await repo.listShopping();
+  const left = shopping.filter((s) => !s.checked);
+  const names = left.map((s) => s.name);
+  const speech = !names.length ? "La liste de courses est vide." : names.length <= 12 ? `Sur la liste : ${names.slice(0, -1).join(", ")}${names.length > 1 ? " et " : ""}${names[names.length - 1]}.` : `Il y a ${names.length} articles, dont ${names.slice(0, 8).join(", ")}.`;
+  return attach(say(speech), listScreen(shopping), apl);
+}
+async function handleCommand(text, link, alexaUser, ui = { apl: false }) {
+  const { jwt, sb, repo } = open(link);
   const [products, shopping] = await Promise.all([repo.listProducts(), repo.listShopping()]);
   const r = await fetch(`${env("SUPABASE_URL")}/functions/v1/voice`, {
     method: "POST",
@@ -712,15 +1805,29 @@ async function handleCommand(text, link, alexaUser) {
   if (!r.ok) return say(data?.error ? `D\xE9sol\xE9, ${data.error}` : "D\xE9sol\xE9, je n\u2019ai pas pu comprendre pour l\u2019instant.");
   const reply = data.reply || "";
   const actions = Array.isArray(data.actions) ? data.actions : [];
-  if (!actions.length) return say(reply || "Je n\u2019ai pas compris. Tu peux reformuler ?", { end: false, reprompt: "Que veux-tu faire ?" });
+  if (!actions.length) {
+    const r2 = say(reply || "Je n\u2019ai pas compris. Tu peux reformuler ?", { end: false, reprompt: "Que veux-tu faire ?" });
+    if (!ui.apl || !reply) return r2;
+    if (ui.view === "grid") {
+      const l = ui.lieu ? norm2(ui.lieu) : "";
+      const list = byExpiry(l ? products.filter((p) => norm2(p.location ?? "").includes(l)) : products);
+      const title = ui.lieu ? ui.lieu.charAt(0).toUpperCase() + ui.lieu.slice(1) : "Tout le stock";
+      return attach(r2, gridScreen(title, `${list.length} produit${list.length > 1 ? "s" : ""}`, list.slice(0, 90).map(productTile)), true);
+    }
+    if (ui.view === "recipe")
+      return attach(r2, answerScreen(reply, { title: "Id\xE9es de repas", tiles: urgent(products, 12).map(productTile), tilesTitle: "\xC0 utiliser en priorit\xE9" }), true);
+    return attach(r2, answerScreen(reply, { tiles: matching(products, ui.query || text).map(productTile), tilesTitle: "Dans ton stock" }), true);
+  }
   const ask = actions.find((a) => a.type === "ask");
   if (ask) {
     const names = ask.options.map((o) => o.label).join(", ou ");
-    return say(`${ask.question} ${names} ?`, {
+    const r2 = say(`${ask.question} ${names} ?`, {
       end: false,
       reprompt: ask.question,
       attrs: { pending: ask }
     });
+    const labels = ask.options.map((o) => o.label);
+    return attach(r2, answerScreen(ask.question, { title: "Une pr\xE9cision", options: labels }), ui.apl);
   }
   const undo = [];
   for (const a of actions) {
@@ -731,8 +1838,22 @@ async function handleCommand(text, link, alexaUser) {
   }
   await rpc("alexa_set_undo", { p_alexa: alexaUser, p_undo: { at: Date.now(), ops: undo } }).catch(() => {
   });
-  return say(reply || "C\u2019est fait.", { card: actions.map((a) => a.label).join("\n") });
+  const tiles = [];
+  for (const a of actions) {
+    if (a.type === "shop_add") tiles.push(nameTile(a.name, "Ajout\xE9 aux courses"));
+    else if (a.type === "stock_add") tiles.push(nameTile(a.name, "Ajout\xE9 au stock"));
+    else if (a.type === "shop_remove") {
+      const it = shopping.find((s) => s.id === a.id);
+      if (it) tiles.push(nameTile(it.name, "Retir\xE9 des courses"));
+    } else {
+      const p = products.find((x) => x.id === a.id);
+      const verb = { stock_finish: "Termin\xE9", stock_waste: "Jet\xE9", stock_open: "Ouvert", stock_remove: "Entam\xE9" }[a.type];
+      if (p) tiles.push({ ...productTile(p), sub: verb ?? productTile(p).sub, tone: "ok" });
+    }
+  }
+  return attach(say(reply || "C\u2019est fait.", { card: actions.map((a) => a.label).join("\n") }), doneScreen(reply || "C\u2019est fait.", tiles), ui.apl);
 }
+var norm2 = (s) => s.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
 async function logHistory(sb, hid, kind, label, meta) {
   const now = /* @__PURE__ */ new Date();
   await sb.from("history").insert({
@@ -818,7 +1939,7 @@ async function applyOne(a, repo, sb, products, shopping, undo) {
     await repo.updateProduct(p.id, { size: newSize });
   }
 }
-async function handleUndo(link, alexaUser) {
+async function handleUndo(link, alexaUser, apl = false) {
   const u = link.last_undo;
   if (!u?.ops?.length || Date.now() - (u.at ?? 0) > 36e5) return say("Il n\u2019y a rien \xE0 annuler.");
   const jwt = userJwt(link.user_id);
@@ -843,7 +1964,7 @@ async function handleUndo(link, alexaUser) {
   }
   await rpc("alexa_set_undo", { p_alexa: alexaUser, p_undo: null }).catch(() => {
   });
-  return say("C\u2019est annul\xE9, tout est revenu comme avant.");
+  return attach(say("C\u2019est annul\xE9, tout est revenu comme avant."), doneScreen("C\u2019est annul\xE9, tout est revenu comme avant.", [], false), apl);
 }
 var VERBS = {
   AjouterIntent: "ajoute",
@@ -887,6 +2008,7 @@ Deno.serve(async (req) => {
   const send = (o) => out(200, o);
   const rq = body.request ?? {};
   const alexaUser = body?.session?.user?.userId ?? body?.context?.System?.user?.userId ?? "";
+  const apl = !!body?.context?.System?.device?.supportedInterfaces?.["Alexa.Presentation.APL"];
   try {
     if (rq.type === "SessionEndedRequest") return send({ version: "1.0", response: {} });
     const intent = rq.intent?.name ?? "";
@@ -908,31 +2030,47 @@ Deno.serve(async (req) => {
       );
     }
     if (rq.type === "LaunchRequest")
+      return send(await handleHome(link, apl, (n) => `Salut${n ? ` ${n}` : ""} ! Qu\u2019est-ce que je fais ?`));
+    if (intent === "AMAZON.HelpIntent" || intent === "AMAZON.NavigateHomeIntent")
       return send(
-        say(`Salut ${link.name ? link.name.split(/[.\s]/)[0] : ""} ! Qu\u2019est-ce que je fais ? Par exemple : ajoute du lait aux courses.`, {
-          end: false,
-          reprompt: "Que veux-tu faire ?"
-        })
-      );
-    if (intent === "AMAZON.HelpIntent")
-      return send(
-        say(
-          "Tu peux me dire : ajoute du pain aux courses, enl\xE8ve deux cents grammes de comt\xE9, j\u2019ai fini les yaourts, ou est-ce qu\u2019il reste du beurre. Pour revenir en arri\xE8re, dis : annule.",
-          { end: false, reprompt: "Que veux-tu faire ?" }
+        await handleHome(
+          link,
+          apl,
+          () => "Tu peux me dire : ajoute du pain aux courses, enl\xE8ve deux cents grammes de comt\xE9, j\u2019ai fini les yaourts, ou est-ce qu\u2019il reste du beurre. Pour revenir en arri\xE8re, dis : annule."
         )
       );
     if (intent === "AMAZON.StopIntent" || intent === "AMAZON.CancelIntent" || intent === "AMAZON.NoIntent") return send(say("\xC0 plus tard !"));
-    if (intent === "AnnulerIntent") return send(await handleUndo(link, alexaUser));
+    if (intent === "AnnulerIntent") return send(await handleUndo(link, alexaUser, apl));
+    if (rq.type === "Alexa.Presentation.APL.UserEvent") {
+      const [kind, value] = rq.arguments ?? [];
+      if (kind === "toggle" && value) {
+        const { repo } = open(link);
+        await repo.toggleShoppingItem(value);
+        const shopping = await repo.listShopping();
+        return send(attach({ version: "1.0", sessionAttributes: body?.session?.attributes ?? {}, response: {} }, listScreen(shopping), apl));
+      }
+      if (kind === "answer" && value) {
+        const pend = body?.session?.attributes?.pending;
+        const text = pend ? `${pend.question} R\xE9ponse : ${value}. (Action : ${pend.then}${pend.then === "stock_remove" ? ` ${pend.amount} ${pend.unit}` : ""})` : value;
+        return send(await handleCommand(text, link, alexaUser, { apl }));
+      }
+      return send({ version: "1.0", response: {} });
+    }
     const pending = body?.session?.attributes?.pending;
     const phrase = rq.intent?.slots?.phrase?.value ?? "";
     if (pending && phrase) {
       const text = `${pending.question} R\xE9ponse : ${phrase}. (Action : ${pending.then}${pending.then === "stock_remove" ? ` ${pending.amount} ${pending.unit}` : ""})`;
-      return send(await handleCommand(text, link, alexaUser));
+      return send(await handleCommand(text, link, alexaUser, { apl, query: phrase }));
     }
-    if (intent in FIXED) return send(await handleCommand(FIXED[intent](rq.intent?.slots?.lieu?.resolutions?.resolutionsPerAuthority?.[0]?.values?.[0]?.value?.name ?? rq.intent?.slots?.lieu?.value), link, alexaUser));
+    if (intent === "ListeIntent") return send(await handleList(link, apl));
+    if (intent in FIXED) {
+      const lieu = rq.intent?.slots?.lieu?.resolutions?.resolutionsPerAuthority?.[0]?.values?.[0]?.value?.name ?? rq.intent?.slots?.lieu?.value;
+      const view = intent === "ContenuIntent" ? "grid" : intent === "RecetteIntent" ? "recipe" : void 0;
+      return send(await handleCommand(FIXED[intent](lieu), link, alexaUser, { apl, view, lieu }));
+    }
     if (intent in VERBS && phrase) {
       const verb = VERBS[intent];
-      return send(await handleCommand(verb ? `${verb} ${phrase}` : phrase, link, alexaUser));
+      return send(await handleCommand(verb ? `${verb} ${phrase}` : phrase, link, alexaUser, { apl, query: phrase }));
     }
     if (intent === "AMAZON.FallbackIntent" || intent in VERBS)
       return send(
