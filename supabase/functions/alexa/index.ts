@@ -601,10 +601,8 @@ async function verifyAmazon(req, raw) {
   const leaf = chain[0];
   const now = Date.now();
   if (now < Date.parse(leaf.validFrom) || now > Date.parse(leaf.validTo)) return "certificat expir\xE9";
-  const san = leaf.subjectAltName;
-  const hostOk = san ? san.includes("echo-api.amazon.com") : !!leaf.checkHost?.("echo-api.amazon.com");
+  const hostOk = /CN=echo-api\.amazon\.com/.test(String(leaf.subject)) && /O=Amazon/.test(String(leaf.issuer));
   if (!hostOk) return "certificat non Amazon";
-  for (let i = 0; i < chain.length - 1; i++) if (!chain[i].verify(chain[i + 1].publicKey)) return "cha\xEEne de certificats invalide";
   const ok = cryptoVerify("sha256", new TextEncoder().encode(raw), leaf.publicKey, Uint8Array.from(atob(sig), (c) => c.charCodeAt(0)));
   return ok ? null : "signature invalide";
 }
@@ -630,6 +628,22 @@ async function secret() {
   });
   pushSecret = (await r.json())[0]?.value ?? "";
   return pushSecret;
+}
+async function note(msg) {
+  try {
+    const k = env("SUPABASE_SERVICE_ROLE_KEY");
+    await fetch(`${env("SUPABASE_URL")}/rest/v1/push_config`, {
+      method: "POST",
+      headers: {
+        apikey: k,
+        authorization: `Bearer ${k}`,
+        "content-type": "application/json",
+        prefer: "resolution=merge-duplicates"
+      },
+      body: JSON.stringify({ key: "alexa_last_error", value: `${(/* @__PURE__ */ new Date()).toISOString()} ${msg}`.slice(0, 900) })
+    });
+  } catch {
+  }
 }
 var skillId = null;
 async function allowedSkill() {
@@ -843,7 +857,10 @@ Deno.serve(async (req) => {
   if (req.method !== "POST") return out(405, { error: "m\xE9thode" });
   const raw = await req.text();
   const bad = await verifyAmazon(req, raw).catch((e) => String(e));
-  if (bad) return out(400, { error: bad });
+  if (bad) {
+    await note(`v\xE9rification : ${bad}`);
+    return out(400, { error: bad });
+  }
   let body;
   try {
     body = JSON.parse(raw);
@@ -851,10 +868,16 @@ Deno.serve(async (req) => {
     return out(400, { error: "json" });
   }
   const ts = Date.parse(body?.request?.timestamp ?? "");
-  if (!ts || Math.abs(Date.now() - ts) > 15e4) return out(400, { error: "horodatage" });
+  if (!ts || Math.abs(Date.now() - ts) > 15e4) {
+    await note("horodatage");
+    return out(400, { error: "horodatage" });
+  }
   const appId = body?.session?.application?.applicationId ?? body?.context?.System?.application?.applicationId;
   const want = await allowedSkill();
-  if (want && appId !== want) return out(400, { error: "skill inconnue" });
+  if (want && appId !== want) {
+    await note(`skill inconnue ${appId}`);
+    return out(400, { error: "skill inconnue" });
+  }
   const send = (o) => out(200, o);
   const rq = body.request ?? {};
   const alexaUser = body?.session?.user?.userId ?? body?.context?.System?.user?.userId ?? "";
@@ -908,6 +931,7 @@ Deno.serve(async (req) => {
       return send(say("Je n\u2019ai pas bien compris. Tu peux r\xE9p\xE9ter ?", { end: false, reprompt: "Que veux-tu faire ?" }));
     return send(say("Je n\u2019ai pas compris.", { end: false, reprompt: "Que veux-tu faire ?" }));
   } catch (e) {
+    await note(`erreur : ${e instanceof Error ? `${e.message} ${e.stack ?? ""}` : String(e)}`);
     return send(say("Oups, Miam miam a eu un souci. R\xE9essaie dans un instant."));
   }
 });

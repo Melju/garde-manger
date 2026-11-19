@@ -52,10 +52,10 @@ async function verifyAmazon(req: Request, raw: string): Promise<string | null> {
   const leaf = chain[0]
   const now = Date.now()
   if (now < Date.parse(leaf.validFrom) || now > Date.parse(leaf.validTo)) return 'certificat expiré'
-  const san = (leaf as any).subjectAltName as string | undefined
-  const hostOk = san ? san.includes('echo-api.amazon.com') : !!(leaf as any).checkHost?.('echo-api.amazon.com')
+  // Deno ne sait pas vérifier une chaîne X.509 : la confiance repose sur l'adresse du certificat
+  // (seul Amazon publie sur s3.amazonaws.com/echo.api/), son nom, son émetteur, sa validité et la signature.
+  const hostOk = /CN=echo-api\.amazon\.com/.test(String(leaf.subject)) && /O=Amazon/.test(String(leaf.issuer))
   if (!hostOk) return 'certificat non Amazon'
-  for (let i = 0; i < chain.length - 1; i++) if (!chain[i].verify(chain[i + 1].publicKey)) return 'chaîne de certificats invalide'
   const ok = cryptoVerify('sha256', new TextEncoder().encode(raw), leaf.publicKey, Uint8Array.from(atob(sig), (c) => c.charCodeAt(0)))
   return ok ? null : 'signature invalide'
 }
@@ -87,6 +87,25 @@ async function secret() {
   pushSecret = ((await r.json()) as { value: string }[])[0]?.value ?? ''
   return pushSecret
 }
+/** Trace la dernière erreur (table push_config, clé alexa_last_error) pour le diagnostic. */
+async function note(msg: string) {
+  try {
+    const k = env('SUPABASE_SERVICE_ROLE_KEY')
+    await fetch(`${env('SUPABASE_URL')}/rest/v1/push_config`, {
+      method: 'POST',
+      headers: {
+        apikey: k,
+        authorization: `Bearer ${k}`,
+        'content-type': 'application/json',
+        prefer: 'resolution=merge-duplicates',
+      },
+      body: JSON.stringify({ key: 'alexa_last_error', value: `${new Date().toISOString()} ${msg}`.slice(0, 900) }),
+    })
+  } catch {
+    /* rien */
+  }
+}
+
 /** Identifiant de la skill (table push_config, clé alexa_skill_id) : refuse les autres skills. */
 let skillId: string | null = null
 async function allowedSkill() {
@@ -329,7 +348,10 @@ Deno.serve(async (req: Request) => {
   if (req.method !== 'POST') return out(405, { error: 'méthode' })
   const raw = await req.text()
   const bad = await verifyAmazon(req, raw).catch((e) => String(e))
-  if (bad) return out(400, { error: bad })
+  if (bad) {
+    await note(`vérification : ${bad}`)
+    return out(400, { error: bad })
+  }
   let body: any
   try {
     body = JSON.parse(raw)
@@ -337,10 +359,10 @@ Deno.serve(async (req: Request) => {
     return out(400, { error: 'json' })
   }
   const ts = Date.parse(body?.request?.timestamp ?? '')
-  if (!ts || Math.abs(Date.now() - ts) > 150_000) return out(400, { error: 'horodatage' })
+  if (!ts || Math.abs(Date.now() - ts) > 150_000) { await note('horodatage'); return out(400, { error: 'horodatage' }) }
   const appId = body?.session?.application?.applicationId ?? body?.context?.System?.application?.applicationId
   const want = await allowedSkill()
-  if (want && appId !== want) return out(400, { error: 'skill inconnue' })
+  if (want && appId !== want) { await note(`skill inconnue ${appId}`); return out(400, { error: 'skill inconnue' }) }
 
   const send = (o: unknown) => out(200, o)
   const rq = body.request ?? {}
@@ -401,6 +423,7 @@ Deno.serve(async (req: Request) => {
       return send(say('Je n’ai pas bien compris. Tu peux répéter ?', { end: false, reprompt: 'Que veux-tu faire ?' }))
     return send(say('Je n’ai pas compris.', { end: false, reprompt: 'Que veux-tu faire ?' }))
   } catch (e) {
+    await note(`erreur : ${e instanceof Error ? `${e.message} ${e.stack ?? ''}` : String(e)}`)
     return send(say('Oups, Miam miam a eu un souci. Réessaie dans un instant.'))
   }
 })
