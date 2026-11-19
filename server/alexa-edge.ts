@@ -11,8 +11,9 @@ import { createClient } from 'npm:@supabase/supabase-js@2'
 import { SupabaseRepository } from '../src/data/supabaseRepository'
 import { consumeAmount, parseContenance } from '../src/lib/contenance'
 import { openShelfDays } from '../src/lib/openShelf'
+import { isIngredientInStock } from '../src/lib/recipesLib'
 import { defaultConservation, type Category, type Product } from '../src/types'
-import { answerScreen, byExpiry, doneScreen, gridScreen, homeScreen, listScreen, matching, nameTile, priorityProducts, productScreen, productTile, urgent, urgentCount, type Tile } from './alexa-apl'
+import { answerScreen, byExpiry, doneScreen, gridScreen, homeScreen, listScreen, matching, nameTile, priorityProducts, productScreen, recipeScreen, recipesScreen, weekDates, weekScreen, productTile, urgent, urgentCount, type Tile } from './alexa-apl'
 
 declare const Deno: any
 const env = (k: string) => Deno.env.get(k) ?? ''
@@ -324,6 +325,11 @@ async function handleNav(key: string, link: any, alexaUser: string, apl: boolean
   if (key === 'recipe') return handleCommand(FIXED.RecetteIntent(), link, alexaUser, { apl, view: 'recipe' })
   const { repo } = open(link)
   if (key === 'list') return quiet(listScreen(await repo.listShopping()), apl)
+  if (key === 'week') return handleWeek(link, apl, 0, false)
+  if (key === 'recipes') {
+    const [recipes, products] = await Promise.all([repo.getRecipes(), repo.listProducts()])
+    return quiet(recipesScreen(recipes, products), apl)
+  }
   const products = await repo.listProducts()
   const count = (n: number) => `${n} produit${n > 1 ? 's' : ''}`
   if (key === 'urgent') {
@@ -359,6 +365,54 @@ async function handleUse(id: string, amount: number, unit: string, label: string
   const left = same.quantity > 1 ? `${same.quantity} unités` : same.size ? same.size.split('/')[0] : same.quantity === 1 ? 'une unité' : ''
   const text = `C’est noté, ${label} de ${p.name}.${left ? ` Il en reste ${left}.` : ''}`
   return attach(say(text), productScreen(same), apl)
+}
+
+/** Planning de la semaine (comme l'écran Planning de l'app). */
+async function handleWeek(link: any, apl: boolean, offset: number, speak: boolean) {
+  const { repo } = open(link)
+  const [plan, recipes] = await Promise.all([repo.getMealPlan(), repo.getRecipes()])
+  let r: any = { version: '1.0', response: {} }
+  if (speak) {
+    const todayIso = new Date().toLocaleDateString('sv-SE', { timeZone: 'Europe/Paris' })
+    const days = weekDates(0).filter((d) => d >= todayIso)
+    const names = ['dimanche', 'lundi', 'mardi', 'mercredi', 'jeudi', 'vendredi', 'samedi']
+    const parts: string[] = []
+    for (const d of days) {
+      const m = plan[`${d}_midi`], e = plan[`${d}_soir`]
+      if (!m && !e) continue
+      const day = d === todayIso ? 'aujourd’hui' : names[new Date(d + 'T12:00:00Z').getUTCDay()]
+      parts.push(`${day}${m ? `, midi : ${m}` : ''}${e ? `, soir : ${e}` : ''}`)
+    }
+    r = say(parts.length ? `Au menu : ${parts.slice(0, 5).join(' ; ')}.` : 'Rien n’est prévu cette semaine. Tu peux planifier tes repas dans l’app.')
+  }
+  return attach(r, weekScreen(plan, recipes, offset), apl)
+}
+
+async function handleRecipe(id: string, link: any, apl: boolean) {
+  const { repo } = open(link)
+  const [recipes, products] = await Promise.all([repo.getRecipes(), repo.listProducts()])
+  const r = recipes.find((x) => x.id === id)
+  return quiet(r ? recipeScreen(r, products) : recipesScreen(recipes, products), apl)
+}
+
+/** Ajoute les ingrédients manquants d'une recette aux courses (comme le bouton du Planning). */
+async function handleRecipeShop(id: string, link: any, alexaUser: string, apl: boolean) {
+  const { repo } = open(link)
+  const [recipes, products, shopping] = await Promise.all([repo.getRecipes(), repo.listProducts(), repo.listShopping()])
+  const r = recipes.find((x) => x.id === id)
+  if (!r) return quiet(null, apl)
+  const have = new Set(shopping.filter((s) => !s.checked).map((s) => norm(s.name)))
+  const ids: string[] = []
+  for (const ing of r.ingredients) {
+    if (isIngredientInStock(ing, products) || have.has(norm(ing.name))) continue
+    const it = await repo.addShoppingItem({ name: ing.name, category: 'autre' as Category, quantity: 1, source: 'auto' })
+    ids.push(it.id)
+  }
+  if (ids.length) await rpc('alexa_set_undo', { p_alexa: alexaUser, p_undo: { at: Date.now(), ops: [{ t: 'shop_del', ids }] } }).catch(() => {})
+  const text = ids.length
+    ? `J’ai ajouté ${ids.length} ingrédient${ids.length > 1 ? 's' : ''} aux courses.`
+    : 'Les ingrédients manquants sont déjà sur la liste.'
+  return attach(say(text), recipeScreen(r, products), apl)
 }
 
 /** Boutons de la fiche produit. */
@@ -596,6 +650,9 @@ Deno.serve(async (req: Request) => {
         const p = (await repo.listProducts()).find((x) => x.id === value)
         return send(p ? quiet(productScreen(p), apl) : await handleNav('stock', link, alexaUser, apl))
       }
+      if (kind === 'week') return send(await handleWeek(link, apl, Number(value) || 0, false))
+      if (kind === 'recipe' && value) return send(await handleRecipe(value, link, apl))
+      if (kind === 'recipeShop' && value) return send(await handleRecipeShop(value, link, alexaUser, apl))
       if (kind === 'use' && value && rq.arguments?.[2]) {
         const [, , amount, unit, label] = rq.arguments as string[]
         return send(await handleUse(value, Number(amount), unit || '', label || '', link, alexaUser, apl))
@@ -627,6 +684,26 @@ Deno.serve(async (req: Request) => {
       return send(await handleCommand(text, link, alexaUser, { apl, query: phrase }))
     }
     if (intent === 'ListeIntent') return send(await handleList(link, apl))
+    if (intent === 'SemaineIntent') return send(await handleWeek(link, apl, 0, true))
+    if (intent === 'RecettesIntent') {
+      const r = await handleNav('recipes', link, alexaUser, apl)
+      return send(apl ? r : say('Tes recettes sont dans l’app.'))
+    }
+    if (intent === 'RecetteIntent') {
+      // Repas déjà prévu au planning : on le donne plutôt que d'inventer.
+      const { repo } = open(link)
+      const [plan, recipes] = await Promise.all([repo.getMealPlan(), repo.getRecipes()])
+      const d = new Date().toLocaleDateString('sv-SE', { timeZone: 'Europe/Paris' })
+      const hour = Number(new Date().toLocaleTimeString('fr-FR', { hour: '2-digit', timeZone: 'Europe/Paris' }).slice(0, 2))
+      const slot = hour < 14 && plan[`${d}_midi`] ? 'midi' : 'soir'
+      const planned = plan[`${d}_${slot}`]
+      if (planned) {
+        const r = recipes.find((x) => x.title.toLowerCase() === planned.toLowerCase())
+        const text = `${slot === 'midi' ? 'Ce midi' : 'Ce soir'}, c’est ${planned}, c’est prévu au planning.`
+        if (r) return send(attach(say(text), recipeScreen(r, await repo.listProducts()), apl))
+        return send(attach(say(text), weekScreen(plan, recipes, 0), apl))
+      }
+    }
     if (intent in FIXED) {
       const lieu = rq.intent?.slots?.lieu?.resolutions?.resolutionsPerAuthority?.[0]?.values?.[0]?.value?.name ?? rq.intent?.slots?.lieu?.value
       const view = intent === 'ContenuIntent' ? 'grid' : intent === 'RecetteIntent' ? 'recipe' : undefined

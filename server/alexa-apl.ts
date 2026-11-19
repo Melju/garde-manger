@@ -1,7 +1,8 @@
 // Écrans de la skill Alexa « Miam miam » pour les Echo à écran (APL), aux couleurs de l'app.
 // Pensés d'abord pour l'Echo Show 15 (1920 × 1080), et lisibles sur les écrans plus petits.
 import { productImageSlug, chosenIconSlug } from '../src/lib/productImage'
-import type { Product, ShoppingItem } from '../src/types'
+import type { MealPlan, Product, Recipe, ShoppingItem } from '../src/types'
+import { recipeIconSlug, recipeStock, isIngredientInStock } from '../src/lib/recipesLib'
 import { formatContenance, isWeightProduct, portionScale } from '../src/lib/contenance'
 import { daysUntilExpiry, expiryLabel, expiryStatus, priorityProducts, urgentCount } from '../src/lib/expiry'
 
@@ -20,7 +21,7 @@ const C = {
   dangerSoft: '#fdeeee',
 }
 
-export type Tile = { id?: string; name: string; sub?: string; img?: string; initial: string; tone: 'ok' | 'soon' | 'expired' }
+export type Tile = { ev?: string; id?: string; name: string; sub?: string; img?: string; initial: string; tone: 'ok' | 'soon' | 'expired' }
 
 // ---------- Données ----------
 
@@ -40,6 +41,7 @@ export function productTile(p: Product): Tile {
     sub = new Date(p.expiryDate + 'T12:00:00').toLocaleDateString('fr-FR', { day: 'numeric', month: 'short', timeZone: 'Europe/Paris' })
   const qty = p.quantity > 1 ? `×${p.quantity}` : p.size || ''
   return {
+    ev: 'product',
     id: p.id,
     name: p.name,
     sub: [sub, qty].filter(Boolean).join(' · ') || undefined,
@@ -97,11 +99,12 @@ const check = {
 const NAV = [
   { key: 'home', label: 'Accueil' },
   { key: 'stock', label: 'Stock' },
-  { key: 'urgent', label: 'À consommer vite' },
+  { key: 'urgent', label: 'Urgent' },
   { key: 'frigo', label: 'Frigo' },
   { key: 'congel', label: 'Congélateur' },
   { key: 'list', label: 'Courses' },
-  { key: 'recipe', label: 'Idées repas' },
+  { key: 'week', label: 'Semaine' },
+  { key: 'recipes', label: 'Recettes' },
 ]
 
 const layouts = {
@@ -132,7 +135,7 @@ const layouts = {
           type: 'TouchWrapper',
           width: '${w - 20}',
           height: '${h - 20}',
-          onPress: [{ type: 'SendEvent', arguments: ['product', '${tile.id}'] }],
+          onPress: [{ type: 'SendEvent', arguments: ['${tile.ev}', '${tile.id}'] }],
           item: {
           type: 'Frame',
           width: '${w - 20}',
@@ -758,6 +761,301 @@ export function productScreen(p: Product) {
           if (st === 'still-good') return `Date dépassée (${exp}), encore bon`
           return `${p.dateType === 'ddm' ? 'De préférence avant le' : 'À consommer avant le'} ${exp}`
         })(),
+      },
+    },
+  }
+}
+
+// ---------- Semaine et recettes ----------
+const DAYS = ['Dim.', 'Lun.', 'Mar.', 'Mer.', 'Jeu.', 'Ven.', 'Sam.']
+const MONTHS = ['janv.', 'févr.', 'mars', 'avr.', 'mai', 'juin', 'juil.', 'août', 'sept.', 'oct.', 'nov.', 'déc.']
+const iso = (d: Date) => d.toISOString().slice(0, 10)
+
+/** Les 7 jours (lundi → dimanche) de la semaine courante + offset, en ISO, à l'heure de Paris. */
+export function weekDates(offset = 0): string[] {
+  const today = new Date(new Date().toLocaleDateString('sv-SE', { timeZone: 'Europe/Paris' }) + 'T12:00:00Z')
+  const dow = (today.getUTCDay() + 6) % 7
+  const monday = new Date(today.getTime() - dow * 86400_000 + offset * 7 * 86400_000)
+  return Array.from({ length: 7 }, (_, i) => iso(new Date(monday.getTime() + i * 86400_000)))
+}
+
+export const recipeFor = (recipes: Recipe[], meal?: string) =>
+  meal ? recipes.find((r) => r.title.toLowerCase() === meal.toLowerCase()) : undefined
+
+const recipeImg = (r: Recipe | undefined, label: string) => {
+  const slug = r ? recipeIconSlug(r) : productImageSlug(label)
+  return slug ? `${SITE}/icons-png/${slug}.png` : ''
+}
+
+export function weekScreen(plan: MealPlan, recipes: Recipe[], offset: number) {
+  const dates = weekDates(offset)
+  const todayIso = weekDates(0)[(new Date(new Date().toLocaleDateString('sv-SE', { timeZone: 'Europe/Paris' }) + 'T12:00:00Z').getUTCDay() + 6) % 7]
+  const meal = (d: string, slot: string) => {
+    const label = plan[`${d}_${slot}`] ?? ''
+    const r = recipeFor(recipes, label)
+    return { label: label || '—', img: label ? recipeImg(r, label) : '', rid: r?.id ?? '', empty: !label }
+  }
+  const days = dates.map((d) => {
+    const dt = new Date(d + 'T12:00:00Z')
+    return { day: DAYS[dt.getUTCDay()], date: `${dt.getUTCDate()} ${MONTHS[dt.getUTCMonth()]}`, today: d === todayIso, midi: meal(d, 'midi'), soir: meal(d, 'soir') }
+  })
+  const first = new Date(dates[0] + 'T12:00:00Z')
+  const label = offset === 0 ? 'Cette semaine' : offset === 1 ? 'Semaine prochaine' : offset === -1 ? 'Semaine dernière' : `Semaine du ${first.getUTCDate()} ${MONTHS[first.getUTCMonth()]}`
+  const colW = `\${Math.floor((viewport.width - ${PADX}) / 7)}`
+  const card = (slot: 'midi' | 'soir', title: string) => ({
+    type: 'TouchWrapper',
+    spacing: 14,
+    onPress: [{ type: 'SendEvent', arguments: ['recipe', `\${data.${slot}.rid}`] }],
+    item: {
+      type: 'Frame',
+      width: `\${Math.floor((viewport.width - ${PADX}) / 7) - 16}`,
+      height: '${viewport.height >= 1000 ? 300 : 210}',
+      borderRadius: 24,
+      borderWidth: 2,
+      borderColor: C.border,
+      backgroundColor: `\${data.${slot}.empty ? '${C.bg}' : '${C.surface}'}`,
+      item: {
+        type: 'Container',
+        alignItems: 'center',
+        paddingTop: 14,
+        paddingLeft: 10,
+        paddingRight: 10,
+        items: [
+          { type: 'Text', text: title, fontSize: 20, fontWeight: '700', color: C.muted },
+          { type: 'Image', when: `\${data.${slot}.img}`, source: `\${data.${slot}.img}`, spacing: 8, width: '${viewport.height >= 1000 ? 120 : 70}', height: '${viewport.height >= 1000 ? 120 : 70}', scale: 'best-fit' },
+          { type: 'Text', text: `\${data.${slot}.label}`, spacing: 8, fontSize: 24, fontWeight: '700', color: `\${data.${slot}.empty ? '${C.muted}' : '${C.fg}'}`, textAlign: 'center', maxLines: 3 },
+        ],
+      },
+    },
+  })
+  return {
+    document: page(
+      [
+        {
+          type: 'Container',
+          direction: 'row',
+          alignItems: 'center',
+          width: '100%',
+          items: [
+            { type: 'Image', source: `${SITE}/logo.png`, width: 72, height: 72, scale: 'best-fit' },
+            { type: 'Text', text: '${miam.label}', fontSize: 38, fontWeight: '800', color: C.fg, spacing: 18, grow: 1 },
+            { type: 'TouchWrapper', onPress: [{ type: 'SendEvent', arguments: ['week', '${miam.prev}'] }], item: { type: 'Chip', label: '‹ Précédente' } },
+            { type: 'TouchWrapper', spacing: 16, when: '${miam.offset != 0}', onPress: [{ type: 'SendEvent', arguments: ['week', '0'] }], item: { type: 'Chip', label: 'Aujourd’hui' } },
+            { type: 'TouchWrapper', spacing: 16, onPress: [{ type: 'SendEvent', arguments: ['week', '${miam.next}'] }], item: { type: 'Chip', label: 'Suivante ›' } },
+          ],
+        },
+        {
+          type: 'Container',
+          direction: 'row',
+          spacing: 24,
+          width: '100%',
+          data: '${miam.days}',
+          item: {
+            type: 'Container',
+            width: colW,
+            items: [
+              {
+                type: 'Frame',
+                width: `\${Math.floor((viewport.width - ${PADX}) / 7) - 16}`,
+                borderRadius: 20,
+                backgroundColor: `\${data.today ? '${C.brand}' : 'transparent'}`,
+                item: {
+                  type: 'Container',
+                  alignItems: 'center',
+                  paddingTop: 8,
+                  paddingBottom: 8,
+                  items: [
+                    { type: 'Text', text: '${data.day}', fontSize: 28, fontWeight: '800', color: `\${data.today ? '#ffffff' : '${C.fg}'}` },
+                    { type: 'Text', text: '${data.date}', fontSize: 22, color: `\${data.today ? '#ffffff' : '${C.muted}'}` },
+                  ],
+                },
+              },
+              card('midi', 'Midi'),
+              card('soir', 'Soir'),
+            ],
+          },
+        },
+      ],
+      'week',
+    ),
+    data: { miam: { label, days, offset, prev: String(offset - 1), next: String(offset + 1) } },
+  }
+}
+
+export function recipesScreen(recipes: Recipe[], products: Product[]) {
+  const tiles: Tile[] = [...recipes]
+    .sort((a, b) => Number(b.favorite) - Number(a.favorite) || recipeStock(b, products).missing * -1 - recipeStock(a, products).missing * -1 || a.title.localeCompare(b.title))
+    .slice(0, 90)
+    .map((r) => {
+      const st = recipeStock(r, products)
+      return {
+        ev: 'recipe',
+        id: r.id,
+        name: r.title,
+        sub: `${r.timeMin ? `${r.timeMin} min · ` : ''}${st.missing ? `${st.missing} manquant${st.missing > 1 ? 's' : ''}` : 'Tout en stock'}`,
+        img: recipeImg(r, r.title) || undefined,
+        initial: r.title.trim().charAt(0).toUpperCase() || '?',
+        tone: 'ok' as const,
+      }
+    })
+  const g = gridScreen('Recettes', `${recipes.length} recette${recipes.length > 1 ? 's' : ''}`, tiles, 'recipes')
+  // Bouton « Idées avec mon stock » sous l'en-tête.
+  ;(g.document as any).mainTemplate.item.item.items[0].items.splice(1, 0, {
+    type: 'TouchWrapper',
+    spacing: 16,
+    onPress: [{ type: 'SendEvent', arguments: ['nav', 'recipe'] }],
+    item: { type: 'Chip', label: 'Des idées avec ce que j’ai ›' },
+  })
+  return g
+}
+
+export function recipeScreen(r: Recipe, products: Product[]) {
+  const st = recipeStock(r, products)
+  const ings = r.ingredients.map((i) => ({ name: i.name, qty: i.qty ?? '', ok: isIngredientInStock(i, products) }))
+  const steps = (r.steps ?? []).map((t, i) => ({ n: String(i + 1), t }))
+  const meta = [r.timeMin ? `${r.timeMin} min` : '', r.servings ? `${r.servings} ${r.servingsUnit || 'personnes'}` : '', r.cuisine ?? ''].filter(Boolean).join(' · ')
+  return {
+    document: page(
+      [
+        {
+          type: 'Container',
+          direction: 'row',
+          alignItems: 'center',
+          width: '100%',
+          items: [
+            { type: 'Image', when: '${miam.img}', source: '${miam.img}', width: 120, height: 120, scale: 'best-fit' },
+            {
+              type: 'Container',
+              spacing: 24,
+              grow: 1,
+              shrink: 1,
+              items: [
+                { type: 'Text', text: '${miam.title}', fontSize: 48, fontWeight: '800', color: C.fg, maxLines: 2 },
+                { type: 'Text', text: '${miam.meta}', fontSize: 26, color: C.muted, spacing: 6 },
+              ],
+            },
+            {
+              type: 'TouchWrapper',
+              when: '${miam.missing > 0}',
+              onPress: [{ type: 'SendEvent', arguments: ['recipeShop', r.id] }],
+              item: { type: 'Chip', label: '${miam.shopLabel}' },
+            },
+          ],
+        },
+        {
+          type: 'Container',
+          direction: 'row',
+          spacing: 28,
+          width: '100%',
+          height: '${viewport.height - 340}',
+          items: [
+            {
+              type: 'Frame',
+              width: `\${Math.floor((viewport.width - ${PADX}) * 0.38)}`,
+              height: '${viewport.height - 340}',
+              borderRadius: 28,
+              backgroundColor: C.surface,
+              borderWidth: 2,
+              borderColor: C.border,
+              item: {
+                type: 'ScrollView',
+                width: '100%',
+                height: '100%',
+                item: {
+                  type: 'Container',
+                  paddingLeft: 28,
+                  paddingRight: 28,
+                  paddingTop: 22,
+                  paddingBottom: 22,
+                  items: [
+                    { type: 'Text', text: '${miam.ingTitle}', fontSize: 28, fontWeight: '800', color: C.fg },
+                    {
+                      type: 'Container',
+                      data: '${miam.ings}',
+                      item: {
+                        type: 'Container',
+                        direction: 'row',
+                        alignItems: 'center',
+                        spacing: 12,
+                        items: [
+                          {
+                            type: 'Frame',
+                            width: 34,
+                            height: 34,
+                            borderRadius: 17,
+                            backgroundColor: `\${data.ok ? '${C.brand}' : '${C.dangerSoft}'}`,
+                            item: { type: 'VectorGraphic', when: '${data.ok}', source: 'check', color: '#ffffff', width: 34, height: 34, scale: 'best-fit' },
+                          },
+                          { type: 'Text', text: '${data.name}', spacing: 14, fontSize: 26, color: C.fg, grow: 1, shrink: 1, maxLines: 2 },
+                          { type: 'Text', text: '${data.qty}', fontSize: 22, color: C.muted, spacing: 10 },
+                        ],
+                      },
+                    },
+                  ],
+                },
+              },
+            },
+            {
+              type: 'Frame',
+              spacing: 28,
+              width: `\${Math.floor((viewport.width - ${PADX}) * 0.62) - 28}`,
+              height: '${viewport.height - 340}',
+              borderRadius: 28,
+              backgroundColor: C.surface,
+              borderWidth: 2,
+              borderColor: C.border,
+              item: {
+                type: 'ScrollView',
+                width: '100%',
+                height: '100%',
+                item: {
+                  type: 'Container',
+                  paddingLeft: 28,
+                  paddingRight: 28,
+                  paddingTop: 22,
+                  paddingBottom: 22,
+                  items: [
+                    { type: 'Text', text: 'Préparation', fontSize: 28, fontWeight: '800', color: C.fg },
+                    { type: 'Text', when: '${miam.steps.length == 0}', text: 'Pas d’étapes pour cette recette.', fontSize: 26, color: C.muted, spacing: 12 },
+                    {
+                      type: 'Container',
+                      data: '${miam.steps}',
+                      item: {
+                        type: 'Container',
+                        direction: 'row',
+                        spacing: 16,
+                        items: [
+                          {
+                            type: 'Frame',
+                            width: 44,
+                            height: 44,
+                            borderRadius: 22,
+                            backgroundColor: C.soft,
+                            item: { type: 'Text', text: '${data.n}', width: 44, height: 44, textAlign: 'center', textAlignVertical: 'center', fontSize: 24, fontWeight: '800', color: C.strong },
+                          },
+                          { type: 'Text', text: '${data.t}', spacing: 16, fontSize: 27, color: C.fg, grow: 1, shrink: 1, lineHeight: 1.3 },
+                        ],
+                      },
+                    },
+                  ],
+                },
+              },
+            },
+          ],
+        },
+      ],
+      'recipes',
+    ),
+    data: {
+      miam: {
+        title: r.title,
+        meta,
+        img: recipeImg(r, r.title),
+        ings,
+        steps,
+        missing: st.missing,
+        ingTitle: `Ingrédients · ${st.inStock}/${st.total} en stock`,
+        shopLabel: `Ajouter les ${st.missing} manquant${st.missing > 1 ? 's' : ''} aux courses`,
       },
     },
   }

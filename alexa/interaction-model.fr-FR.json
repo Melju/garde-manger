@@ -333,6 +333,43 @@
             "qu'est-ce qui manque",
             "ce qui manque"
           ]
+        },
+        {
+          "name": "SemaineIntent",
+          "samples": [
+            "la semaine",
+            "affiche la semaine",
+            "montre la semaine",
+            "montre moi la semaine",
+            "le planning",
+            "affiche le planning",
+            "montre le planning",
+            "le planning des repas",
+            "le menu de la semaine",
+            "le menu",
+            "les repas de la semaine",
+            "qu'est-ce qu'on mange cette semaine",
+            "ce qu'on mange cette semaine",
+            "qu'est-ce qu'on mange demain",
+            "ce qu'on mange demain",
+            "qu'est-ce qui est prévu cette semaine",
+            "ce qui est prévu cette semaine",
+            "qu'est-ce qui est prévu au menu",
+            "le programme des repas"
+          ]
+        },
+        {
+          "name": "RecettesIntent",
+          "samples": [
+            "les recettes",
+            "mes recettes",
+            "affiche les recettes",
+            "montre les recettes",
+            "montre moi les recettes",
+            "affiche mes recettes",
+            "la liste des recettes",
+            "ouvre les recettes"
+          ]
         }
       ],
       "types": [

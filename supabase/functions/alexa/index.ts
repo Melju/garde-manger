@@ -578,32 +578,6 @@ function openShelfDays(name, _category) {
   return { days: 7, known: false };
 }
 
-// src/types.ts
-var CATEGORIES = [
-  { id: "fruits", label: "Fruits" },
-  { id: "legumes", label: "L\xE9gumes" },
-  { id: "viandes", label: "Viandes" },
-  { id: "viandes-vg", label: "Viandes VG" },
-  { id: "poissons", label: "Poissons" },
-  { id: "laitiers", label: "Laitiers" },
-  { id: "epicerie", label: "\xC9picerie" },
-  { id: "huiles", label: "Huiles" },
-  { id: "conserves", label: "Conserves" },
-  { id: "sucreries", label: "Sucreries" },
-  { id: "patisserie", label: "P\xE2tisserie" },
-  { id: "apero", label: "Ap\xE9ro" },
-  { id: "boissons", label: "Boissons" },
-  { id: "surgeles", label: "Surgel\xE9s" },
-  { id: "maison", label: "Maison" },
-  { id: "autre", label: "Autre" }
-];
-var CAT_MAP = Object.fromEntries(CATEGORIES.map((c) => [c.id, c.label]));
-function defaultConservation(category) {
-  if (category === "surgeles") return "congele";
-  if (["viandes", "viandes-vg", "poissons", "laitiers", "fruits", "legumes"].includes(category)) return "refrigere";
-  return "frais";
-}
-
 // src/lib/productImage.ts
 var RULES = [
   [["gousse de vanille", "gousses de vanille", "gousse vanille", "vanille en gousse", "vanille bourbon gousse"], "gousses-vanille"],
@@ -1190,6 +1164,84 @@ function chosenIconSlug(imageUrl) {
   return imageUrl && imageUrl.startsWith(CHOSEN) ? imageUrl.slice(CHOSEN.length) : null;
 }
 
+// src/lib/recipesLib.ts
+function norm(s) {
+  return s.toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "").replace(/s\b/g, "").trim();
+}
+function score(ing, name) {
+  if (!ing || !name) return 0;
+  if (ing === name) return 4;
+  if (name.startsWith(ing) || ing.startsWith(name)) return 3;
+  if (name.includes(ing) || ing.includes(name)) return 2;
+  return 0;
+}
+function linkedProduct(ingredient, products) {
+  if (ingredient.productId) {
+    const direct = products.find((p) => p.id === ingredient.productId);
+    if (direct) return direct;
+  }
+  const ing = norm(ingredient.name);
+  let best;
+  let bestScore = 0;
+  for (const p of products) {
+    const s = score(ing, norm(p.name)) * 10 + (p.quantity > 0 ? 5 : 0);
+    if (score(ing, norm(p.name)) > 0 && s > bestScore) {
+      best = p;
+      bestScore = s;
+    }
+  }
+  return best;
+}
+function isIngredientInStock(ingredient, products) {
+  const p = linkedProduct(ingredient, products);
+  return !!p && p.quantity > 0;
+}
+function recipeStock(recipe, products) {
+  const missingIngredients = recipe.ingredients.filter((i) => !isIngredientInStock(i, products));
+  const missing = missingIngredients.length;
+  const total = recipe.ingredients.length;
+  return { inStock: total - missing, missing, total, missingIngredients };
+}
+var UNI = { "\u215B": 0.125, "\xBD": 0.5, "\xBC": 0.25, "\xBE": 0.75, "\u2153": 1 / 3, "\u2154": 2 / 3 };
+var NUM = "(?:\\d+\\s+\\d+\\/\\d+|\\d+\\/\\d+|\\d+(?:[.,]\\d+)?|[\xBD\xBC\xBE\u2153\u2154\u215B])";
+var QTY_RE = new RegExp(`^(\\s*)(${NUM})(?:(\\s*(?:-|\xE0)\\s*)(${NUM}))?`);
+function recipeIconSlug(recipe) {
+  if (recipe.icon) return recipe.icon;
+  const fromTitle = productImageSlug(recipe.title);
+  if (fromTitle) return fromTitle;
+  for (const ing of recipe.ingredients) {
+    const s = productImageSlug(ing.name);
+    if (s) return s;
+  }
+  return null;
+}
+
+// src/types.ts
+var CATEGORIES = [
+  { id: "fruits", label: "Fruits" },
+  { id: "legumes", label: "L\xE9gumes" },
+  { id: "viandes", label: "Viandes" },
+  { id: "viandes-vg", label: "Viandes VG" },
+  { id: "poissons", label: "Poissons" },
+  { id: "laitiers", label: "Laitiers" },
+  { id: "epicerie", label: "\xC9picerie" },
+  { id: "huiles", label: "Huiles" },
+  { id: "conserves", label: "Conserves" },
+  { id: "sucreries", label: "Sucreries" },
+  { id: "patisserie", label: "P\xE2tisserie" },
+  { id: "apero", label: "Ap\xE9ro" },
+  { id: "boissons", label: "Boissons" },
+  { id: "surgeles", label: "Surgel\xE9s" },
+  { id: "maison", label: "Maison" },
+  { id: "autre", label: "Autre" }
+];
+var CAT_MAP = Object.fromEntries(CATEGORIES.map((c) => [c.id, c.label]));
+function defaultConservation(category) {
+  if (category === "surgeles") return "congele";
+  if (["viandes", "viandes-vg", "poissons", "laitiers", "fruits", "legumes"].includes(category)) return "refrigere";
+  return "frais";
+}
+
 // src/lib/dryStaple.ts
 var WORDS = [
   "pates",
@@ -1238,11 +1290,11 @@ var WORDS = [
   "chapelure",
   "tapioca"
 ];
-var norm = (s) => " " + s.normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase().replace(/[^a-z0-9]+/g, " ").trim() + " ";
+var norm2 = (s) => " " + s.normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase().replace(/[^a-z0-9]+/g, " ").trim() + " ";
 function isDryStaple(name, category) {
   if (category === "conserves") return true;
   if (category && category !== "epicerie") return false;
-  const n = norm(name);
+  const n = norm2(name);
   if (/ (feuillet|bris|sabl|pizza|a tartiner|fraiche)/.test(n)) return false;
   return WORDS.some((w) => n.includes(` ${w} `));
 }
@@ -1360,6 +1412,7 @@ function productTile(p) {
     sub = (/* @__PURE__ */ new Date(p.expiryDate + "T12:00:00")).toLocaleDateString("fr-FR", { day: "numeric", month: "short", timeZone: "Europe/Paris" });
   const qty = p.quantity > 1 ? `\xD7${p.quantity}` : p.size || "";
   return {
+    ev: "product",
     id: p.id,
     name: p.name,
     sub: [sub, qty].filter(Boolean).join(" \xB7 ") || void 0,
@@ -1378,12 +1431,12 @@ function byExpiry(products) {
 function urgent(products, n = 8) {
   return priorityProducts(products).slice(0, n);
 }
-var norm2 = (s) => s.toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "").replace(/œ/g, "oe");
+var norm3 = (s) => s.toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "").replace(/œ/g, "oe");
 function matching(products, query) {
   const stop = /* @__PURE__ */ new Set(["reste", "encore", "combien", "quoi", "dans", "avec", "est-ce", "quil", "cest", "question", "avons", "tout", "tous", "quelle", "quelles", "quel", "quels"]);
-  const words = norm2(query).split(/[^a-z0-9]+/).map((w) => w.replace(/s$/, "")).filter((w) => w.length >= 4 && !stop.has(w));
+  const words = norm3(query).split(/[^a-z0-9]+/).map((w) => w.replace(/s$/, "")).filter((w) => w.length >= 4 && !stop.has(w));
   if (!words.length) return [];
-  return byExpiry(products.filter((p) => words.some((w) => norm2(p.name).includes(w)))).slice(0, 12);
+  return byExpiry(products.filter((p) => words.some((w) => norm3(p.name).includes(w)))).slice(0, 12);
 }
 var check = {
   type: "AVG",
@@ -1396,11 +1449,12 @@ var check = {
 var NAV = [
   { key: "home", label: "Accueil" },
   { key: "stock", label: "Stock" },
-  { key: "urgent", label: "\xC0 consommer vite" },
+  { key: "urgent", label: "Urgent" },
   { key: "frigo", label: "Frigo" },
   { key: "congel", label: "Cong\xE9lateur" },
   { key: "list", label: "Courses" },
-  { key: "recipe", label: "Id\xE9es repas" }
+  { key: "week", label: "Semaine" },
+  { key: "recipes", label: "Recettes" }
 ];
 var layouts = {
   Header: {
@@ -1430,7 +1484,7 @@ var layouts = {
           type: "TouchWrapper",
           width: "${w - 20}",
           height: "${h - 20}",
-          onPress: [{ type: "SendEvent", arguments: ["product", "${tile.id}"] }],
+          onPress: [{ type: "SendEvent", arguments: ["${tile.ev}", "${tile.id}"] }],
           item: {
             type: "Frame",
             width: "${w - 20}",
@@ -2041,6 +2095,287 @@ function productScreen(p) {
     }
   };
 }
+var DAYS = ["Dim.", "Lun.", "Mar.", "Mer.", "Jeu.", "Ven.", "Sam."];
+var MONTHS = ["janv.", "f\xE9vr.", "mars", "avr.", "mai", "juin", "juil.", "ao\xFBt", "sept.", "oct.", "nov.", "d\xE9c."];
+var iso = (d) => d.toISOString().slice(0, 10);
+function weekDates(offset = 0) {
+  const today = /* @__PURE__ */ new Date((/* @__PURE__ */ new Date()).toLocaleDateString("sv-SE", { timeZone: "Europe/Paris" }) + "T12:00:00Z");
+  const dow = (today.getUTCDay() + 6) % 7;
+  const monday = new Date(today.getTime() - dow * 864e5 + offset * 7 * 864e5);
+  return Array.from({ length: 7 }, (_, i) => iso(new Date(monday.getTime() + i * 864e5)));
+}
+var recipeFor = (recipes, meal) => meal ? recipes.find((r) => r.title.toLowerCase() === meal.toLowerCase()) : void 0;
+var recipeImg = (r, label) => {
+  const slug = r ? recipeIconSlug(r) : productImageSlug(label);
+  return slug ? `${SITE}/icons-png/${slug}.png` : "";
+};
+function weekScreen(plan, recipes, offset) {
+  const dates = weekDates(offset);
+  const todayIso = weekDates(0)[((/* @__PURE__ */ new Date((/* @__PURE__ */ new Date()).toLocaleDateString("sv-SE", { timeZone: "Europe/Paris" }) + "T12:00:00Z")).getUTCDay() + 6) % 7];
+  const meal = (d, slot) => {
+    const label2 = plan[`${d}_${slot}`] ?? "";
+    const r = recipeFor(recipes, label2);
+    return { label: label2 || "\u2014", img: label2 ? recipeImg(r, label2) : "", rid: r?.id ?? "", empty: !label2 };
+  };
+  const days = dates.map((d) => {
+    const dt = /* @__PURE__ */ new Date(d + "T12:00:00Z");
+    return { day: DAYS[dt.getUTCDay()], date: `${dt.getUTCDate()} ${MONTHS[dt.getUTCMonth()]}`, today: d === todayIso, midi: meal(d, "midi"), soir: meal(d, "soir") };
+  });
+  const first = /* @__PURE__ */ new Date(dates[0] + "T12:00:00Z");
+  const label = offset === 0 ? "Cette semaine" : offset === 1 ? "Semaine prochaine" : offset === -1 ? "Semaine derni\xE8re" : `Semaine du ${first.getUTCDate()} ${MONTHS[first.getUTCMonth()]}`;
+  const colW = `\${Math.floor((viewport.width - ${PADX}) / 7)}`;
+  const card = (slot, title) => ({
+    type: "TouchWrapper",
+    spacing: 14,
+    onPress: [{ type: "SendEvent", arguments: ["recipe", `\${data.${slot}.rid}`] }],
+    item: {
+      type: "Frame",
+      width: `\${Math.floor((viewport.width - ${PADX}) / 7) - 16}`,
+      height: "${viewport.height >= 1000 ? 300 : 210}",
+      borderRadius: 24,
+      borderWidth: 2,
+      borderColor: C.border,
+      backgroundColor: `\${data.${slot}.empty ? '${C.bg}' : '${C.surface}'}`,
+      item: {
+        type: "Container",
+        alignItems: "center",
+        paddingTop: 14,
+        paddingLeft: 10,
+        paddingRight: 10,
+        items: [
+          { type: "Text", text: title, fontSize: 20, fontWeight: "700", color: C.muted },
+          { type: "Image", when: `\${data.${slot}.img}`, source: `\${data.${slot}.img}`, spacing: 8, width: "${viewport.height >= 1000 ? 120 : 70}", height: "${viewport.height >= 1000 ? 120 : 70}", scale: "best-fit" },
+          { type: "Text", text: `\${data.${slot}.label}`, spacing: 8, fontSize: 24, fontWeight: "700", color: `\${data.${slot}.empty ? '${C.muted}' : '${C.fg}'}`, textAlign: "center", maxLines: 3 }
+        ]
+      }
+    }
+  });
+  return {
+    document: page(
+      [
+        {
+          type: "Container",
+          direction: "row",
+          alignItems: "center",
+          width: "100%",
+          items: [
+            { type: "Image", source: `${SITE}/logo.png`, width: 72, height: 72, scale: "best-fit" },
+            { type: "Text", text: "${miam.label}", fontSize: 38, fontWeight: "800", color: C.fg, spacing: 18, grow: 1 },
+            { type: "TouchWrapper", onPress: [{ type: "SendEvent", arguments: ["week", "${miam.prev}"] }], item: { type: "Chip", label: "\u2039 Pr\xE9c\xE9dente" } },
+            { type: "TouchWrapper", spacing: 16, when: "${miam.offset != 0}", onPress: [{ type: "SendEvent", arguments: ["week", "0"] }], item: { type: "Chip", label: "Aujourd\u2019hui" } },
+            { type: "TouchWrapper", spacing: 16, onPress: [{ type: "SendEvent", arguments: ["week", "${miam.next}"] }], item: { type: "Chip", label: "Suivante \u203A" } }
+          ]
+        },
+        {
+          type: "Container",
+          direction: "row",
+          spacing: 24,
+          width: "100%",
+          data: "${miam.days}",
+          item: {
+            type: "Container",
+            width: colW,
+            items: [
+              {
+                type: "Frame",
+                width: `\${Math.floor((viewport.width - ${PADX}) / 7) - 16}`,
+                borderRadius: 20,
+                backgroundColor: `\${data.today ? '${C.brand}' : 'transparent'}`,
+                item: {
+                  type: "Container",
+                  alignItems: "center",
+                  paddingTop: 8,
+                  paddingBottom: 8,
+                  items: [
+                    { type: "Text", text: "${data.day}", fontSize: 28, fontWeight: "800", color: `\${data.today ? '#ffffff' : '${C.fg}'}` },
+                    { type: "Text", text: "${data.date}", fontSize: 22, color: `\${data.today ? '#ffffff' : '${C.muted}'}` }
+                  ]
+                }
+              },
+              card("midi", "Midi"),
+              card("soir", "Soir")
+            ]
+          }
+        }
+      ],
+      "week"
+    ),
+    data: { miam: { label, days, offset, prev: String(offset - 1), next: String(offset + 1) } }
+  };
+}
+function recipesScreen(recipes, products) {
+  const tiles = [...recipes].sort((a, b) => Number(b.favorite) - Number(a.favorite) || recipeStock(b, products).missing * -1 - recipeStock(a, products).missing * -1 || a.title.localeCompare(b.title)).slice(0, 90).map((r) => {
+    const st = recipeStock(r, products);
+    return {
+      ev: "recipe",
+      id: r.id,
+      name: r.title,
+      sub: `${r.timeMin ? `${r.timeMin} min \xB7 ` : ""}${st.missing ? `${st.missing} manquant${st.missing > 1 ? "s" : ""}` : "Tout en stock"}`,
+      img: recipeImg(r, r.title) || void 0,
+      initial: r.title.trim().charAt(0).toUpperCase() || "?",
+      tone: "ok"
+    };
+  });
+  const g = gridScreen("Recettes", `${recipes.length} recette${recipes.length > 1 ? "s" : ""}`, tiles, "recipes");
+  g.document.mainTemplate.item.item.items[0].items.splice(1, 0, {
+    type: "TouchWrapper",
+    spacing: 16,
+    onPress: [{ type: "SendEvent", arguments: ["nav", "recipe"] }],
+    item: { type: "Chip", label: "Des id\xE9es avec ce que j\u2019ai \u203A" }
+  });
+  return g;
+}
+function recipeScreen(r, products) {
+  const st = recipeStock(r, products);
+  const ings = r.ingredients.map((i) => ({ name: i.name, qty: i.qty ?? "", ok: isIngredientInStock(i, products) }));
+  const steps = (r.steps ?? []).map((t, i) => ({ n: String(i + 1), t }));
+  const meta = [r.timeMin ? `${r.timeMin} min` : "", r.servings ? `${r.servings} ${r.servingsUnit || "personnes"}` : "", r.cuisine ?? ""].filter(Boolean).join(" \xB7 ");
+  return {
+    document: page(
+      [
+        {
+          type: "Container",
+          direction: "row",
+          alignItems: "center",
+          width: "100%",
+          items: [
+            { type: "Image", when: "${miam.img}", source: "${miam.img}", width: 120, height: 120, scale: "best-fit" },
+            {
+              type: "Container",
+              spacing: 24,
+              grow: 1,
+              shrink: 1,
+              items: [
+                { type: "Text", text: "${miam.title}", fontSize: 48, fontWeight: "800", color: C.fg, maxLines: 2 },
+                { type: "Text", text: "${miam.meta}", fontSize: 26, color: C.muted, spacing: 6 }
+              ]
+            },
+            {
+              type: "TouchWrapper",
+              when: "${miam.missing > 0}",
+              onPress: [{ type: "SendEvent", arguments: ["recipeShop", r.id] }],
+              item: { type: "Chip", label: "${miam.shopLabel}" }
+            }
+          ]
+        },
+        {
+          type: "Container",
+          direction: "row",
+          spacing: 28,
+          width: "100%",
+          height: "${viewport.height - 340}",
+          items: [
+            {
+              type: "Frame",
+              width: `\${Math.floor((viewport.width - ${PADX}) * 0.38)}`,
+              height: "${viewport.height - 340}",
+              borderRadius: 28,
+              backgroundColor: C.surface,
+              borderWidth: 2,
+              borderColor: C.border,
+              item: {
+                type: "ScrollView",
+                width: "100%",
+                height: "100%",
+                item: {
+                  type: "Container",
+                  paddingLeft: 28,
+                  paddingRight: 28,
+                  paddingTop: 22,
+                  paddingBottom: 22,
+                  items: [
+                    { type: "Text", text: "${miam.ingTitle}", fontSize: 28, fontWeight: "800", color: C.fg },
+                    {
+                      type: "Container",
+                      data: "${miam.ings}",
+                      item: {
+                        type: "Container",
+                        direction: "row",
+                        alignItems: "center",
+                        spacing: 12,
+                        items: [
+                          {
+                            type: "Frame",
+                            width: 34,
+                            height: 34,
+                            borderRadius: 17,
+                            backgroundColor: `\${data.ok ? '${C.brand}' : '${C.dangerSoft}'}`,
+                            item: { type: "VectorGraphic", when: "${data.ok}", source: "check", color: "#ffffff", width: 34, height: 34, scale: "best-fit" }
+                          },
+                          { type: "Text", text: "${data.name}", spacing: 14, fontSize: 26, color: C.fg, grow: 1, shrink: 1, maxLines: 2 },
+                          { type: "Text", text: "${data.qty}", fontSize: 22, color: C.muted, spacing: 10 }
+                        ]
+                      }
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              type: "Frame",
+              spacing: 28,
+              width: `\${Math.floor((viewport.width - ${PADX}) * 0.62) - 28}`,
+              height: "${viewport.height - 340}",
+              borderRadius: 28,
+              backgroundColor: C.surface,
+              borderWidth: 2,
+              borderColor: C.border,
+              item: {
+                type: "ScrollView",
+                width: "100%",
+                height: "100%",
+                item: {
+                  type: "Container",
+                  paddingLeft: 28,
+                  paddingRight: 28,
+                  paddingTop: 22,
+                  paddingBottom: 22,
+                  items: [
+                    { type: "Text", text: "Pr\xE9paration", fontSize: 28, fontWeight: "800", color: C.fg },
+                    { type: "Text", when: "${miam.steps.length == 0}", text: "Pas d\u2019\xE9tapes pour cette recette.", fontSize: 26, color: C.muted, spacing: 12 },
+                    {
+                      type: "Container",
+                      data: "${miam.steps}",
+                      item: {
+                        type: "Container",
+                        direction: "row",
+                        spacing: 16,
+                        items: [
+                          {
+                            type: "Frame",
+                            width: 44,
+                            height: 44,
+                            borderRadius: 22,
+                            backgroundColor: C.soft,
+                            item: { type: "Text", text: "${data.n}", width: 44, height: 44, textAlign: "center", textAlignVertical: "center", fontSize: 24, fontWeight: "800", color: C.strong }
+                          },
+                          { type: "Text", text: "${data.t}", spacing: 16, fontSize: 27, color: C.fg, grow: 1, shrink: 1, lineHeight: 1.3 }
+                        ]
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          ]
+        }
+      ],
+      "recipes"
+    ),
+    data: {
+      miam: {
+        title: r.title,
+        meta,
+        img: recipeImg(r, r.title),
+        ings,
+        steps,
+        missing: st.missing,
+        ingTitle: `Ingr\xE9dients \xB7 ${st.inStock}/${st.total} en stock`,
+        shopLabel: `Ajouter les ${st.missing} manquant${st.missing > 1 ? "s" : ""} aux courses`
+      }
+    }
+  };
+}
 
 // server/alexa-edge.ts
 var env = (k) => Deno.env.get(k) ?? "";
@@ -2236,8 +2571,8 @@ async function handleCommand(text, link, alexaUser, ui = { apl: false }) {
     const r2 = say(reply || "Je n\u2019ai pas compris. Tu peux reformuler ?", { end: false, reprompt: "Que veux-tu faire ?" });
     if (!ui.apl || !reply) return r2;
     if (ui.view === "grid") {
-      const l = ui.lieu ? norm3(ui.lieu) : "";
-      const list = byExpiry(l ? products.filter((p) => norm3(p.location ?? "").includes(l)) : products);
+      const l = ui.lieu ? norm4(ui.lieu) : "";
+      const list = byExpiry(l ? products.filter((p) => norm4(p.location ?? "").includes(l)) : products);
       const title = ui.lieu ? ui.lieu.charAt(0).toUpperCase() + ui.lieu.slice(1) : "Tout le stock";
       const nav = l.startsWith("refri") ? "frigo" : l.startsWith("congel") ? "congel" : l ? "" : "stock";
       return attach(r2, gridScreen(title, `${list.length} produit${list.length > 1 ? "s" : ""}`, list.slice(0, 90).map(productTile), nav), true);
@@ -2281,13 +2616,18 @@ async function handleCommand(text, link, alexaUser, ui = { apl: false }) {
   }
   return attach(say(reply || "C\u2019est fait.", { card: actions.map((a) => a.label).join("\n") }), doneScreen(reply || "C\u2019est fait.", tiles), ui.apl);
 }
-var norm3 = (s) => s.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+var norm4 = (s) => s.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
 var quiet = (screen, apl, attrs = {}) => attach({ version: "1.0", sessionAttributes: attrs, response: {} }, screen, apl);
 async function handleNav(key, link, alexaUser, apl) {
   if (key === "home") return handleHome(link, apl, null);
   if (key === "recipe") return handleCommand(FIXED.RecetteIntent(), link, alexaUser, { apl, view: "recipe" });
   const { repo } = open(link);
   if (key === "list") return quiet(listScreen(await repo.listShopping()), apl);
+  if (key === "week") return handleWeek(link, apl, 0, false);
+  if (key === "recipes") {
+    const [recipes, products2] = await Promise.all([repo.getRecipes(), repo.listProducts()]);
+    return quiet(recipesScreen(recipes, products2), apl);
+  }
   const products = await repo.listProducts();
   const count = (n) => `${n} produit${n > 1 ? "s" : ""}`;
   if (key === "urgent") {
@@ -2296,7 +2636,7 @@ async function handleNav(key, link, alexaUser, apl) {
   }
   if (key === "frigo" || key === "congel") {
     const want = key === "frigo" ? ["refrigerateur", "frigo"] : ["congel"];
-    const list2 = byExpiry(products.filter((p) => want.some((w) => norm3(p.location ?? "").includes(w))));
+    const list2 = byExpiry(products.filter((p) => want.some((w) => norm4(p.location ?? "").includes(w))));
     return quiet(gridScreen(key === "frigo" ? "R\xE9frig\xE9rateur" : "Cong\xE9lateur", count(list2.length), list2.slice(0, 90).map(productTile), key), apl);
   }
   const list = byExpiry(products);
@@ -2322,6 +2662,48 @@ async function handleUse(id, amount, unit, label, link, alexaUser, apl) {
   const left = same.quantity > 1 ? `${same.quantity} unit\xE9s` : same.size ? same.size.split("/")[0] : same.quantity === 1 ? "une unit\xE9" : "";
   const text = `C\u2019est not\xE9, ${label} de ${p.name}.${left ? ` Il en reste ${left}.` : ""}`;
   return attach(say(text), productScreen(same), apl);
+}
+async function handleWeek(link, apl, offset, speak) {
+  const { repo } = open(link);
+  const [plan, recipes] = await Promise.all([repo.getMealPlan(), repo.getRecipes()]);
+  let r = { version: "1.0", response: {} };
+  if (speak) {
+    const todayIso = (/* @__PURE__ */ new Date()).toLocaleDateString("sv-SE", { timeZone: "Europe/Paris" });
+    const days = weekDates(0).filter((d) => d >= todayIso);
+    const names = ["dimanche", "lundi", "mardi", "mercredi", "jeudi", "vendredi", "samedi"];
+    const parts = [];
+    for (const d of days) {
+      const m = plan[`${d}_midi`], e = plan[`${d}_soir`];
+      if (!m && !e) continue;
+      const day = d === todayIso ? "aujourd\u2019hui" : names[(/* @__PURE__ */ new Date(d + "T12:00:00Z")).getUTCDay()];
+      parts.push(`${day}${m ? `, midi : ${m}` : ""}${e ? `, soir : ${e}` : ""}`);
+    }
+    r = say(parts.length ? `Au menu : ${parts.slice(0, 5).join(" ; ")}.` : "Rien n\u2019est pr\xE9vu cette semaine. Tu peux planifier tes repas dans l\u2019app.");
+  }
+  return attach(r, weekScreen(plan, recipes, offset), apl);
+}
+async function handleRecipe(id, link, apl) {
+  const { repo } = open(link);
+  const [recipes, products] = await Promise.all([repo.getRecipes(), repo.listProducts()]);
+  const r = recipes.find((x) => x.id === id);
+  return quiet(r ? recipeScreen(r, products) : recipesScreen(recipes, products), apl);
+}
+async function handleRecipeShop(id, link, alexaUser, apl) {
+  const { repo } = open(link);
+  const [recipes, products, shopping] = await Promise.all([repo.getRecipes(), repo.listProducts(), repo.listShopping()]);
+  const r = recipes.find((x) => x.id === id);
+  if (!r) return quiet(null, apl);
+  const have = new Set(shopping.filter((s) => !s.checked).map((s) => norm4(s.name)));
+  const ids = [];
+  for (const ing of r.ingredients) {
+    if (isIngredientInStock(ing, products) || have.has(norm4(ing.name))) continue;
+    const it = await repo.addShoppingItem({ name: ing.name, category: "autre", quantity: 1, source: "auto" });
+    ids.push(it.id);
+  }
+  if (ids.length) await rpc("alexa_set_undo", { p_alexa: alexaUser, p_undo: { at: Date.now(), ops: [{ t: "shop_del", ids }] } }).catch(() => {
+  });
+  const text = ids.length ? `J\u2019ai ajout\xE9 ${ids.length} ingr\xE9dient${ids.length > 1 ? "s" : ""} aux courses.` : "Les ingr\xE9dients manquants sont d\xE9j\xE0 sur la liste.";
+  return attach(say(text), recipeScreen(r, products), apl);
 }
 async function handleAct(kind, id, link, alexaUser, apl) {
   const { sb, repo } = open(link);
@@ -2539,6 +2921,9 @@ Deno.serve(async (req) => {
         const p = (await repo.listProducts()).find((x) => x.id === value);
         return send(p ? quiet(productScreen(p), apl) : await handleNav("stock", link, alexaUser, apl));
       }
+      if (kind === "week") return send(await handleWeek(link, apl, Number(value) || 0, false));
+      if (kind === "recipe" && value) return send(await handleRecipe(value, link, apl));
+      if (kind === "recipeShop" && value) return send(await handleRecipeShop(value, link, alexaUser, apl));
       if (kind === "use" && value && rq.arguments?.[2]) {
         const [, , amount, unit, label] = rq.arguments;
         return send(await handleUse(value, Number(amount), unit || "", label || "", link, alexaUser, apl));
@@ -2567,6 +2952,25 @@ Deno.serve(async (req) => {
       return send(await handleCommand(text, link, alexaUser, { apl, query: phrase }));
     }
     if (intent === "ListeIntent") return send(await handleList(link, apl));
+    if (intent === "SemaineIntent") return send(await handleWeek(link, apl, 0, true));
+    if (intent === "RecettesIntent") {
+      const r = await handleNav("recipes", link, alexaUser, apl);
+      return send(apl ? r : say("Tes recettes sont dans l\u2019app."));
+    }
+    if (intent === "RecetteIntent") {
+      const { repo } = open(link);
+      const [plan, recipes] = await Promise.all([repo.getMealPlan(), repo.getRecipes()]);
+      const d = (/* @__PURE__ */ new Date()).toLocaleDateString("sv-SE", { timeZone: "Europe/Paris" });
+      const hour = Number((/* @__PURE__ */ new Date()).toLocaleTimeString("fr-FR", { hour: "2-digit", timeZone: "Europe/Paris" }).slice(0, 2));
+      const slot = hour < 14 && plan[`${d}_midi`] ? "midi" : "soir";
+      const planned = plan[`${d}_${slot}`];
+      if (planned) {
+        const r = recipes.find((x) => x.title.toLowerCase() === planned.toLowerCase());
+        const text = `${slot === "midi" ? "Ce midi" : "Ce soir"}, c\u2019est ${planned}, c\u2019est pr\xE9vu au planning.`;
+        if (r) return send(attach(say(text), recipeScreen(r, await repo.listProducts()), apl));
+        return send(attach(say(text), weekScreen(plan, recipes, 0), apl));
+      }
+    }
     if (intent in FIXED) {
       const lieu = rq.intent?.slots?.lieu?.resolutions?.resolutionsPerAuthority?.[0]?.values?.[0]?.value?.name ?? rq.intent?.slots?.lieu?.value;
       const view = intent === "ContenuIntent" ? "grid" : intent === "RecetteIntent" ? "recipe" : void 0;
