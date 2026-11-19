@@ -340,6 +340,27 @@ async function handleNav(key: string, link: any, alexaUser: string, apl: boolean
   return quiet(gridScreen('Tout le stock', label, list.slice(0, 120).map(productTile), 'stock'), apl)
 }
 
+/** « J'en ai utilisé » : retire une portion ou des unités, puis réaffiche la fiche à jour. */
+async function handleUse(id: string, amount: number, unit: string, label: string, link: any, alexaUser: string, apl: boolean) {
+  const { sb, repo } = open(link)
+  const [products, shopping] = await Promise.all([repo.listProducts(), repo.listShopping()])
+  const p = products.find((x) => x.id === id)
+  if (!p || !(amount > 0)) return quiet(null, apl)
+  const undo: Undo[] = []
+  await applyOne(unit ? { type: 'stock_remove', id, amount, unit } : { type: 'stock_remove', id, amount }, repo, sb, products, shopping, undo)
+  await rpc('alexa_set_undo', { p_alexa: alexaUser, p_undo: { at: Date.now(), ops: undo } }).catch(() => {})
+  const after = (await repo.listProducts()).filter((x) => x.name === p.name && x.category === p.category)
+  const split = (undo.find((u) => u.t === 'prod_del') as { id: string } | undefined)?.id
+  const same = after.find((x) => x.id === split) ?? after.find((x) => x.id === id) ?? after[0]
+  if (!same) {
+    const text = `${p.name} : il n’en reste plus, je le retire du stock.`
+    return attach(say(text), doneScreen(text, [{ ...productTile(p), sub: 'Terminé', tone: 'ok' }]), apl)
+  }
+  const left = same.quantity > 1 ? `${same.quantity} unités` : same.size ? same.size.split('/')[0] : same.quantity === 1 ? 'une unité' : ''
+  const text = `C’est noté, ${label} de ${p.name}.${left ? ` Il en reste ${left}.` : ''}`
+  return attach(say(text), productScreen(same), apl)
+}
+
 /** Boutons de la fiche produit. */
 async function handleAct(kind: string, id: string, link: any, alexaUser: string, apl: boolean) {
   const { sb, repo } = open(link)
@@ -574,6 +595,10 @@ Deno.serve(async (req: Request) => {
         const { repo } = open(link)
         const p = (await repo.listProducts()).find((x) => x.id === value)
         return send(p ? quiet(productScreen(p), apl) : await handleNav('stock', link, alexaUser, apl))
+      }
+      if (kind === 'use' && value && rq.arguments?.[2]) {
+        const [, , amount, unit, label] = rq.arguments as string[]
+        return send(await handleUse(value, Number(amount), unit || '', label || '', link, alexaUser, apl))
       }
       if (kind === 'act' && value && rq.arguments?.[2]) return send(await handleAct(value, String(rq.arguments[2]), link, alexaUser, apl))
       if (kind === 'clear') {

@@ -2,6 +2,7 @@
 // Pensés d'abord pour l'Echo Show 15 (1920 × 1080), et lisibles sur les écrans plus petits.
 import { productImageSlug, chosenIconSlug } from '../src/lib/productImage'
 import type { Product, ShoppingItem } from '../src/types'
+import { formatContenance, isWeightProduct, portionScale } from '../src/lib/contenance'
 import { daysUntilExpiry, expiryLabel, expiryStatus, priorityProducts, urgentCount } from '../src/lib/expiry'
 
 const SITE = 'https://food.graphikeo.com'
@@ -602,6 +603,35 @@ export function answerScreen(text: string, o: { tiles?: Tile[]; tilesTitle?: str
   }
 }
 
+export type UseChip = { label: string; amount: string; unit: string }
+
+/** Quantités proposées sur la fiche : des portions du paquet entamé, puis des unités entières. */
+export function useChips(p: Product): UseChip[] {
+  const chips: UseChip[] = []
+  const ps = isWeightProduct(p.size) ? portionScale(p.size) : null
+  if (ps) {
+    const total = ps.values[ps.values.length - 1]
+    if (ps.count) {
+      for (let v = 1; v < Math.min(total, 6); v++) chips.push({ label: `${v} ${ps.baseUnit}${v > 1 ? 's' : ''}`, amount: String(v), unit: ps.baseUnit })
+    } else {
+      const seen = new Set<number>()
+      for (const f of [0.1, 0.25, 0.5, 0.75]) {
+        const v = Math.round((total * f) / ps.major) * ps.major
+        if (v > 0 && v < total && !seen.has(v)) {
+          seen.add(v)
+          chips.push({ label: formatContenance(v, ps.baseUnit), amount: String(v), unit: ps.baseUnit })
+        }
+      }
+    }
+  }
+  if (p.quantity > 1) {
+    const word = ps && !ps.count ? 'entier' : 'unité'
+    for (let n = 1; n < Math.min(p.quantity, 5); n++)
+      chips.push({ label: word === 'entier' ? `${n} entier${n > 1 ? 's' : ''}` : `${n} unité${n > 1 ? 's' : ''}`, amount: String(n), unit: '' })
+  }
+  return chips
+}
+
 export function productScreen(p: Product) {
   const t = productTile(p)
   const exp = p.expiryDate
@@ -670,6 +700,38 @@ export function productScreen(p: Product) {
         },
         {
           type: 'Container',
+          when: '${miam.uses.length > 0}',
+          direction: 'row',
+          alignItems: 'center',
+          width: '100%',
+          spacing: 16,
+          items: [
+            { type: 'Text', text: 'J’en ai utilisé :', fontSize: 30, fontWeight: '700', color: C.fg },
+            {
+              type: 'Container',
+              direction: 'row',
+              data: '${miam.uses}',
+              item: {
+                type: 'TouchWrapper',
+                spacing: 16,
+                onPress: [{ type: 'SendEvent', arguments: ['use', p.id, '${data.amount}', '${data.unit}', '${data.label}'] }],
+                item: {
+                  type: 'Frame',
+                  height: 80,
+                  borderRadius: 40,
+                  borderWidth: 3,
+                  borderColor: C.brand,
+                  backgroundColor: C.surface,
+                  paddingLeft: 30,
+                  paddingRight: 30,
+                  item: { type: 'Text', text: '${data.label}', height: 74, textAlignVertical: 'center', fontSize: 30, fontWeight: '800', color: C.strong },
+                },
+              },
+            },
+          ],
+        },
+        {
+          type: 'Container',
           direction: 'row',
           width: '100%',
           spacing: 24,
@@ -685,6 +747,7 @@ export function productScreen(p: Product) {
     ),
     data: { miam: {
         name: p.name,
+        uses: useChips(p),
         img: t.img ?? '',
         initial: t.initial,
         tone: t.tone,

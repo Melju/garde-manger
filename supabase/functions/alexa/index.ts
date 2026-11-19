@@ -411,6 +411,7 @@ var SupabaseRepository = class {
 };
 
 // src/lib/contenance.ts
+var WEIGHT_UNITS = ["g", "kg", "mL", "ml", "cl", "L", "l", "sachet", "sachets"];
 var COUNT_ALIASES = {
   sachet: "sachet",
   sachets: "sachet",
@@ -454,6 +455,37 @@ function parseContenance(size) {
   const value = Number(m[1].replace(",", "."));
   if (!isFinite(value) || value <= 0) return null;
   return { value, unit: m[2].trim() };
+}
+function isWeightProduct(size) {
+  const p = parseContenance(size);
+  if (!p) return false;
+  if (countUnit(p.unit)) return p.value > 1;
+  return WEIGHT_UNITS.includes(p.unit);
+}
+function weightInfo(size) {
+  const p = parseContenance(size);
+  if (!p) return null;
+  const fam = family(p.unit);
+  if (!fam) return null;
+  const baseUnit2 = fam === "mass" ? "g" : fam === "count" ? countUnit(p.unit) : "mL";
+  return { baseUnit: baseUnit2, count: fam === "count", total: toBase(p.value, p.unit) };
+}
+function scaleSteps(total, count = false) {
+  if (count) return { fine: 1, major: total > 12 ? 2 : 1 };
+  if (total <= 200) return { fine: 5, major: 25 };
+  if (total <= 600) return { fine: 5, major: 50 };
+  if (total <= 2e3) return { fine: 10, major: 100 };
+  if (total <= 5e3) return { fine: 25, major: 250 };
+  return { fine: 50, major: 500 };
+}
+function portionScale(size) {
+  const wi = weightInfo(size);
+  if (!wi) return null;
+  const { fine, major } = scaleSteps(wi.total, wi.count);
+  const values = [];
+  for (let v = 0; v < wi.total - 1e-3; v += fine) values.push(Math.round(v));
+  values.push(Math.round(wi.total));
+  return { values, baseUnit: wi.baseUnit, count: wi.count, major };
 }
 function family(unit) {
   const u = unit.toLowerCase();
@@ -1855,6 +1887,31 @@ function answerScreen(text, o = {}) {
     data: { miam: { text, title: o.title ?? "", tiles, tilesTitle: o.tilesTitle ?? "", options: o.options ?? [] } }
   };
 }
+function useChips(p) {
+  const chips = [];
+  const ps = isWeightProduct(p.size) ? portionScale(p.size) : null;
+  if (ps) {
+    const total = ps.values[ps.values.length - 1];
+    if (ps.count) {
+      for (let v = 1; v < Math.min(total, 6); v++) chips.push({ label: `${v} ${ps.baseUnit}${v > 1 ? "s" : ""}`, amount: String(v), unit: ps.baseUnit });
+    } else {
+      const seen = /* @__PURE__ */ new Set();
+      for (const f of [0.1, 0.25, 0.5, 0.75]) {
+        const v = Math.round(total * f / ps.major) * ps.major;
+        if (v > 0 && v < total && !seen.has(v)) {
+          seen.add(v);
+          chips.push({ label: formatContenance(v, ps.baseUnit), amount: String(v), unit: ps.baseUnit });
+        }
+      }
+    }
+  }
+  if (p.quantity > 1) {
+    const word = ps && !ps.count ? "entier" : "unit\xE9";
+    for (let n = 1; n < Math.min(p.quantity, 5); n++)
+      chips.push({ label: word === "entier" ? `${n} entier${n > 1 ? "s" : ""}` : `${n} unit\xE9${n > 1 ? "s" : ""}`, amount: String(n), unit: "" });
+  }
+  return chips;
+}
 function productScreen(p) {
   const t = productTile(p);
   const exp = p.expiryDate ? (/* @__PURE__ */ new Date(p.expiryDate + "T12:00:00")).toLocaleDateString("fr-FR", { day: "numeric", month: "long", year: "numeric", timeZone: "Europe/Paris" }) : "";
@@ -1921,6 +1978,38 @@ function productScreen(p) {
         },
         {
           type: "Container",
+          when: "${miam.uses.length > 0}",
+          direction: "row",
+          alignItems: "center",
+          width: "100%",
+          spacing: 16,
+          items: [
+            { type: "Text", text: "J\u2019en ai utilis\xE9 :", fontSize: 30, fontWeight: "700", color: C.fg },
+            {
+              type: "Container",
+              direction: "row",
+              data: "${miam.uses}",
+              item: {
+                type: "TouchWrapper",
+                spacing: 16,
+                onPress: [{ type: "SendEvent", arguments: ["use", p.id, "${data.amount}", "${data.unit}", "${data.label}"] }],
+                item: {
+                  type: "Frame",
+                  height: 80,
+                  borderRadius: 40,
+                  borderWidth: 3,
+                  borderColor: C.brand,
+                  backgroundColor: C.surface,
+                  paddingLeft: 30,
+                  paddingRight: 30,
+                  item: { type: "Text", text: "${data.label}", height: 74, textAlignVertical: "center", fontSize: 30, fontWeight: "800", color: C.strong }
+                }
+              }
+            }
+          ]
+        },
+        {
+          type: "Container",
           direction: "row",
           width: "100%",
           spacing: 24,
@@ -1937,6 +2026,7 @@ function productScreen(p) {
     data: {
       miam: {
         name: p.name,
+        uses: useChips(p),
         img: t.img ?? "",
         initial: t.initial,
         tone: t.tone,
@@ -2213,6 +2303,26 @@ async function handleNav(key, link, alexaUser, apl) {
   const label = list.length > 120 ? `${list.length} produits, les 120 plus urgents` : count(list.length);
   return quiet(gridScreen("Tout le stock", label, list.slice(0, 120).map(productTile), "stock"), apl);
 }
+async function handleUse(id, amount, unit, label, link, alexaUser, apl) {
+  const { sb, repo } = open(link);
+  const [products, shopping] = await Promise.all([repo.listProducts(), repo.listShopping()]);
+  const p = products.find((x) => x.id === id);
+  if (!p || !(amount > 0)) return quiet(null, apl);
+  const undo = [];
+  await applyOne(unit ? { type: "stock_remove", id, amount, unit } : { type: "stock_remove", id, amount }, repo, sb, products, shopping, undo);
+  await rpc("alexa_set_undo", { p_alexa: alexaUser, p_undo: { at: Date.now(), ops: undo } }).catch(() => {
+  });
+  const after = (await repo.listProducts()).filter((x) => x.name === p.name && x.category === p.category);
+  const split = undo.find((u) => u.t === "prod_del")?.id;
+  const same = after.find((x) => x.id === split) ?? after.find((x) => x.id === id) ?? after[0];
+  if (!same) {
+    const text2 = `${p.name} : il n\u2019en reste plus, je le retire du stock.`;
+    return attach(say(text2), doneScreen(text2, [{ ...productTile(p), sub: "Termin\xE9", tone: "ok" }]), apl);
+  }
+  const left = same.quantity > 1 ? `${same.quantity} unit\xE9s` : same.size ? same.size.split("/")[0] : same.quantity === 1 ? "une unit\xE9" : "";
+  const text = `C\u2019est not\xE9, ${label} de ${p.name}.${left ? ` Il en reste ${left}.` : ""}`;
+  return attach(say(text), productScreen(same), apl);
+}
 async function handleAct(kind, id, link, alexaUser, apl) {
   const { sb, repo } = open(link);
   const [products, shopping] = await Promise.all([repo.listProducts(), repo.listShopping()]);
@@ -2428,6 +2538,10 @@ Deno.serve(async (req) => {
         const { repo } = open(link);
         const p = (await repo.listProducts()).find((x) => x.id === value);
         return send(p ? quiet(productScreen(p), apl) : await handleNav("stock", link, alexaUser, apl));
+      }
+      if (kind === "use" && value && rq.arguments?.[2]) {
+        const [, , amount, unit, label] = rq.arguments;
+        return send(await handleUse(value, Number(amount), unit || "", label || "", link, alexaUser, apl));
       }
       if (kind === "act" && value && rq.arguments?.[2]) return send(await handleAct(value, String(rq.arguments[2]), link, alexaUser, apl));
       if (kind === "clear") {
