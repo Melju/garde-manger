@@ -118,45 +118,43 @@ const layouts = {
       width: '100%',
       items: [
         { type: 'Image', source: `${SITE}/logo.png`, width: 72, height: 72, scale: 'best-fit' },
-        { type: 'Text', text: 'Miam miam', fontSize: 38, fontWeight: 800, color: C.strong, spacing: 18 },
-        { type: 'Text', when: '${title}', text: '${title}', fontSize: 34, fontWeight: 600, color: C.fg, spacing: 28, grow: 1, maxLines: 1 },
+        { type: 'Text', text: 'Miam miam', fontSize: 38, fontWeight: '800', color: C.strong, spacing: 18 },
+        { type: 'Text', when: '${title}', text: '${title}', fontSize: 34, fontWeight: '600', color: C.fg, spacing: 28, grow: 1, maxLines: 1 },
         { type: 'Text', when: '${!title}', text: ' ', grow: 1 },
         { type: 'Text', text: '${hint}', fontSize: 24, color: C.muted, textAlign: 'right' },
       ],
     },
   },
   Tile: {
-    parameters: ['tile'],
+    parameters: ['tile', { name: 'w', type: 'number', default: 260 }, { name: 'h', type: 'number', default: 290 }],
     item: {
       type: 'Container',
-      width: '100%',
-      height: '100%',
-      paddingRight: 20,
-      paddingBottom: 20,
+      width: '${w}',
+      height: '${h}',
       items: [
         {
           type: 'TouchWrapper',
-          width: '100%',
-          height: '100%',
+          width: '${w - 20}',
+          height: '${h - 20}',
           onPress: [{ type: 'SendEvent', arguments: ['product', '${tile.id}'] }],
           item: {
           type: 'Frame',
-          width: '100%',
-          height: '100%',
+          width: '${w - 20}',
+          height: '${h - 20}',
           borderRadius: 28,
           borderWidth: 2,
           backgroundColor: `\${tile.tone == 'expired' ? '${C.dangerSoft}' : '${C.surface}'}`,
           borderColor: `\${tile.tone == 'expired' ? '#f4b8b8' : '${C.border}'}`,
           item: {
             type: 'Container',
-            width: '100%',
-            height: '100%',
+            width: '${w - 24}',
+            height: '${h - 24}',
             alignItems: 'center',
             justifyContent: 'center',
             paddingLeft: 16,
             paddingRight: 16,
             items: [
-              { type: 'Image', when: '${tile.img}', source: '${tile.img}', width: '62%', height: '52%', scale: 'best-fit' },
+              { type: 'Image', when: '${tile.img}', source: '${tile.img}', width: '${Math.floor((h - 20) * 0.5)}', height: '${Math.floor((h - 20) * 0.5)}', scale: 'best-fit' },
               {
                 type: 'Frame',
                 when: '${!tile.img}',
@@ -164,16 +162,16 @@ const layouts = {
                 height: 110,
                 borderRadius: 55,
                 backgroundColor: C.soft,
-                item: { type: 'Text', text: '${tile.initial}', width: 110, height: 110, textAlign: 'center', textAlignVertical: 'center', fontSize: 52, fontWeight: 800, color: C.strong },
+                item: { type: 'Text', text: '${tile.initial}', width: 110, height: 110, textAlign: 'center', textAlignVertical: 'center', fontSize: 52, fontWeight: '800', color: C.strong },
               },
-              { type: 'Text', text: '${tile.name}', spacing: 12, fontSize: 26, fontWeight: 700, color: C.fg, textAlign: 'center', maxLines: 2 },
+              { type: 'Text', text: '${tile.name}', spacing: 12, fontSize: 26, fontWeight: '700', color: C.fg, textAlign: 'center', maxLines: 2 },
               {
                 type: 'Text',
                 when: '${tile.sub}',
                 text: '${tile.sub}',
                 spacing: 4,
                 fontSize: 22,
-                fontWeight: 600,
+                fontWeight: '600',
                 textAlign: 'center',
                 maxLines: 1,
                 color: `\${tile.tone == 'expired' ? '${C.danger}' : tile.tone == 'soon' ? '${C.warn}' : '${C.muted}'}`,
@@ -214,7 +212,7 @@ const layouts = {
             height: 76,
             textAlignVertical: 'center',
             fontSize: 28,
-            fontWeight: 700,
+            fontWeight: '700',
             color: `\${data.key == current ? '#ffffff' : '${C.fg}'}`,
           },
         },
@@ -239,11 +237,12 @@ const layouts = {
           type: 'Text',
           text: '${label}',
           height: 106,
-          width: '100%',
+          paddingLeft: 20,
+          paddingRight: 20,
           textAlign: 'center',
           textAlignVertical: 'center',
           fontSize: 32,
-          fontWeight: 800,
+          fontWeight: '800',
           color: `\${danger ? '${C.danger}' : '#ffffff'}`,
         },
       },
@@ -260,13 +259,15 @@ const layouts = {
       paddingTop: 12,
       paddingBottom: 12,
       spacing: 16,
-      item: { type: 'Text', text: '${label}', fontSize: 25, fontWeight: 600, color: C.strong },
+      item: { type: 'Text', text: '${label}', fontSize: 25, fontWeight: '600', color: C.strong },
     },
   },
 }
 
-const cols = "${viewport.width >= 1500 ? '16.66%' : viewport.width >= 1000 ? '20%' : '33.33%'}"
+const PADX = '(viewport.width >= 1500 ? 128 : 64)'
+const tileW = `\${Math.floor((viewport.width - ${PADX}) / (viewport.width >= 1500 ? 6 : viewport.width >= 1000 ? 5 : 3))}`
 const tileH = '${viewport.width >= 1500 ? 290 : 230}'
+const rowW = '${viewport.width >= 1500 ? 260 : 210}'
 
 function grid(dataPath: string, extra: Record<string, unknown> = {}) {
   return {
@@ -275,10 +276,10 @@ function grid(dataPath: string, extra: Record<string, unknown> = {}) {
     grow: 1,
     shrink: 1,
     spacing: 24,
-    childWidth: cols,
+    childWidth: tileW,
     childHeight: tileH,
     data: dataPath,
-    item: { type: 'Tile', tile: '${data}' },
+    item: { type: 'Tile', tile: '${data}', w: tileW, h: tileH },
     ...extra,
   }
 }
@@ -291,7 +292,7 @@ function row(dataPath: string) {
     height: tileH,
     spacing: 24,
     data: dataPath,
-    item: { type: 'Container', width: '${viewport.width >= 1500 ? 260 : 210}', height: '100%', item: { type: 'Tile', tile: '${data}' } },
+    item: { type: 'Tile', tile: '${data}', w: rowW, h: tileH },
   }
 }
 
@@ -306,18 +307,23 @@ function page(items: unknown[], nav = '') {
     mainTemplate: {
       parameters: ['payload'],
       item: {
-        type: 'Container',
+        type: 'Frame',
         width: '100vw',
         height: '100vh',
         backgroundColor: C.bg,
-        paddingLeft: '${viewport.width >= 1500 ? 64 : 32}',
-        paddingRight: '${viewport.width >= 1500 ? 64 : 32}',
-        paddingTop: '${viewport.width >= 1500 ? 44 : 24}',
-        paddingBottom: 20,
-        items: [
-          { type: 'Container', width: '100%', grow: 1, shrink: 1, items },
-          { type: 'NavBar', current: nav },
-        ],
+        item: {
+          type: 'Container',
+          width: '100vw',
+          height: '100vh',
+          paddingLeft: '${viewport.width >= 1500 ? 64 : 32}',
+          paddingRight: '${viewport.width >= 1500 ? 64 : 32}',
+          paddingTop: '${viewport.width >= 1500 ? 44 : 24}',
+          paddingBottom: 20,
+          items: [
+            { type: 'Container', width: '100%', grow: 1, shrink: 1, items },
+            { type: 'NavBar', current: nav },
+          ],
+        },
       },
     },
   }
@@ -344,8 +350,8 @@ export function homeScreen(o: { name: string; total: number; soon: number; shop:
       paddingTop: 24,
       paddingBottom: 24,
       items: [
-        { type: 'Text', text: value, fontSize: 68, fontWeight: 800, color },
-        { type: 'Text', text: label, fontSize: 26, color: C.muted, fontWeight: 600 },
+        { type: 'Text', text: value, fontSize: 68, fontWeight: '800', color },
+        { type: 'Text', text: label, fontSize: 26, color: C.muted, fontWeight: '600' },
       ],
     },
     },
@@ -353,7 +359,7 @@ export function homeScreen(o: { name: string; total: number; soon: number; shop:
   return {
     document: page([
       { type: 'Header', title: '', hint: '${payload.date}' },
-      { type: 'Text', text: '${payload.hello}', spacing: 28, fontSize: 60, fontWeight: 800, color: C.fg },
+      { type: 'Text', text: '${payload.hello}', spacing: 28, fontSize: 60, fontWeight: '800', color: C.fg },
       {
         type: 'Container',
         direction: 'row',
@@ -365,7 +371,7 @@ export function homeScreen(o: { name: string; total: number; soon: number; shop:
           stat('${payload.shop}', 'articles à acheter  ›', C.strong, 'list'),
         ],
       },
-      { type: 'Text', when: '${payload.urgent.length > 0}', text: 'À consommer en priorité', spacing: 32, fontSize: 32, fontWeight: 800, color: C.fg },
+      { type: 'Text', when: '${payload.urgent.length > 0}', text: 'À consommer en priorité', spacing: 32, fontSize: 32, fontWeight: '800', color: C.fg },
       { type: 'Container', when: '${payload.urgent.length > 0}', spacing: 16, width: '100%', items: [row('${payload.urgent}')] },
       {
         type: 'Container',
@@ -374,7 +380,7 @@ export function homeScreen(o: { name: string; total: number; soon: number; shop:
         spacing: 28,
         alignItems: 'center',
         items: [
-          { type: 'Text', text: 'À dire :', fontSize: 25, color: C.muted, fontWeight: 600 },
+          { type: 'Text', text: 'À dire :', fontSize: 25, color: C.muted, fontWeight: '600' },
           { type: 'Chip', label: '« Alexa, ajoute du lait »' },
           { type: 'Chip', label: '« Alexa, j’ai fini le beurre »' },
           { type: 'Chip', label: '« Alexa, il reste des œufs ? »' },
@@ -418,22 +424,22 @@ export function listScreen(items: ShoppingItem[]) {
     checked: s.checked,
   }))
   const left = items.filter((s) => !s.checked).length
+  const listW = `\${Math.floor((viewport.width - ${PADX}) / (viewport.width >= 1500 ? 3 : 2))}`
+  const inner = `\${Math.floor((viewport.width - ${PADX}) / (viewport.width >= 1500 ? 3 : 2)) - 20}`
   const rowItem = {
     type: 'Container',
-    width: '100%',
-    height: '100%',
-    paddingRight: 20,
-    paddingBottom: 18,
+    width: listW,
+    height: 116,
     items: [
       {
         type: 'TouchWrapper',
-        width: '100%',
-        height: '100%',
+        width: inner,
+        height: 98,
         onPress: [{ type: 'SendEvent', arguments: ['toggle', '${data.id}'] }],
         item: {
           type: 'Frame',
-          width: '100%',
-          height: '100%',
+          width: inner,
+          height: 98,
           borderRadius: 24,
           borderWidth: 2,
           borderColor: C.border,
@@ -442,7 +448,8 @@ export function listScreen(items: ShoppingItem[]) {
             type: 'Container',
             direction: 'row',
             alignItems: 'center',
-            height: '100%',
+            width: inner,
+            height: 94,
             paddingLeft: 24,
             paddingRight: 24,
             opacity: '${data.checked ? 0.5 : 1}',
@@ -466,10 +473,10 @@ export function listScreen(items: ShoppingItem[]) {
                 borderRadius: 36,
                 spacing: 20,
                 backgroundColor: C.soft,
-                item: { type: 'Text', text: '${data.initial}', width: 72, height: 72, textAlign: 'center', textAlignVertical: 'center', fontSize: 34, fontWeight: 800, color: C.strong },
+                item: { type: 'Text', text: '${data.initial}', width: 72, height: 72, textAlign: 'center', textAlignVertical: 'center', fontSize: 34, fontWeight: '800', color: C.strong },
               },
-              { type: 'Text', text: '${data.name}', spacing: 20, grow: 1, shrink: 1, fontSize: 30, fontWeight: 700, color: C.fg, maxLines: 1 },
-              { type: 'Text', text: '${data.qty}', fontSize: 24, color: C.muted, fontWeight: 600 },
+              { type: 'Text', text: '${data.name}', spacing: 20, grow: 1, shrink: 1, fontSize: 30, fontWeight: '700', color: C.fg, maxLines: 1 },
+              { type: 'Text', text: '${data.qty}', fontSize: 24, color: C.muted, fontWeight: '600' },
             ],
           },
         },
@@ -486,7 +493,7 @@ export function listScreen(items: ShoppingItem[]) {
             width: '100%',
             grow: 1,
             shrink: 1,
-            childWidth: "${viewport.width >= 1500 ? '33.33%' : '50%'}",
+            childWidth: listW,
             childHeight: 116,
             data: '${payload.rows}',
             item: rowItem,
@@ -540,7 +547,7 @@ export function doneScreen(text: string, tiles: Tile[], undoHint = true) {
             backgroundColor: C.brand,
             item: { type: 'VectorGraphic', source: 'check', color: '#ffffff', width: 128, height: 128, scale: 'best-fit' },
           },
-          { type: 'Text', text: '${payload.text}', spacing: 28, fontSize: 44, fontWeight: 800, color: C.fg, textAlign: 'center', width: '80%', maxLines: 3 },
+          { type: 'Text', text: '${payload.text}', spacing: 28, fontSize: 44, fontWeight: '800', color: C.fg, textAlign: 'center', width: '80%', maxLines: 3 },
           {
             type: 'Container',
             when: '${payload.tiles.length > 0}',
@@ -550,7 +557,7 @@ export function doneScreen(text: string, tiles: Tile[], undoHint = true) {
             width: '100%',
             height: tileH,
             data: '${payload.tiles}',
-            item: { type: 'Container', width: '${viewport.width >= 1500 ? 260 : 210}', height: '100%', item: { type: 'Tile', tile: '${data}' } },
+            item: { type: 'Tile', tile: '${data}', w: rowW, h: tileH },
           },
           { type: 'Text', when: '${payload.undo}', text: 'Pour revenir en arrière : « Alexa, annule »', spacing: 28, fontSize: 25, color: C.muted },
         ],
@@ -580,7 +587,7 @@ export function answerScreen(text: string, o: { tiles?: Tile[]; tilesTitle?: str
           paddingTop: 32,
           paddingBottom: 32,
           items: [
-            { type: 'Text', text: '${payload.text}', fontSize: 36, fontWeight: 600, color: C.fg, lineHeight: 1.3, maxLines: 7 },
+            { type: 'Text', text: '${payload.text}', fontSize: 36, fontWeight: '600', color: C.fg, lineHeight: 1.3, maxLines: 7 },
             {
               type: 'Container',
               when: '${payload.options.length > 0}',
@@ -598,7 +605,7 @@ export function answerScreen(text: string, o: { tiles?: Tile[]; tilesTitle?: str
           ],
         },
       },
-      { type: 'Text', when: '${payload.tiles.length > 0}', text: '${payload.tilesTitle}', spacing: 32, fontSize: 30, fontWeight: 800, color: C.fg },
+      { type: 'Text', when: '${payload.tiles.length > 0}', text: '${payload.tilesTitle}', spacing: 32, fontSize: 30, fontWeight: '800', color: C.fg },
       { type: 'Container', when: '${payload.tiles.length > 0}', spacing: 16, width: '100%', grow: 1, shrink: 1, items: [grid('${payload.tiles}')] },
     ], o.nav ?? ''),
     data: { payload: { text, title: o.title ?? '', tiles, tilesTitle: o.tilesTitle ?? '', options: o.options ?? [] } },
@@ -640,13 +647,13 @@ export function productScreen(p: Product) {
               borderColor: C.border,
               item: {
                 type: 'Container',
-                width: '100%',
-                height: '100%',
+                width: '${viewport.width >= 1500 ? 436 : 296}',
+                height: '${viewport.width >= 1500 ? 436 : 296}',
                 alignItems: 'center',
                 justifyContent: 'center',
                 items: [
-                  { type: 'Image', when: '${payload.img}', source: '${payload.img}', width: '78%', height: '78%', scale: 'best-fit' },
-                  { type: 'Text', when: '${!payload.img}', text: '${payload.initial}', fontSize: 160, fontWeight: 800, color: C.strong },
+                  { type: 'Image', when: '${payload.img}', source: '${payload.img}', width: '${viewport.width >= 1500 ? 340 : 230}', height: '${viewport.width >= 1500 ? 340 : 230}', scale: 'best-fit' },
+                  { type: 'Text', when: '${!payload.img}', text: '${payload.initial}', fontSize: 160, fontWeight: '800', color: C.strong },
                 ],
               },
             },
@@ -656,14 +663,14 @@ export function productScreen(p: Product) {
               shrink: 1,
               spacing: 48,
               items: [
-                { type: 'Text', text: '${payload.name}', fontSize: 54, fontWeight: 800, color: C.fg, maxLines: 2 },
+                { type: 'Text', text: '${payload.name}', fontSize: 54, fontWeight: '800', color: C.fg, maxLines: 2 },
                 {
                   type: 'Text',
                   when: '${payload.exp}',
                   text: '${payload.exp}',
                   spacing: 14,
                   fontSize: 32,
-                  fontWeight: 700,
+                  fontWeight: '700',
                   color: `\${payload.tone == 'expired' ? '${C.danger}' : payload.tone == 'soon' ? '${C.warn}' : '${C.strong}'}`,
                 },
                 ...lines.map(line),
