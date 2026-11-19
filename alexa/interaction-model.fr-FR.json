@@ -1,0 +1,97 @@
+{
+  "interactionModel": {
+    "languageModel": {
+      "invocationName": "miam miam",
+      "intents": [
+        { "name": "AMAZON.CancelIntent", "samples": [] },
+        { "name": "AMAZON.HelpIntent", "samples": [] },
+        { "name": "AMAZON.StopIntent", "samples": [] },
+        { "name": "AMAZON.NoIntent", "samples": [] },
+        { "name": "AMAZON.NavigateHomeIntent", "samples": [] },
+        { "name": "AMAZON.FallbackIntent", "samples": [] },
+        {
+          "name": "AjouterIntent",
+          "slots": [{ "name": "phrase", "type": "AMAZON.SearchQuery" }],
+          "samples": [
+            "ajoute {phrase}",
+            "ajouter {phrase}",
+            "d'ajouter {phrase}",
+            "rajoute {phrase}",
+            "de rajouter {phrase}",
+            "mets {phrase}",
+            "de mettre {phrase}",
+            "note {phrase}",
+            "de noter {phrase}",
+            "il faut {phrase}",
+            "il faudrait {phrase}"
+          ]
+        },
+        {
+          "name": "EnleverIntent",
+          "slots": [{ "name": "phrase", "type": "AMAZON.SearchQuery" }],
+          "samples": [
+            "enlève {phrase}",
+            "d'enlever {phrase}",
+            "retire {phrase}",
+            "de retirer {phrase}",
+            "supprime {phrase}",
+            "de supprimer {phrase}",
+            "barre {phrase}"
+          ]
+        },
+        {
+          "name": "JaiIntent",
+          "slots": [{ "name": "phrase", "type": "AMAZON.SearchQuery" }],
+          "samples": [
+            "j'ai {phrase}",
+            "que j'ai {phrase}",
+            "on a {phrase}",
+            "qu'on a {phrase}",
+            "nous avons {phrase}"
+          ]
+        },
+        {
+          "name": "QuestionIntent",
+          "slots": [{ "name": "phrase", "type": "AMAZON.SearchQuery" }],
+          "samples": [
+            "est-ce que {phrase}",
+            "si {phrase}",
+            "combien {phrase}",
+            "est-ce qu'il reste {phrase}",
+            "s'il reste {phrase}",
+            "il reste {phrase}",
+            "qu'est-ce que {phrase}",
+            "qu'est-ce qui {phrase}",
+            "ce qui {phrase}",
+            "où est {phrase}",
+            "où sont {phrase}"
+          ]
+        },
+        {
+          "name": "CommandeIntent",
+          "slots": [{ "name": "phrase", "type": "AMAZON.SearchQuery" }],
+          "samples": ["le {phrase}", "la {phrase}", "les {phrase}", "c'est {phrase}", "plutôt {phrase}"]
+        },
+        {
+          "name": "AssocierIntent",
+          "samples": [
+            "associe moi",
+            "de m'associer",
+            "m'associer",
+            "associer",
+            "associe mon compte",
+            "d'associer mon compte",
+            "donne moi un code",
+            "de me donner un code",
+            "code d'association"
+          ]
+        },
+        {
+          "name": "AnnulerIntent",
+          "samples": ["annule", "d'annuler", "annuler", "annule la dernière action", "reviens en arrière", "de revenir en arrière", "oups annule"]
+        }
+      ],
+      "types": []
+    }
+  }
+}
