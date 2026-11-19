@@ -302,7 +302,7 @@ function page(items: unknown[], nav = '') {
     graphics: { check },
     layouts,
     mainTemplate: {
-      parameters: ['payload'],
+      parameters: ['miam'],
       item: {
         type: 'Frame',
         width: '100vw',
@@ -355,21 +355,21 @@ export function homeScreen(o: { name: string; total: number; soon: number; shop:
   })
   return {
     document: page([
-      { type: 'Header', title: '', hint: '${payload.date}' },
-      { type: 'Text', text: '${payload.hello}', spacing: 28, fontSize: 60, fontWeight: '800', color: C.fg },
+      { type: 'Header', title: '', hint: '${miam.date}' },
+      { type: 'Text', text: '${miam.hello}', spacing: 28, fontSize: 60, fontWeight: '800', color: C.fg },
       {
         type: 'Container',
         direction: 'row',
         spacing: 24,
         width: '100%',
         items: [
-          stat('${payload.total}', 'produits en stock  ›', C.strong, 'stock'),
-          stat('${payload.soon}', 'à consommer vite  ›', o.soon ? C.warn : C.strong, 'urgent'),
-          stat('${payload.shop}', 'articles à acheter  ›', C.strong, 'list'),
+          stat('${miam.total}', 'produits en stock  ›', C.strong, 'stock'),
+          stat('${miam.soon}', 'à consommer vite  ›', o.soon ? C.warn : C.strong, 'urgent'),
+          stat('${miam.shop}', 'articles à acheter  ›', C.strong, 'list'),
         ],
       },
-      { type: 'Text', when: '${payload.urgent.length > 0}', text: 'À consommer en priorité', spacing: 32, fontSize: 32, fontWeight: '800', color: C.fg },
-      { type: 'Container', when: '${payload.urgent.length > 0}', spacing: 16, width: '100%', items: [row('${payload.urgent}')] },
+      { type: 'Text', when: '${miam.urgent.length > 0}', text: 'À consommer en priorité', spacing: 32, fontSize: 32, fontWeight: '800', color: C.fg },
+      { type: 'Container', when: '${miam.urgent.length > 0}', spacing: 16, width: '100%', items: [row('${miam.urgent}')] },
       {
         type: 'Container',
         direction: 'row',
@@ -385,8 +385,7 @@ export function homeScreen(o: { name: string; total: number; soon: number; shop:
         ],
       },
     ], 'home'),
-    data: {
-      payload: {
+    data: { miam: {
         hello: o.name ? `Salut ${o.name} !` : 'Salut !',
         date: new Date().toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long', timeZone: 'Europe/Paris' }),
         total: String(o.total),
@@ -401,12 +400,12 @@ export function homeScreen(o: { name: string; total: number; soon: number; shop:
 export function gridScreen(title: string, count: string, tiles: Tile[], nav = 'stock') {
   return {
     document: page([
-      { type: 'Header', title: '${payload.title}', hint: '${payload.count}' },
+      { type: 'Header', title: '${miam.title}', hint: '${miam.count}' },
       tiles.length
-        ? { type: 'Container', spacing: 28, width: '100%', grow: 1, shrink: 1, items: [grid('${payload.tiles}')] }
+        ? { type: 'Container', spacing: 28, width: '100%', grow: 1, shrink: 1, items: [grid('${miam.tiles}')] }
         : { type: 'Text', text: 'Rien ici pour l’instant.', spacing: 60, fontSize: 40, color: C.muted, textAlign: 'center', width: '100%' },
     ], nav),
-    data: { payload: { title, count, tiles } },
+    data: { miam: { title, count, tiles } },
   }
 }
 
@@ -482,7 +481,7 @@ export function listScreen(items: ShoppingItem[]) {
   }
   return {
     document: page([
-      { type: 'Header', title: 'Liste de courses', hint: '${payload.count}' },
+      { type: 'Header', title: 'Liste de courses', hint: '${miam.count}' },
       rows.length
         ? {
             type: 'GridSequence',
@@ -492,13 +491,13 @@ export function listScreen(items: ShoppingItem[]) {
             shrink: 1,
             childWidth: listW,
             childHeight: 116,
-            data: '${payload.rows}',
+            data: '${miam.rows}',
             item: rowItem,
           }
         : { type: 'Text', text: 'La liste est vide. Dis « Alexa, ajoute du pain ».', spacing: 60, fontSize: 40, color: C.muted, textAlign: 'center', width: '100%' },
       {
         type: 'Container',
-        when: '${payload.rows.length > 0}',
+        when: '${miam.rows.length > 0}',
         direction: 'row',
         alignItems: 'center',
         spacing: 8,
@@ -507,15 +506,14 @@ export function listScreen(items: ShoppingItem[]) {
           { type: 'Text', text: 'Touche un article pour le cocher.', fontSize: 24, color: C.muted, grow: 1 },
           {
             type: 'TouchWrapper',
-            when: '${payload.checked > 0}',
+            when: '${miam.checked > 0}',
             onPress: [{ type: 'SendEvent', arguments: ['clear'] }],
-            item: { type: 'Chip', label: '${payload.clearLabel}' },
+            item: { type: 'Chip', label: '${miam.clearLabel}' },
           },
         ],
       },
     ], 'list'),
-    data: {
-      payload: {
+    data: { miam: {
         rows,
         count: left ? `${left} à acheter` : 'Tout est pris',
         checked: items.length - left,
@@ -544,23 +542,23 @@ export function doneScreen(text: string, tiles: Tile[], undoHint = true) {
             backgroundColor: C.brand,
             item: { type: 'VectorGraphic', source: 'check', color: '#ffffff', width: 128, height: 128, scale: 'best-fit' },
           },
-          { type: 'Text', text: '${payload.text}', spacing: 28, fontSize: 44, fontWeight: '800', color: C.fg, textAlign: 'center', width: '80%', maxLines: 3 },
+          { type: 'Text', text: '${miam.text}', spacing: 28, fontSize: 44, fontWeight: '800', color: C.fg, textAlign: 'center', width: '80%', maxLines: 3 },
           {
             type: 'Container',
-            when: '${payload.tiles.length > 0}',
+            when: '${miam.tiles.length > 0}',
             spacing: 36,
             direction: 'row',
             justifyContent: 'center',
             width: '100%',
             height: tileH,
-            data: '${payload.tiles}',
+            data: '${miam.tiles}',
             item: { type: 'Tile', tile: '${data}', w: rowW, h: tileH },
           },
-          { type: 'Text', when: '${payload.undo}', text: 'Pour revenir en arrière : « Alexa, annule »', spacing: 28, fontSize: 25, color: C.muted },
+          { type: 'Text', when: '${miam.undo}', text: 'Pour revenir en arrière : « Alexa, annule »', spacing: 28, fontSize: 25, color: C.muted },
         ],
       },
     ], ''),
-    data: { payload: { text, tiles: tiles.slice(0, 6), undo: undoHint } },
+    data: { miam: { text, tiles: tiles.slice(0, 6), undo: undoHint } },
   }
 }
 
@@ -568,7 +566,7 @@ export function answerScreen(text: string, o: { tiles?: Tile[]; tilesTitle?: str
   const tiles = o.tiles ?? []
   return {
     document: page([
-      { type: 'Header', title: '${payload.title}', hint: hintDefault },
+      { type: 'Header', title: '${miam.title}', hint: hintDefault },
       {
         type: 'Frame',
         spacing: 28,
@@ -584,14 +582,14 @@ export function answerScreen(text: string, o: { tiles?: Tile[]; tilesTitle?: str
           paddingTop: 32,
           paddingBottom: 32,
           items: [
-            { type: 'Text', text: '${payload.text}', fontSize: 36, fontWeight: '600', color: C.fg, lineHeight: 1.3, maxLines: 7 },
+            { type: 'Text', text: '${miam.text}', fontSize: 36, fontWeight: '600', color: C.fg, lineHeight: 1.3, maxLines: 7 },
             {
               type: 'Container',
-              when: '${payload.options.length > 0}',
+              when: '${miam.options.length > 0}',
               direction: 'row',
               wrap: 'wrap',
               spacing: 24,
-              data: '${payload.options}',
+              data: '${miam.options}',
               item: {
                 type: 'TouchWrapper',
                 spacing: 16,
@@ -602,10 +600,10 @@ export function answerScreen(text: string, o: { tiles?: Tile[]; tilesTitle?: str
           ],
         },
       },
-      { type: 'Text', when: '${payload.tiles.length > 0}', text: '${payload.tilesTitle}', spacing: 32, fontSize: 30, fontWeight: '800', color: C.fg },
-      { type: 'Container', when: '${payload.tiles.length > 0}', spacing: 16, width: '100%', grow: 1, shrink: 1, items: [grid('${payload.tiles}')] },
+      { type: 'Text', when: '${miam.tiles.length > 0}', text: '${miam.tilesTitle}', spacing: 32, fontSize: 30, fontWeight: '800', color: C.fg },
+      { type: 'Container', when: '${miam.tiles.length > 0}', spacing: 16, width: '100%', grow: 1, shrink: 1, items: [grid('${miam.tiles}')] },
     ], o.nav ?? ''),
-    data: { payload: { text, title: o.title ?? '', tiles, tilesTitle: o.tilesTitle ?? '', options: o.options ?? [] } },
+    data: { miam: { text, title: o.title ?? '', tiles, tilesTitle: o.tilesTitle ?? '', options: o.options ?? [] } },
   }
 }
 
@@ -639,7 +637,7 @@ export function productScreen(p: Product) {
               width: '${viewport.width >= 1500 ? 440 : 300}',
               height: '${viewport.width >= 1500 ? 440 : 300}',
               borderRadius: 40,
-              backgroundColor: `\${payload.tone == 'expired' ? '${C.dangerSoft}' : '${C.surface}'}`,
+              backgroundColor: `\${miam.tone == 'expired' ? '${C.dangerSoft}' : '${C.surface}'}`,
               borderWidth: 2,
               borderColor: C.border,
               item: {
@@ -649,8 +647,8 @@ export function productScreen(p: Product) {
                 alignItems: 'center',
                 justifyContent: 'center',
                 items: [
-                  { type: 'Image', when: '${payload.img}', source: '${payload.img}', width: '${viewport.width >= 1500 ? 340 : 230}', height: '${viewport.width >= 1500 ? 340 : 230}', scale: 'best-fit' },
-                  { type: 'Text', when: '${!payload.img}', text: '${payload.initial}', fontSize: 160, fontWeight: '800', color: C.strong },
+                  { type: 'Image', when: '${miam.img}', source: '${miam.img}', width: '${viewport.width >= 1500 ? 340 : 230}', height: '${viewport.width >= 1500 ? 340 : 230}', scale: 'best-fit' },
+                  { type: 'Text', when: '${!miam.img}', text: '${miam.initial}', fontSize: 160, fontWeight: '800', color: C.strong },
                 ],
               },
             },
@@ -660,15 +658,15 @@ export function productScreen(p: Product) {
               shrink: 1,
               spacing: 48,
               items: [
-                { type: 'Text', text: '${payload.name}', fontSize: 54, fontWeight: '800', color: C.fg, maxLines: 2 },
+                { type: 'Text', text: '${miam.name}', fontSize: 54, fontWeight: '800', color: C.fg, maxLines: 2 },
                 {
                   type: 'Text',
-                  when: '${payload.exp}',
-                  text: '${payload.exp}',
+                  when: '${miam.exp}',
+                  text: '${miam.exp}',
                   spacing: 14,
                   fontSize: 32,
                   fontWeight: '700',
-                  color: `\${payload.tone == 'expired' ? '${C.danger}' : payload.tone == 'soon' ? '${C.warn}' : '${C.strong}'}`,
+                  color: `\${miam.tone == 'expired' ? '${C.danger}' : miam.tone == 'soon' ? '${C.warn}' : '${C.strong}'}`,
                 },
                 ...lines.map(line),
               ],
@@ -690,8 +688,7 @@ export function productScreen(p: Product) {
       ],
       '',
     ),
-    data: {
-      payload: {
+    data: { miam: {
         name: p.name,
         img: t.img ?? '',
         initial: t.initial,
