@@ -450,7 +450,13 @@ function splitSize(size) {
 }
 function parseContenance(size) {
   if (!size) return null;
-  const m = splitSize(size).current.match(/^([\d.,]+)\s*(.+)$/);
+  const cur = splitSize(size).current;
+  const bare = cur.match(/^(\d+)$/);
+  if (bare) {
+    const value2 = Number(bare[1]);
+    return value2 > 0 ? { value: value2, unit: "pi\xE8ce" } : null;
+  }
+  const m = cur.match(/^([\d.,]+)\s*(.+)$/);
   if (!m) return null;
   const value = Number(m[1].replace(",", "."));
   if (!isFinite(value) || value <= 0) return null;

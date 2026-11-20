@@ -51,7 +51,14 @@ export function splitSize(size?: string): { current: string; full?: string } {
 /** Sépare une contenance « 1 kg » / « 400 g » en { value, unit } (partie actuelle uniquement). */
 export function parseContenance(size?: string): Parsed | null {
   if (!size) return null
-  const m = splitSize(size).current.match(/^([\d.,]+)\s*(.+)$/)
+  const cur = splitSize(size).current
+  // Un nombre seul (« 4 ») est un comptage : 4 pièces (pots, sachets…), pas une quantité de boîtes.
+  const bare = cur.match(/^(\d+)$/)
+  if (bare) {
+    const value = Number(bare[1])
+    return value > 0 ? { value, unit: 'pièce' } : null
+  }
+  const m = cur.match(/^([\d.,]+)\s*(.+)$/)
   if (!m) return null
   const value = Number(m[1].replace(',', '.'))
   if (!isFinite(value) || value <= 0) return null
