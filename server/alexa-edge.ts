@@ -9,7 +9,7 @@
 import { X509Certificate, createHmac, verify as cryptoVerify, randomUUID } from 'node:crypto'
 import { createClient } from 'npm:@supabase/supabase-js@2'
 import { SupabaseRepository } from '../src/data/supabaseRepository'
-import { consumeAmount, formatContenance, parseContenance } from '../src/lib/contenance'
+import { consumeAmount, countLabel, countPerPack, countUnit, formatContenance, parseContenance } from '../src/lib/contenance'
 import { openShelfDays } from '../src/lib/openShelf'
 import { isIngredientInStock } from '../src/lib/recipesLib'
 import { defaultConservation, type Category, type Product } from '../src/types'
@@ -366,9 +366,16 @@ async function handleUse(id: string, amount: number, unit: string, label: string
   const p = products.find((x) => x.id === id)
   if (!p || !(amount > 0)) return quiet(null, apl)
   if (!label)
-    label = unit === 'g' || unit === 'mL' ? formatContenance(amount, unit) : unit ? `${amount} ${unit}${amount > 1 ? 's' : ''}` : `${amount}`
+    label = unit === 'g' || unit === 'mL' ? formatContenance(amount, unit) : unit ? countLabel(amount, unit) : `${amount}`
   const undo: Undo[] = []
-  await applyOne(unit ? { type: 'stock_remove', id, amount, unit } : { type: 'stock_remove', id, amount }, repo, sb, products, shopping, undo)
+  const pack = countPerPack(p.size)
+  const action =
+    pack && p.quantity > 1 && unit === pack.unit
+      ? { type: 'stock_sachets', id, amount }
+      : unit
+        ? { type: 'stock_remove', id, amount, unit }
+        : { type: 'stock_remove', id, amount }
+  await applyOne(action, repo, sb, products, shopping, undo)
   await rpc('alexa_set_undo', { p_alexa: alexaUser, p_undo: { at: Date.now(), ops: undo } }).catch(() => {})
   const after = (await repo.listProducts()).filter((x) => x.name === p.name && x.category === p.category)
   const split = (undo.find((u) => u.t === 'prod_del') as { id: string } | undefined)?.id
@@ -377,7 +384,11 @@ async function handleUse(id: string, amount: number, unit: string, label: string
     const text = `${p.name} : il n’en reste plus, je le retire du stock.`
     return attach(say(text), doneScreen(text, [{ ...productTile(p), sub: 'Terminé', tone: 'ok' }]), apl)
   }
-  const left = same.quantity > 1 ? `${same.quantity} unités` : same.size ? same.size.split('/')[0] : same.quantity === 1 ? 'une unité' : ''
+  const allSame = after.filter((x) => countPerPack(x.size)?.unit === pack?.unit)
+  const sachetsLeft = pack ? allSame.reduce((n, x) => n + (x.quantity > 1 ? x.quantity * (countPerPack(x.size)?.per ?? 0) : (parseContenance(x.size)?.value ?? 0)), 0) : 0
+  const left = pack && p.quantity > 1
+    ? countLabel(sachetsLeft, pack.unit)
+    : same.quantity > 1 ? `${same.quantity} unités` : same.size ? same.size.split('/')[0] : same.quantity === 1 ? 'une unité' : ''
   const text = `C’est noté, ${label} de ${p.name}.${left ? ` Il en reste ${left}.` : ''}`
   return attach(say(text), productScreen(same), apl)
 }
@@ -512,6 +523,29 @@ async function applyOne(a: any, repo: SupabaseRepository, sb: any, products: Pro
     const exp = new Date(Date.now() + days * 86400_000).toISOString().slice(0, 10)
     const keep = p.expiryDate && p.expiryDate < exp ? p.expiryDate : exp
     await repo.updateProduct(p.id, { openedAt: new Date().toISOString(), expiryDate: keep })
+    return
+  }
+  // Plusieurs boîtes de sachets : on retire des sachets sur l'ensemble, comme dans l'app.
+  const pack = countPerPack(p.size)
+  if ((a.type === 'stock_sachets' || (a.type === 'stock_remove' && a.unit && countUnit(a.unit))) && pack && p.quantity > 1) {
+    const n = Math.max(1, Math.round(a.amount))
+    const remaining = p.quantity * pack.per - n
+    await logHistory(undo, sb, hid, 'consomme', `${p.name} : ${countLabel(Math.min(n, p.quantity * pack.per), pack.unit)}`, { ...meta, qty: 0 })
+    if (remaining <= 0) {
+      await repo.removeProduct(p.id)
+      return
+    }
+    const full = Math.floor(remaining / pack.per)
+    const rem = remaining % pack.per
+    const partial = `${rem} ${pack.unit}/${pack.per} ${pack.unit}`
+    if (rem === 0) await repo.updateProduct(p.id, { quantity: full })
+    else if (full === 0) await repo.updateProduct(p.id, { quantity: 1, size: partial })
+    else {
+      const { id: _i, createdAt: _c, updatedAt: _u, ...rest } = p as any
+      await repo.updateProduct(p.id, { quantity: full })
+      const np = await repo.addProduct({ ...rest, quantity: 1, size: partial })
+      undo.push({ t: 'prod_del', id: np.id })
+    }
     return
   }
   if (a.type === 'stock_remove') {

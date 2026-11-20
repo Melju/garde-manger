@@ -523,6 +523,13 @@ function withFull(remaining, oldSize, p) {
   const full = splitSize(oldSize).full ?? formatContenance(p.value, p.unit);
   return `${remaining}/${full}`;
 }
+function countPerPack(size) {
+  const p = parseContenance(size);
+  const unit = p ? countUnit(p.unit) : null;
+  if (!p || !unit) return null;
+  const per = Math.round(p.value);
+  return per > 1 ? { per, unit } : null;
+}
 
 // src/lib/productIcon.ts
 function normalize(s) {
@@ -1944,7 +1951,7 @@ function answerScreen(text, o = {}) {
 function useChips(p) {
   const chips = [];
   const ps = isWeightProduct(p.size) ? portionScale(p.size) : null;
-  if (p.quantity > 1) {
+  if (p.quantity > 1 && !countPerPack(p.size)) {
     const word = ps && !ps.count ? "entier" : "unit\xE9";
     for (let n = 1; n < Math.min(p.quantity, 5); n++)
       chips.push({ label: word === "entier" ? `${n} entier${n > 1 ? "s" : ""}` : `${n} unit\xE9${n > 1 ? "s" : ""}`, amount: String(n), unit: "" });
@@ -1952,19 +1959,46 @@ function useChips(p) {
   return chips;
 }
 function useSlider(p) {
+  const pack = countPerPack(p.size);
+  if (pack && p.quantity > 1) return { total: p.quantity * pack.per, step: 1, unit: pack.unit, presets: [] };
   const ps = isWeightProduct(p.size) ? portionScale(p.size) : null;
   if (!ps) return null;
   const total = ps.values[ps.values.length - 1];
   if (!(total > 0)) return null;
-  const step = ps.count ? 1 : Math.max(1, Math.round(ps.values[1] - ps.values[0]) || ps.major / 2);
-  return { total, step, unit: ps.baseUnit };
+  if (ps.count) return { total, step: 1, unit: ps.baseUnit, presets: [] };
+  const step = ps.major >= total ? Math.max(1, Math.round(total / 10)) : ps.major;
+  const pr = step % 2 === 0 ? step / 2 : step;
+  const presets = [...new Set([0.25, 0.5, 0.75].map((f) => Math.round(total * f / pr) * pr))].filter((v) => v > 0 && v < total);
+  return { total, step, unit: ps.baseUnit, presets };
 }
 function sliderBlock(p, sl) {
-  const A = `Math.min(${sl.total}, Math.round(Pos / ${sl.step}) * ${sl.step})`;
   const fmt = (x) => sl.unit === "g" ? `\${${x} >= 1000 ? (${x}) / 1000 + ' kg' : ${x} + ' g'}` : sl.unit === "mL" ? `\${${x} >= 1000 ? (${x}) / 1000 + ' L' : ${x} >= 100 ? (${x}) / 10 + ' cl' : ${x} + ' mL'}` : `\${${x} + ' ${sl.unit}' + (${x} > 1 ? 's' : '')}`;
+  const set = (value) => [{ type: "SetValue", componentId: "useBox", property: "Pos", value }];
+  const round = (label, value) => ({
+    type: "TouchWrapper",
+    spacing: 16,
+    onPress: set(value),
+    item: {
+      type: "Frame",
+      width: 104,
+      height: 104,
+      borderRadius: 52,
+      borderWidth: 3,
+      borderColor: C.brand,
+      backgroundColor: C.surface,
+      item: { type: "Text", text: label, width: 98, height: 98, textAlign: "center", textAlignVertical: "center", fontSize: 56, fontWeight: "800", color: C.strong }
+    }
+  });
+  const presetChip = (v) => ({
+    type: "TouchWrapper",
+    spacing: 12,
+    onPress: set(String(v)),
+    item: { type: "Chip", label: fmt(String(v)) }
+  });
   return {
     type: "Container",
-    bind: [{ name: "Pos", type: "number", value: 0 }],
+    id: "useBox",
+    bind: [{ name: "Pos", type: "number", value: sl.step }],
     direction: "row",
     alignItems: "center",
     width: "100%",
@@ -1975,27 +2009,18 @@ function sliderBlock(p, sl) {
         width: 330,
         items: [
           { type: "Text", text: "J\u2019en ai utilis\xE9", fontSize: 26, fontWeight: "700", color: C.muted },
-          { type: "Text", text: fmt(A), fontSize: 50, fontWeight: "800", color: C.strong },
-          { type: "Text", text: `il en restera ${fmt(`(${sl.total} - ${A})`)}`, fontSize: 24, color: C.muted }
+          { type: "Text", text: fmt("Pos"), fontSize: 50, fontWeight: "800", color: C.strong },
+          { type: "Text", text: `il en restera ${fmt(`(${sl.total} - Pos)`)}`, fontSize: 24, color: C.muted }
         ]
       },
-      {
-        type: "AlexaSlider",
-        sliderId: "useSlider",
-        width: `\${viewport.width - ${PADX} - 330 - 300}`,
-        theme: "light",
-        progressValue: 0,
-        totalValue: sl.total,
-        positionPropertyName: "Pos",
-        sliderMoveMillisecond: sl.step,
-        progressFillColor: C.brand,
-        thumbColor: C.strong,
-        accessibilityLabel: "Quantit\xE9 utilis\xE9e"
-      },
+      round("\u2212", `\${Math.max(${sl.step}, Pos - ${sl.step})}`),
+      round("+", `\${Math.min(${sl.total}, Pos + ${sl.step})}`),
+      ...sl.presets.map(presetChip),
+      { type: "Container", grow: 1 },
       {
         type: "TouchWrapper",
-        spacing: 30,
-        onPress: [{ type: "SendEvent", arguments: ["use", p.id, `\${${A}}`, sl.unit, ""] }],
+        spacing: 20,
+        onPress: [{ type: "SendEvent", arguments: ["use", p.id, "${Pos}", sl.unit, ""] }],
         item: {
           type: "Frame",
           height: 96,
@@ -2119,7 +2144,6 @@ function productScreen(p) {
     ],
     ""
   );
-  doc.import = [{ name: "alexa-layouts", version: "1.7.0" }];
   return {
     document: doc,
     data: {
@@ -2706,9 +2730,11 @@ async function handleUse(id, amount, unit, label, link, alexaUser, apl) {
   const p = products.find((x) => x.id === id);
   if (!p || !(amount > 0)) return quiet(null, apl);
   if (!label)
-    label = unit === "g" || unit === "mL" ? formatContenance(amount, unit) : unit ? `${amount} ${unit}${amount > 1 ? "s" : ""}` : `${amount}`;
+    label = unit === "g" || unit === "mL" ? formatContenance(amount, unit) : unit ? countLabel(amount, unit) : `${amount}`;
   const undo = [];
-  await applyOne(unit ? { type: "stock_remove", id, amount, unit } : { type: "stock_remove", id, amount }, repo, sb, products, shopping, undo);
+  const pack = countPerPack(p.size);
+  const action = pack && p.quantity > 1 && unit === pack.unit ? { type: "stock_sachets", id, amount } : unit ? { type: "stock_remove", id, amount, unit } : { type: "stock_remove", id, amount };
+  await applyOne(action, repo, sb, products, shopping, undo);
   await rpc("alexa_set_undo", { p_alexa: alexaUser, p_undo: { at: Date.now(), ops: undo } }).catch(() => {
   });
   const after = (await repo.listProducts()).filter((x) => x.name === p.name && x.category === p.category);
@@ -2718,7 +2744,9 @@ async function handleUse(id, amount, unit, label, link, alexaUser, apl) {
     const text2 = `${p.name} : il n\u2019en reste plus, je le retire du stock.`;
     return attach(say(text2), doneScreen(text2, [{ ...productTile(p), sub: "Termin\xE9", tone: "ok" }]), apl);
   }
-  const left = same.quantity > 1 ? `${same.quantity} unit\xE9s` : same.size ? same.size.split("/")[0] : same.quantity === 1 ? "une unit\xE9" : "";
+  const allSame = after.filter((x) => countPerPack(x.size)?.unit === pack?.unit);
+  const sachetsLeft = pack ? allSame.reduce((n, x) => n + (x.quantity > 1 ? x.quantity * (countPerPack(x.size)?.per ?? 0) : parseContenance(x.size)?.value ?? 0), 0) : 0;
+  const left = pack && p.quantity > 1 ? countLabel(sachetsLeft, pack.unit) : same.quantity > 1 ? `${same.quantity} unit\xE9s` : same.size ? same.size.split("/")[0] : same.quantity === 1 ? "une unit\xE9" : "";
   const text = `C\u2019est not\xE9, ${label} de ${p.name}.${left ? ` Il en reste ${left}.` : ""}`;
   return attach(say(text), productScreen(same), apl);
 }
@@ -2840,6 +2868,28 @@ async function applyOne(a, repo, sb, products, shopping, undo) {
     const exp = new Date(Date.now() + days * 864e5).toISOString().slice(0, 10);
     const keep = p.expiryDate && p.expiryDate < exp ? p.expiryDate : exp;
     await repo.updateProduct(p.id, { openedAt: (/* @__PURE__ */ new Date()).toISOString(), expiryDate: keep });
+    return;
+  }
+  const pack = countPerPack(p.size);
+  if ((a.type === "stock_sachets" || a.type === "stock_remove" && a.unit && countUnit(a.unit)) && pack && p.quantity > 1) {
+    const n = Math.max(1, Math.round(a.amount));
+    const remaining = p.quantity * pack.per - n;
+    await logHistory(undo, sb, hid, "consomme", `${p.name} : ${countLabel(Math.min(n, p.quantity * pack.per), pack.unit)}`, { ...meta, qty: 0 });
+    if (remaining <= 0) {
+      await repo.removeProduct(p.id);
+      return;
+    }
+    const full = Math.floor(remaining / pack.per);
+    const rem = remaining % pack.per;
+    const partial = `${rem} ${pack.unit}/${pack.per} ${pack.unit}`;
+    if (rem === 0) await repo.updateProduct(p.id, { quantity: full });
+    else if (full === 0) await repo.updateProduct(p.id, { quantity: 1, size: partial });
+    else {
+      const { id: _i, createdAt: _c, updatedAt: _u, ...rest } = p;
+      await repo.updateProduct(p.id, { quantity: full });
+      const np = await repo.addProduct({ ...rest, quantity: 1, size: partial });
+      undo.push({ t: "prod_del", id: np.id });
+    }
     return;
   }
   if (a.type === "stock_remove") {

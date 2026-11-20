@@ -3,7 +3,7 @@
 import { productImageSlug, chosenIconSlug } from '../src/lib/productImage'
 import type { MealPlan, Product, Recipe, ShoppingItem } from '../src/types'
 import { recipeIconSlug, recipeStock, isIngredientInStock } from '../src/lib/recipesLib'
-import { formatContenance, isWeightProduct, portionScale } from '../src/lib/contenance'
+import { countPerPack, formatContenance, isWeightProduct, portionScale } from '../src/lib/contenance'
 import { daysUntilExpiry, expiryLabel, expiryStatus, priorityProducts, urgentCount } from '../src/lib/expiry'
 
 const SITE = 'https://food.graphikeo.com'
@@ -612,7 +612,7 @@ export type UseChip = { label: string; amount: string; unit: string }
 export function useChips(p: Product): UseChip[] {
   const chips: UseChip[] = []
   const ps = isWeightProduct(p.size) ? portionScale(p.size) : null
-  if (p.quantity > 1) {
+  if (p.quantity > 1 && !countPerPack(p.size)) {
     const word = ps && !ps.count ? 'entier' : 'unité'
     for (let n = 1; n < Math.min(p.quantity, 5); n++)
       chips.push({ label: word === 'entier' ? `${n} entier${n > 1 ? 's' : ''}` : `${n} unité${n > 1 ? 's' : ''}`, amount: String(n), unit: '' })
@@ -620,27 +620,54 @@ export function useChips(p: Product): UseChip[] {
   return chips
 }
 
-/** Curseur « J'en ai utilisé » (comme la roulette de l'app) : produits au poids, au volume ou à la pièce. */
-export function useSlider(p: Product): { total: number; step: number; unit: string } | null {
+/** Réglage « J'en ai utilisé » (boutons − / +, comme la roulette de l'app) : poids, volume, pièces ou sachets sur plusieurs boîtes. */
+export function useSlider(p: Product): { total: number; step: number; unit: string; presets: number[] } | null {
+  const pack = countPerPack(p.size)
+  if (pack && p.quantity > 1) return { total: p.quantity * pack.per, step: 1, unit: pack.unit, presets: [] }
   const ps = isWeightProduct(p.size) ? portionScale(p.size) : null
   if (!ps) return null
   const total = ps.values[ps.values.length - 1]
   if (!(total > 0)) return null
-  const step = ps.count ? 1 : Math.max(1, Math.round(ps.values[1] - ps.values[0]) || ps.major / 2)
-  return { total, step, unit: ps.baseUnit }
+  if (ps.count) return { total, step: 1, unit: ps.baseUnit, presets: [] }
+  const step = ps.major >= total ? Math.max(1, Math.round(total / 10)) : ps.major
+  const pr = step % 2 === 0 ? step / 2 : step
+  const presets = [...new Set([0.25, 0.5, 0.75].map((f) => Math.round((total * f) / pr) * pr))].filter((v) => v > 0 && v < total)
+  return { total, step, unit: ps.baseUnit, presets }
 }
 
-function sliderBlock(p: Product, sl: { total: number; step: number; unit: string }) {
-  const A = `Math.min(${sl.total}, Math.round(Pos / ${sl.step}) * ${sl.step})`
+function sliderBlock(p: Product, sl: { total: number; step: number; unit: string; presets: number[] }) {
   const fmt = (x: string) =>
     sl.unit === 'g'
       ? `\${${x} >= 1000 ? (${x}) / 1000 + ' kg' : ${x} + ' g'}`
       : sl.unit === 'mL'
         ? `\${${x} >= 1000 ? (${x}) / 1000 + ' L' : ${x} >= 100 ? (${x}) / 10 + ' cl' : ${x} + ' mL'}`
         : `\${${x} + ' ${sl.unit}' + (${x} > 1 ? 's' : '')}`
+  const set = (value: string) => [{ type: 'SetValue', componentId: 'useBox', property: 'Pos', value }]
+  const round = (label: string, value: string) => ({
+    type: 'TouchWrapper',
+    spacing: 16,
+    onPress: set(value),
+    item: {
+      type: 'Frame',
+      width: 104,
+      height: 104,
+      borderRadius: 52,
+      borderWidth: 3,
+      borderColor: C.brand,
+      backgroundColor: C.surface,
+      item: { type: 'Text', text: label, width: 98, height: 98, textAlign: 'center', textAlignVertical: 'center', fontSize: 56, fontWeight: '800', color: C.strong },
+    },
+  })
+  const presetChip = (v: number) => ({
+    type: 'TouchWrapper',
+    spacing: 12,
+    onPress: set(String(v)),
+    item: { type: 'Chip', label: fmt(String(v)) },
+  })
   return {
     type: 'Container',
-    bind: [{ name: 'Pos', type: 'number', value: 0 }],
+    id: 'useBox',
+    bind: [{ name: 'Pos', type: 'number', value: sl.step }],
     direction: 'row',
     alignItems: 'center',
     width: '100%',
@@ -651,27 +678,18 @@ function sliderBlock(p: Product, sl: { total: number; step: number; unit: string
         width: 330,
         items: [
           { type: 'Text', text: 'J’en ai utilisé', fontSize: 26, fontWeight: '700', color: C.muted },
-          { type: 'Text', text: fmt(A), fontSize: 50, fontWeight: '800', color: C.strong },
-          { type: 'Text', text: `il en restera ${fmt(`(${sl.total} - ${A})`)}`, fontSize: 24, color: C.muted },
+          { type: 'Text', text: fmt('Pos'), fontSize: 50, fontWeight: '800', color: C.strong },
+          { type: 'Text', text: `il en restera ${fmt(`(${sl.total} - Pos)`)}`, fontSize: 24, color: C.muted },
         ],
       },
-      {
-        type: 'AlexaSlider',
-        sliderId: 'useSlider',
-        width: `\${viewport.width - ${PADX} - 330 - 300}`,
-        theme: 'light',
-        progressValue: 0,
-        totalValue: sl.total,
-        positionPropertyName: 'Pos',
-        sliderMoveMillisecond: sl.step,
-        progressFillColor: C.brand,
-        thumbColor: C.strong,
-        accessibilityLabel: 'Quantité utilisée',
-      },
+      round('−', `\${Math.max(${sl.step}, Pos - ${sl.step})}`),
+      round('+', `\${Math.min(${sl.total}, Pos + ${sl.step})}`),
+      ...sl.presets.map(presetChip),
+      { type: 'Container', grow: 1 },
       {
         type: 'TouchWrapper',
-        spacing: 30,
-        onPress: [{ type: 'SendEvent', arguments: ['use', p.id, `\${${A}}`, sl.unit, ''] }],
+        spacing: 20,
+        onPress: [{ type: 'SendEvent', arguments: ['use', p.id, '${Pos}', sl.unit, ''] }],
         item: {
           type: 'Frame',
           height: 96,
@@ -798,7 +816,6 @@ export function productScreen(p: Product) {
       ],
       '',
     )
-  doc.import = [{ name: 'alexa-layouts', version: '1.7.0' }]
   return {
     document: doc,
     data: { miam: {
