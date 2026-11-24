@@ -3511,3 +3511,30 @@ html.kiosk .stock-switch { margin-top: 4px; }
 @media (min-width: 1000px) {
   .pharma-items { display: grid; grid-template-columns: repeat(auto-fill, minmax(420px, 1fr)); gap: 0 14px; }
 }
+
+/* Courses : rayons colorés et vue grille */
+.shop-cat-head { display: flex; align-items: center; gap: 10px; margin: 4px 0 10px; }
+.shop-cat-ico { width: 34px; height: 34px; border-radius: 11px; display: flex; align-items: center; justify-content: center; background: var(--cat-bg); color: var(--cat-fg); flex-shrink: 0; }
+.shop-cat-ico svg { width: 19px; height: 19px; }
+.shop-cat-name { font-size: 15px; font-weight: 800; color: var(--cat-fg); letter-spacing: 0.01em; flex: 1; }
+.shop-cat-count { min-width: 26px; height: 24px; padding: 0 8px; border-radius: 12px; background: var(--cat-bg); color: var(--cat-fg); font-size: 13px; font-weight: 800; display: flex; align-items: center; justify-content: center; }
+.shopping-category .shopping-item { border-left: 4px solid var(--cat-bg); }
+.shop-thumb { width: 40px; height: 40px; border-radius: 12px; background: var(--cat-bg); color: var(--cat-fg); display: flex; align-items: center; justify-content: center; flex-shrink: 0; overflow: hidden; }
+.shop-thumb img { width: 34px; height: 34px; object-fit: contain; }
+.shop-thumb svg { width: 20px; height: 20px; }
+.shopping-item.checked .shop-thumb { filter: grayscale(1); }
+.view-chip { margin-left: auto; padding: 0 12px; }
+
+.shop-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(104px, 1fr)); gap: 10px; }
+.shop-tile { position: relative; background: var(--surface); border: 1px solid var(--border); border-radius: 18px; padding: 10px 8px 10px; text-align: center; cursor: pointer; transition: transform 0.12s ease, opacity 0.15s ease; user-select: none; -webkit-tap-highlight-color: transparent; }
+.shop-tile:active { transform: scale(0.96); }
+.shop-tile-img { width: 100%; aspect-ratio: 1; border-radius: 14px; background: var(--cat-bg); color: var(--cat-fg); display: flex; align-items: center; justify-content: center; margin-bottom: 8px; }
+.shop-tile-img img { width: 78%; height: 78%; object-fit: contain; }
+.shop-tile-img svg { width: 40%; height: 40%; }
+.shop-tile-name { font-size: 13px; font-weight: 700; line-height: 1.2; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; min-height: 2.4em; }
+.shop-tile-qty { font-size: 12px; color: var(--muted); margin-top: 3px; }
+.shop-tile.checked { opacity: 0.45; }
+.shop-tile.checked .shop-tile-img { filter: grayscale(1); }
+.shop-tile-check { position: absolute; top: 8px; right: 8px; width: 30px; height: 30px; border-radius: 50%; background: var(--success); color: #fff; display: flex; align-items: center; justify-content: center; box-shadow: 0 2px 6px oklch(0 0 0 / 0.2); }
+.shop-tile-check svg { width: 16px; height: 16px; }
+@media (min-width: 900px) { .shop-grid { grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); } }

@@ -8,7 +8,9 @@ import { euros, pricesByStore, priceKey, usePriceObs } from '../lib/prices'
 import { useBasketEstimate } from '../lib/costs'
 import { kioskEnabled } from '../lib/kiosk'
 import { useToast } from '../components/Toast'
-import { Icon } from '../components/Icon'
+import { Icon, categoryIcon } from '../components/Icon'
+import { categoryColor } from '../lib/categoryColors'
+import { chosenIconSlug, productImageSlug, productImageUrl } from '../lib/productImage'
 import { QuantityWheel } from '../components/QuantityWheel'
 import { CATEGORIES, categoryLabel, defaultConservation, type Category, type ShoppingItem } from '../types'
 import { buyScale, formatContenance, parseContenance } from '../lib/contenance'
@@ -46,6 +48,28 @@ export function ShoppingScreen({ addOpen, onCloseAdd }: ShoppingScreenProps) {
     settings,
     cloudMode,
   } = useStore()
+  // Affichage de la liste : lignes ou grille d'illustrations (mémorisé sur l'appareil).
+  const [shopView, setShopView] = useState<'list' | 'grid'>(() => {
+    try {
+      return localStorage.getItem('miamm.shopView') === 'grid' ? 'grid' : 'list'
+    } catch {
+      return 'list'
+    }
+  })
+  function toggleShopView() {
+    const v = shopView === 'grid' ? 'list' : 'grid'
+    setShopView(v)
+    try {
+      localStorage.setItem('miamm.shopView', v)
+    } catch {
+      /* stockage indisponible */
+    }
+  }
+  /** Illustration d'un article : celle du produit en stock s'il y en a une choisie, sinon devinée du nom. */
+  function shopImage(name: string): string | null {
+    const inStock = products.find((p) => p.name.trim().toLowerCase() === name.trim().toLowerCase())
+    return chosenIconSlug(inStock?.imageUrl) ?? productImageSlug(name)
+  }
   const [lowPick, setLowPick] = useState<LowCandidate[] | null>(null)
   const priceObs = usePriceObs()
   const basket = useBasketEstimate(shopping, priceObs, products, cloudMode)
@@ -440,6 +464,15 @@ export function ShoppingScreen({ addOpen, onCloseAdd }: ShoppingScreenProps) {
         <button type="button" className="store-chip" onClick={() => locate(false)} disabled={locating} aria-label="Trouver le magasin où je suis">
           {locating ? 'Recherche…' : 'Où suis-je ?'}
         </button>
+        <button
+          type="button"
+          className="store-chip view-chip"
+          onClick={toggleShopView}
+          aria-label={shopView === 'grid' ? 'Afficher en liste' : 'Afficher en grille'}
+          title={shopView === 'grid' ? 'Afficher en liste' : 'Afficher en grille'}
+        >
+          <Icon name={shopView === 'grid' ? 'list' : 'grid'} width={2} />
+        </button>
       </div>
       {locating && <p className="store-msg">Recherche du magasin autour de toi…</p>}
       {locMsg && <p className="store-msg">{locMsg}</p>}
@@ -576,10 +609,39 @@ export function ShoppingScreen({ addOpen, onCloseAdd }: ShoppingScreenProps) {
           <p>Votre liste est vide.</p>
         </div>
       ) : (
-        grouped.map((group) => (
-          <div className="shopping-category" key={group.category}>
-            <div className="shopping-category-title">{categoryLabel(group.category)}</div>
-            {group.items.map((it) => (
+        grouped.map((group) => {
+          const col = categoryColor(group.category)
+          const left = group.items.filter((it) => !it.checked).length
+          return (
+          <div className={`shopping-category${shopView === 'grid' ? ' as-grid' : ''}`} key={group.category} style={{ ['--cat-bg' as string]: col.bg, ['--cat-fg' as string]: col.fg }}>
+            <div className="shop-cat-head">
+              <span className="shop-cat-ico">
+                <Icon name={categoryIcon(group.category)} width={2} />
+              </span>
+              <span className="shop-cat-name">{categoryLabel(group.category)}</span>
+              <span className="shop-cat-count">{left === 0 ? '✓' : left}</span>
+            </div>
+            {shopView === 'grid' ? (
+              <div className="shop-grid">
+                {group.items.map((it) => {
+                  const slug = shopImage(it.name)
+                  return (
+                    <div key={it.id} className={`shop-tile${it.checked ? ' checked' : ''}`} onClick={() => toggleShoppingItem(it.id)} role="button" tabIndex={0}>
+                      <div className="shop-tile-img">
+                        {slug ? <img src={productImageUrl(slug)} alt="" loading="lazy" draggable={false} /> : <Icon name={categoryIcon(group.category)} width={1.6} />}
+                      </div>
+                      <div className="shop-tile-name">{it.name}</div>
+                      <div className="shop-tile-qty">{qtyLabel(it.quantity, it.unit)}</div>
+                      {it.checked && (
+                        <div className="shop-tile-check">
+                          <Icon name="check" width={3} />
+                        </div>
+                      )}
+                    </div>
+                  )
+                })}
+              </div>
+            ) : group.items.map((it) => (
               <div
                 key={it.id}
                 className={`shopping-item${it.checked ? ' checked' : ''}`}
@@ -588,6 +650,12 @@ export function ShoppingScreen({ addOpen, onCloseAdd }: ShoppingScreenProps) {
                 <div className="checkbox">
                   <Icon name="check" width={3} />
                 </div>
+                <span className="shop-thumb">
+                  {(() => {
+                    const slug = shopImage(it.name)
+                    return slug ? <img src={productImageUrl(slug)} alt="" loading="lazy" draggable={false} /> : <Icon name={categoryIcon(group.category)} width={1.8} />
+                  })()}
+                </span>
                 <span className="shopping-name">
                   {it.name}
                   {(() => {
@@ -628,7 +696,8 @@ export function ShoppingScreen({ addOpen, onCloseAdd }: ShoppingScreenProps) {
               </div>
             ))}
           </div>
-        ))
+          )
+        })
       )}
       </div>
 
