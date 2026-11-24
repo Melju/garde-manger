@@ -143,9 +143,11 @@ export function PharmacyScreen({ onBack, onAdd, onEdit, topSlot }: PharmacyScree
             <br />
             Ajoute ceux de ton armoire à pharmacie pour suivre leurs dates de péremption.
           </p>
-          <button className="btn-primary" style={{ marginTop: 16 }} onClick={onAdd}>
-            Ajouter un médicament
-          </button>
+          {onBack && (
+            <button className="btn-primary" style={{ marginTop: 16 }} onClick={onAdd}>
+              Ajouter un médicament
+            </button>
+          )}
         </div>
       ) : (
         <div className="product-list">
