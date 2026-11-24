@@ -26,6 +26,7 @@ import { DatePicker } from '../components/DatePicker'
 import { OpenProductSheet } from '../components/OpenProductSheet'
 import { formatLong } from '../lib/dates'
 import { DateScanner, type ScannedDate } from '../components/DateScanner'
+import { MedScanner, type ScannedMed } from '../components/MedScanner'
 import { PriceScanner } from '../components/PriceScanner'
 import { PriceCompare } from '../components/PriceCompare'
 import { recordPrices } from '../lib/prices'
@@ -223,6 +224,23 @@ export function ProductFormScreen({ product, initial, onClose, onSaved }: Produc
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [name, pharma])
+  // Photo de la boîte : l'IA remplit nom, laboratoire, forme, contenu et date si visible.
+  const [scanningBox, setScanningBox] = useState(false)
+  function onBoxScanned(r: ScannedMed) {
+    setScanningBox(false)
+    if (r.name) setName(r.name)
+    if (r.lab) setBrand(r.lab)
+    const f = MED_FORMS.find((m) => m.id === r.form)
+    if (f) {
+      medFormTouched.current = true
+      setMedForm(f.id)
+    }
+    const unit = r.unit ?? f?.unit
+    if (r.count) setSizeValue(String(r.count).replace('.', ','))
+    if (unit) setSizeUnit(unit)
+    if (r.expiry) setExpiryDate(r.expiry)
+    toast(r.expiry ? 'Fiche remplie, vérifie avant d’enregistrer' : 'Fiche remplie : ajoute la date (souvent sur le rabat)')
+  }
   /** Aliment · Maison · Médicament : le premier choix, qui adapte le reste de la fiche. */
   function pickKind(k: 'food' | 'home' | 'med') {
     if (k === kind) return
@@ -496,6 +514,14 @@ export function ProductFormScreen({ product, initial, onClose, onSaved }: Produc
           </button>
         ))}
       </div>
+
+      {pharma && !isEdit && (
+        <button type="button" className="ai-complete-btn med-photo-btn" onClick={() => setScanningBox(true)}>
+          <Icon name="scan" width={2.2} />
+          Photographier la boîte : je remplis la fiche
+        </button>
+      )}
+      {scanningBox && <MedScanner onResult={onBoxScanned} onClose={() => setScanningBox(false)} />}
 
       <div className="form-group product-hero">
         <div className="hero-name">

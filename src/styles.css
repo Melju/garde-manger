@@ -3506,3 +3506,4 @@ html.kiosk .product-list.tiles .product-icon > svg { width: 32cqw !important; ma
 .med-forms { display: flex; flex-wrap: wrap; gap: 8px; }
 .stock-switch { margin: 0 20px 14px; }
 html.kiosk .stock-switch { margin-top: 4px; }
+.med-photo-btn { display: flex; width: calc(100% - 40px); margin: 0 20px 16px; justify-content: center; padding: 14px; font-size: 15px; }

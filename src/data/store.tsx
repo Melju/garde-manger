@@ -97,6 +97,8 @@ interface StoreValue {
   /** Lit le prix sur une étiquette de rayon (Claude Vision). */
   scanPrice(image: string, mediaType: string): Promise<{ price: number | null; unitPrice: number | null; unitLabel: string | null; name: string | null; confident: boolean }>
   scanExpiry(image: string, mediaType: string): Promise<{ date: string | null; type: DateType | null; raw: string; confident: boolean }>
+  /** Lit une boîte de médicament en photo (nom, laboratoire, forme, contenu, date si visible). */
+  scanMedicine(image: string, mediaType: string): Promise<{ name: string | null; lab: string | null; form: string | null; count: number | null; unit: string | null; expiry: string | null }>
   updateProduct(id: string, patch: Partial<ProductInput>): Promise<void>
   adjustQuantity(id: string, delta: number): Promise<void>
   removeProduct(id: string): Promise<void>
@@ -884,6 +886,14 @@ export function StoreProvider({ children }: { children: ReactNode }) {
           name: typeof d.name === 'string' ? d.name : null,
           confident: d.confident !== false,
         }
+      },
+      async scanMedicine(image, mediaType) {
+        if (!supabase) throw new Error('Connecte-toi pour lire une boîte')
+        const { data, error } = await invokeFn('medscan', { image, mediaType })
+        if (error) throw new Error(error.message || 'Analyse impossible')
+        const d = data as any
+        if (!d || d.error) throw new Error(d?.error || 'Réponse invalide')
+        return d
       },
       async scanExpiry(image, mediaType) {
         if (!supabase) throw new Error('Connecte-toi pour scanner une date')
