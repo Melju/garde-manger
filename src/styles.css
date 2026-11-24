@@ -3595,3 +3595,9 @@ html.kiosk .stock-switch { margin-top: 4px; }
 .cart-empty { text-align: center; color: var(--muted); padding: 28px 0; }
 .cart-empty svg { width: 36px; height: 36px; opacity: 0.5; }
 .stow-name small { display: block; font-weight: 500; font-size: 12px; color: var(--muted); }
+.med-chip { display: inline-flex; align-items: center; gap: 6px; padding-left: 8px; }
+.med-chip img { width: 22px; height: 22px; object-fit: contain; }
+.med-hero { align-items: center; }
+.med-hero-icon { cursor: default; }
+.med-hero .hero-info { display: flex; flex-direction: column; gap: 2px; }
+.med-hero .hero-info small { font-size: 12px; color: var(--muted); }

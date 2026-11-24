@@ -11,6 +11,8 @@ import {
   isNonFood,
   isPharmacy,
   guessMedForm,
+  medFormIcon,
+  medFormLabel,
   MED_FORMS,
   type MedForm,
   type Category,
@@ -612,6 +614,17 @@ export function ProductFormScreen({ product, initial, onClose, onSaved }: Produc
           </div>
         </div>
         )}
+        {pharma && (
+          <div className="hero-row med-hero">
+            <div className="hero-icon med-hero-icon" aria-hidden>
+              <img src={productImageUrl(medFormIcon(medForm))} alt="" />
+            </div>
+            <div className="hero-info">
+              <strong>{medForm ? medFormLabel(medForm) : 'Forme à choisir'}</strong>
+              <small>L'icône suit la forme choisie plus bas</small>
+            </div>
+          </div>
+        )}
         {pickingIcon && !pharma && (
           <div className="icon-picker">
             <div style={{ position: 'relative' }}>
@@ -679,9 +692,10 @@ export function ProductFormScreen({ product, initial, onClose, onSaved }: Produc
               <button
                 key={f.id}
                 type="button"
-                className={`usual-chip${medForm === f.id ? ' on' : ''}`}
+                className={`usual-chip med-chip${medForm === f.id ? ' on' : ''}`}
                 onClick={() => pickMedForm(f.id)}
               >
+                {f.icon && <img src={productImageUrl(f.icon)} alt="" width={22} height={22} loading="lazy" />}
                 {f.label}
               </button>
             ))}
