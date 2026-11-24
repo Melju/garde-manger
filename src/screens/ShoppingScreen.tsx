@@ -383,7 +383,17 @@ export function ShoppingScreen({ addOpen, onCloseAdd }: ShoppingScreenProps) {
           <h1>Liste de courses</h1>
           <p>{remaining} article{remaining !== 1 ? 's' : ''} restant{remaining !== 1 ? 's' : ''}</p>
         </div>
-        <div className="header-actions" />
+        <div className="header-actions">
+          <button
+            type="button"
+            className={`icon-btn${shopView === 'grid' ? ' on' : ''}`}
+            onClick={toggleShopView}
+            aria-label={shopView === 'grid' ? 'Afficher en liste' : 'Afficher en grille'}
+            title={shopView === 'grid' ? 'Afficher en liste' : 'Afficher en grille'}
+          >
+            <Icon name={shopView === 'grid' ? 'list' : 'grid'} />
+          </button>
+        </div>
       </header>
 
       <div className="shop-quick">
@@ -463,15 +473,6 @@ export function ShoppingScreen({ addOpen, onCloseAdd }: ShoppingScreenProps) {
         </button>
         <button type="button" className="store-chip" onClick={() => locate(false)} disabled={locating} aria-label="Trouver le magasin où je suis">
           {locating ? 'Recherche…' : 'Où suis-je ?'}
-        </button>
-        <button
-          type="button"
-          className="store-chip view-chip"
-          onClick={toggleShopView}
-          aria-label={shopView === 'grid' ? 'Afficher en liste' : 'Afficher en grille'}
-          title={shopView === 'grid' ? 'Afficher en liste' : 'Afficher en grille'}
-        >
-          <Icon name={shopView === 'grid' ? 'list' : 'grid'} width={2} />
         </button>
       </div>
       {locating && <p className="store-msg">Recherche du magasin autour de toi…</p>}
