@@ -499,11 +499,11 @@ export function ProductFormScreen({ product, initial, onClose, onSaved }: Produc
 
       <div className="form-group product-hero">
         <div className="hero-name">
-          <label className="form-label" htmlFor="name">Nom du produit</label>
+          <label className="form-label" htmlFor="name">{pharma ? 'Nom du médicament' : 'Nom du produit'}</label>
           <input
             id="name"
             className="form-input"
-            placeholder="Ex : Tomates, Poulet, Lait…"
+            placeholder={pharma ? 'Ex : Doliprane 1000 mg' : nonFood ? 'Ex : Lessive, Papier toilette…' : 'Ex : Tomates, Poulet, Lait…'}
             value={name}
             autoFocus={!isEdit}
             onChange={(e) => setName(e.target.value)}
@@ -512,8 +512,8 @@ export function ProductFormScreen({ product, initial, onClose, onSaved }: Produc
             <input
               id="brand"
               className="form-input"
-              placeholder="Marque (facultatif)"
-              aria-label="Marque"
+              placeholder={pharma ? 'Laboratoire (facultatif)' : 'Marque (facultatif)'}
+              aria-label={pharma ? 'Laboratoire' : 'Marque'}
               autoComplete="off"
               value={brand}
               onFocus={() => setBrandOpen(true)}
@@ -554,6 +554,7 @@ export function ProductFormScreen({ product, initial, onClose, onSaved }: Produc
             </div>
           )}
         </div>
+        {!pharma && (
         <div className="hero-row">
           <div className="hero-icon-col">
             <button type="button" className="hero-icon" onClick={() => setPickingIcon((v) => !v)} aria-label="Changer l'icône">
@@ -584,7 +585,8 @@ export function ProductFormScreen({ product, initial, onClose, onSaved }: Produc
             </div>
           </div>
         </div>
-        {pickingIcon && (
+        )}
+        {pickingIcon && !pharma && (
           <div className="icon-picker">
             <div style={{ position: 'relative' }}>
               <input
@@ -681,7 +683,19 @@ export function ProductFormScreen({ product, initial, onClose, onSaved }: Produc
             className="form-input"
             type="text"
             inputMode="decimal"
-            placeholder={countUnit(sizeUnit) ? `Nombre (${sizeUnit}s par paquet)` : 'Ex : 400'}
+            placeholder={
+              pharma
+                ? countUnit(sizeUnit)
+                  ? `Nombre de ${sizeUnit}s par boîte`
+                  : sizeUnit === 'mL'
+                    ? 'Ex : 150'
+                    : sizeUnit === 'g'
+                      ? 'Ex : 50'
+                      : 'Ex : 8'
+                : countUnit(sizeUnit)
+                  ? `Nombre (${sizeUnit}s par paquet)`
+                  : 'Ex : 400'
+            }
             value={sizeValue}
             onChange={(e) => setSizeValue(e.target.value)}
           />
@@ -775,6 +789,7 @@ export function ProductFormScreen({ product, initial, onClose, onSaved }: Produc
 
       </div>
 
+      {!pharma && (
       <div className="form-group deduced">
         <div className="deduced-head">
           <h2 className="form-group-title" style={{ margin: 0 }}>Déduit automatiquement</h2>
@@ -857,7 +872,9 @@ export function ProductFormScreen({ product, initial, onClose, onSaved }: Produc
           </>
         )}
       </div>
+      )}
 
+      {!pharma && (
       <div className="form-group deduced">
         <div className="deduced-head">
           <h2 className="form-group-title" style={{ margin: 0 }}>Achat</h2>
@@ -928,6 +945,7 @@ export function ProductFormScreen({ product, initial, onClose, onSaved }: Produc
           </>
         )}
       </div>
+      )}
 
       <div className="form-footer">
         {isEdit && (
