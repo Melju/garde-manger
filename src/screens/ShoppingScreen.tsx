@@ -43,6 +43,8 @@ export function ShoppingScreen({ addOpen, onCloseAdd }: ShoppingScreenProps) {
     toggleShoppingItem,
     removeShoppingItem,
     clearCheckedShopping,
+    undoAddedProducts,
+    restoreShoppingItems,
     addShoppingBatch,
     removeShoppingItems,
     settings,
@@ -331,10 +333,11 @@ export function ShoppingScreen({ addOpen, onCloseAdd }: ShoppingScreenProps) {
   async function addCheckedToStock() {
     const checked = shopping.filter((it) => it.checked)
     if (checked.length === 0) return
+    const createdIds: string[] = []
     for (const it of checked) {
       const conservation = defaultConservation(it.category)
       const byWeight = !!it.unit && ['g', 'kg', 'mL', 'L'].includes(it.unit)
-      await addProduct({
+      const created = await addProduct({
         name: it.name,
         category: it.category,
         conservation,
@@ -343,13 +346,21 @@ export function ShoppingScreen({ addOpen, onCloseAdd }: ShoppingScreenProps) {
         dateType: 'dlc',
         expiryDate: estimatedExpiryISO(it.name, conservation, it.category) || undefined,
       })
+      if (created?.id) createdIds.push(created.id)
     }
     if (store) {
       recordPurchases(store, checked.map((it) => ({ name: it.name, category: it.category, unit: it.unit, quantity: it.quantity })))
       setStoreTick((t) => t + 1)
     }
     await clearCheckedShopping()
-    toast(`${checked.length} article${checked.length > 1 ? 's' : ''} rangé${checked.length > 1 ? 's' : ''} dans le stock`)
+    toast(`${checked.length} article${checked.length > 1 ? 's' : ''} rangé${checked.length > 1 ? 's' : ''} dans le stock`, {
+      label: 'Annuler',
+      onClick: async () => {
+        await undoAddedProducts(createdIds)
+        await restoreShoppingItems(checked)
+        toast('Annulé : les articles sont revenus dans la liste')
+      },
+    })
   }
 
   function handleGenerate() {
@@ -447,8 +458,12 @@ export function ShoppingScreen({ addOpen, onCloseAdd }: ShoppingScreenProps) {
           <button
             className="btn-secondary"
             onClick={async () => {
+              const gone = shopping.filter((it) => it.checked)
               await clearCheckedShopping()
-              toast('Articles cochés effacés')
+              toast(`${gone.length} article${gone.length > 1 ? 's' : ''} effacé${gone.length > 1 ? 's' : ''}`, {
+                label: 'Annuler',
+                onClick: () => void restoreShoppingItems(gone),
+              })
             }}
           >
             Effacer cochés
@@ -690,6 +705,7 @@ export function ShoppingScreen({ addOpen, onCloseAdd }: ShoppingScreenProps) {
                   onClick={(e) => {
                     e.stopPropagation()
                     removeShoppingItem(it.id)
+                    toast(`${it.name} retiré de la liste`, { label: 'Annuler', onClick: () => void restoreShoppingItems([it]) })
                   }}
                 >
                   <Icon name="trash" />

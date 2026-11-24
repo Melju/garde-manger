@@ -92,7 +92,11 @@ interface StoreValue {
   refreshFromOFF(): Promise<{ updated: number; scanned: number }>
 
   // Produits
-  addProduct(input: ProductInput): Promise<void>
+  addProduct(input: ProductInput): Promise<Product>
+  /** Annule l'ajout de produits (retire les produits et leurs lignes « ajouté » de l'historique). */
+  undoAddedProducts(ids: string[]): Promise<void>
+  /** Remet des articles de courses supprimés par erreur (sans renvoyer de notification). */
+  restoreShoppingItems(items: ShoppingItem[]): Promise<void>
   /** Lit la date de péremption sur la photo d'un emballage (IA). */
   /** Lit le prix sur une étiquette de rayon (Claude Vision). */
   scanPrice(image: string, mediaType: string): Promise<{ price: number | null; unitPrice: number | null; unitLabel: string | null; name: string | null; confident: boolean }>
@@ -541,6 +545,22 @@ export function StoreProvider({ children }: { children: ReactNode }) {
           await repo.saveExpenses(next)
           setExpenses(next)
         }
+        return created
+      },
+      async undoAddedProducts(ids) {
+        if (!ids.length) return
+        for (const id of ids) await repo.removeProduct(id).catch(() => {})
+        const next = (await repo.getHistory()).filter((h) => !(h.kind === 'ajoute' && h.meta?.productId && ids.includes(h.meta.productId)))
+        await repo.saveHistory(next)
+        setHistory(next)
+        setProducts(await repo.listProducts())
+      },
+      async restoreShoppingItems(items) {
+        for (const it of items) {
+          const created = await repo.addShoppingItem({ name: it.name, category: it.category, quantity: it.quantity, unit: it.unit, source: it.source })
+          if (it.checked) await repo.toggleShoppingItem(created.id)
+        }
+        setShopping(await repo.listShopping())
       },
       async updateProduct(id, patch) {
         setProducts((prev) => prev.map((p) => (p.id === id ? { ...p, ...patch } : p)))
