@@ -632,6 +632,9 @@ var RULES = [
   [["gelatine", "gelatine alimentaire", "gelatine en feuilles", "feuilles de gelatine", "feuille de gelatine"], "gelatine-feuilles"],
   [["mini canape", "mini canapes", "canape", "canapes", "toasts apero", "mini toasts"], "mini-canapes"],
   [["peches en conserve", "peche en conserve", "peches au sirop", "peche au sirop", "peches en boite", "pfirsich", "pfirsiche", "demi peches", "moities de peches"], "peches-conserve"],
+  [["sucre de canne liquide", "sucre canne liquide"], "sirop-canne"],
+  [["grenadine"], "sirop-grenadine"],
+  [["orgeat"], "sirop-orgeat"],
   [["gingembre marine", "gingembre confit", "gingembre rose", "sushi ginger", "gari", "ginger", "mindestens ginger"], "gingembre-pot"],
   [["liant", "liant pour sauces", "liant sauces blanches", "liant sauce blanche", "epaississant sauce", "roux instantane", "sauce binder"], "liant-sauces"],
   [["feuille de brick", "feuilles de brick", "pate de brick", "pates de brick", "galette de brick", "galettes de brick", "brick pastry"], "feuilles-brick"],
@@ -1025,7 +1028,7 @@ var RULES = [
   [["eau gazeuse", "perrier", "badoit", "san pellegrino", "saint yorre"], "eau-gazeuse"],
   [["eau", "evian", "volvic", "vittel", "cristaline"], "eau"],
   [["jus", "smoothie"], "jus"],
-  [["sirop", "grenadine"], "sirop"],
+  [["sirop"], "sirop-grenadine"],
   [["soda", "cola", "limonade", "orangina", "fanta", "sprite", "ice tea"], "soda"],
   [["biere", "bieres"], "biere"],
   [["champagne", "cremant", "prosecco"], "champagne"],
@@ -1192,9 +1195,26 @@ var RULES = [
   [["pasteque", "pasteques"], "pasteque"],
   [["noix de coco", "coco"], "coco"]
 ];
+var SYRUP_FLAVORS = [
+  [["erable"], "sirop-erable"],
+  [["canne"], "sirop-canne"],
+  [["grenadine"], "sirop-grenadine"],
+  [["menthe"], "sirop-menthe"],
+  [["framboise"], "sirop-framboise"],
+  [["fraise"], "sirop-fraise"],
+  [["cassis"], "sirop-cassis"],
+  [["peche"], "sirop-peche"],
+  [["orgeat", "amande"], "sirop-orgeat"],
+  [["violette"], "sirop-violette"],
+  [["citron"], "sirop-citron"],
+  [["orange"], "sirop-orange"]
+];
 function productImageSlug(name) {
   const padded = ` ${normalize(name)} `;
   if (padded.trim() === "") return null;
+  if (padded.includes(" sirop ") && !/ (pancakes?|crepes?|gaufres?|peches? au|poires? au|ananas au|fruits? au) /.test(padded)) {
+    for (const [words, slug] of SYRUP_FLAVORS) if (words.some((w) => padded.includes(` ${w} `) || padded.includes(` ${w}s `))) return slug;
+  }
   for (const [words, slug] of RULES) {
     for (const w of words) {
       if (padded.includes(` ${w} `) || padded.includes(` ${w}s `) || padded.includes(` ${w}x `)) return slug;
