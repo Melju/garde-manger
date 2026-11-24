@@ -799,6 +799,10 @@ export function ShoppingScreen({ addOpen, onCloseAdd }: ShoppingScreenProps) {
           qtyLabel={qtyLabel}
           onStep={(it, dir) => void stepQty(it, dir)}
           onBack={(it) => tick(it.id)}
+          onRemove={(it) => {
+            removeShoppingItem(it.id)
+            toast(`${it.name} retiré des courses`, { label: 'Annuler', onClick: () => void restoreShoppingItems([it]) })
+          }}
           onClear={async () => {
             const gone = cart
             setCartSheet(false)

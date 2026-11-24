@@ -22,6 +22,7 @@ export function CartSheet({
   initialStep = 'cart',
   onStep,
   onBack,
+  onRemove,
   onClear,
   onConfirm,
   onClose,
@@ -32,6 +33,7 @@ export function CartSheet({
   initialStep?: 'cart' | 'dates'
   onStep: (it: ShoppingItem, dir: 1 | -1) => void
   onBack: (it: ShoppingItem) => void
+  onRemove: (it: ShoppingItem) => void
   onClear: () => void
   onConfirm: (dates: Record<string, string>) => void
   onClose: () => void
@@ -102,6 +104,9 @@ export function CartSheet({
                   </div>
                   <button type="button" className="cart-back" onClick={() => onBack(it)} aria-label={`Remettre ${it.name} dans la liste`} title="Remettre dans la liste">
                     <Icon name="undo" />
+                  </button>
+                  <button type="button" className="cart-back cart-del" onClick={() => onRemove(it)} aria-label={`Retirer ${it.name} des courses`} title="Je n'en veux plus">
+                    <Icon name="trash" />
                   </button>
                 </div>
               ))}
