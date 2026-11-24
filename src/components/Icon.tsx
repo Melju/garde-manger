@@ -57,6 +57,7 @@ export type IconName =
   | 'grid'
   | 'list'
   | 'snowflake'
+  | 'undo'
 
 const paths: Record<IconName, React.ReactNode> = {
   bell: (
@@ -370,6 +371,12 @@ const paths: Record<IconName, React.ReactNode> = {
       <path d="M5 14c0-1.7 1.2-3 3.2-3h7.6c2 0 3.2 1.3 3.2 3" />
       <path d="M12 11V8" />
       <path d="M12 3.5c1 1 1 2.5 0 3.5-1-1-1-2.5 0-3.5Z" />
+    </>
+  ),
+  undo: (
+    <>
+      <path d="M9 14 4 9l5-5" />
+      <path d="M4 9h10.5a5.5 5.5 0 0 1 0 11H11" />
     </>
   ),
   snowflake: (

@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { openVoice } from '../components/VoiceAssistant'
 import { useStore } from '../data/store'
 import { detectNearbyStores, type NearbyStore } from '../lib/geoStore'
@@ -70,7 +70,10 @@ export function ShoppingScreen({ addOpen, onCloseAdd }: ShoppingScreenProps) {
   }
   // Panier (tampon) : les articles cochés, rangés au stock en une fois au retour.
   const cart = shopping.filter((it) => it.checked)
-  const [cartOpen, setCartOpen] = useState(true)
+  const [cartOpen, setCartOpen] = useState(false)
+  const [leaving, setLeaving] = useState<Set<string>>(new Set())
+  const [bump, setBump] = useState(0)
+  const cartRef = useRef<HTMLDivElement>(null)
   const [stowing, setStowing] = useState(false)
   const [cartAt, setCartAt] = useState<number>(() => {
     try {
@@ -79,8 +82,26 @@ export function ShoppingScreen({ addOpen, onCloseAdd }: ShoppingScreenProps) {
       return 0
     }
   })
+  /** Coche : l'article se coche, glisse hors de la liste puis rejoint le panier (avec un Annuler). */
   function tick(id: string) {
-    void toggleShoppingItem(id)
+    const it = shopping.find((x) => x.id === id)
+    if (!it || leaving.has(id)) return
+    if (!it.checked) {
+      setLeaving((s) => new Set(s).add(id))
+      setTimeout(() => {
+        void toggleShoppingItem(id)
+        setLeaving((s) => {
+          const n = new Set(s)
+          n.delete(id)
+          return n
+        })
+        setBump((b) => b + 1)
+      }, 380)
+      toast(`${it.name} est dans le panier`, { label: 'Annuler', onClick: () => void toggleShoppingItem(id) })
+    } else {
+      void toggleShoppingItem(id)
+      toast(`${it.name} remis dans la liste`)
+    }
     const now = Date.now()
     setCartAt(now)
     try {
@@ -421,6 +442,22 @@ export function ShoppingScreen({ addOpen, onCloseAdd }: ShoppingScreenProps) {
           <p>{remaining} article{remaining !== 1 ? 's' : ''} restant{remaining !== 1 ? 's' : ''}</p>
         </div>
         <div className="header-actions">
+          {cart.length > 0 && (
+            <button
+              type="button"
+              key={bump}
+              className={`icon-btn cart-btn${bump ? ' bump' : ''}`}
+              onClick={() => {
+                setCartOpen(true)
+                setTimeout(() => cartRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 50)
+              }}
+              aria-label={`Panier : ${cart.length} article${cart.length > 1 ? 's' : ''}`}
+              title="Voir le panier"
+            >
+              <Icon name="cart" />
+              <span className="cart-badge">{cart.length}</span>
+            </button>
+          )}
           <button
             type="button"
             className={`icon-btn${shopView === 'grid' ? ' on' : ''}`}
@@ -639,8 +676,8 @@ export function ShoppingScreen({ addOpen, onCloseAdd }: ShoppingScreenProps) {
       <div className="shopping-groups">
       {grouped.length === 0 ? (
         <div className="empty-state">
-          <Icon name="cart" />
-          <p>Votre liste est vide.</p>
+          <Icon name={cart.length ? 'check' : 'cart'} />
+          <p>{cart.length ? 'Tout est dans le panier !' : 'Votre liste est vide.'}</p>
         </div>
       ) : (
         grouped.map((group) => {
@@ -660,7 +697,7 @@ export function ShoppingScreen({ addOpen, onCloseAdd }: ShoppingScreenProps) {
                 {group.items.map((it) => {
                   const slug = shopImage(it.name)
                   return (
-                    <div key={it.id} className={`shop-tile${it.checked ? ' checked' : ''}`} onClick={() => tick(it.id)} role="button" tabIndex={0}>
+                    <div key={it.id} className={`shop-tile${it.checked || leaving.has(it.id) ? ' checked' : ''}${leaving.has(it.id) ? ' leaving' : ''}`} onClick={() => tick(it.id)} role="button" tabIndex={0}>
                       <div className="shop-tile-img">
                         {slug ? <img src={productImageUrl(slug)} alt="" loading="lazy" draggable={false} /> : <Icon name={categoryIcon(group.category)} width={1.6} />}
                       </div>
@@ -678,7 +715,7 @@ export function ShoppingScreen({ addOpen, onCloseAdd }: ShoppingScreenProps) {
             ) : group.items.map((it) => (
               <div
                 key={it.id}
-                className={`shopping-item${it.checked ? ' checked' : ''}`}
+                className={`shopping-item${leaving.has(it.id) ? ' checked leaving' : ''}`}
                 onClick={() => tick(it.id)}
               >
                 <div className="checkbox">
@@ -735,52 +772,72 @@ export function ShoppingScreen({ addOpen, onCloseAdd }: ShoppingScreenProps) {
         })
       )}
       {cart.length > 0 && (
-        <div className="cart-block">
-          <button type="button" className="cart-head" onClick={() => setCartOpen((v) => !v)}>
-            <span className="shop-cat-ico cart-ico">
-              <Icon name="cart" width={2} />
+        <div className={`cart-block${cartOpen ? ' open' : ''}`} ref={cartRef}>
+          <button type="button" className="cart-head" onClick={() => setCartOpen((v) => !v)} aria-expanded={cartOpen}>
+            <span className="cart-ico">
+              <Icon name="cart" />
             </span>
-            <span className="shop-cat-name">Dans le panier</span>
-            <span className="shop-cat-count">{cart.length}</span>
-            <Icon name="chevron" className={`cart-chev${cartOpen ? ' open' : ''}`} />
-          </button>
-          {cartOpen && (
-            <>
-              <div className="cart-items">
-                {cart.map((it) => {
+            <span className="cart-title">
+              <strong>Dans le panier</strong>
+              <small>
+                {cart.length} article{cart.length > 1 ? 's' : ''} pris
+              </small>
+            </span>
+            {!cartOpen && (
+              <span className="cart-stack" aria-hidden>
+                {cart.slice(0, 4).map((it) => {
                   const slug = shopImage(it.name)
                   const col = categoryColor(it.category)
                   return (
-                    <button type="button" key={it.id} className="cart-item" onClick={() => tick(it.id)} title="Remettre dans la liste">
-                      <span className="shop-thumb" style={{ background: col.bg, color: col.fg }}>
-                        {slug ? <img src={productImageUrl(slug)} alt="" loading="lazy" draggable={false} /> : <Icon name={categoryIcon(it.category)} width={1.8} />}
-                      </span>
-                      <span className="cart-name">{it.name}</span>
-                      <span className="cart-qty">{qtyLabel(it.quantity, it.unit)}</span>
-                    </button>
+                    <span key={it.id} style={{ background: col.bg, color: col.fg }}>
+                      {slug ? <img src={productImageUrl(slug)} alt="" loading="lazy" draggable={false} /> : <Icon name={categoryIcon(it.category)} width={1.8} />}
+                    </span>
                   )
                 })}
-              </div>
-              <p className="cart-hint">Touche un article pour le remettre dans la liste.</p>
-              <div className="btn-row">
-                <button
-                  className="btn-secondary"
-                  onClick={async () => {
-                    const gone = cart
-                    await clearCheckedShopping()
-                    toast(`${gone.length} article${gone.length > 1 ? 's' : ''} retiré${gone.length > 1 ? 's' : ''} du panier`, {
-                      label: 'Annuler',
-                      onClick: () => void restoreShoppingItems(gone),
-                    })
-                  }}
-                >
-                  Vider sans ranger
-                </button>
-                <button className="btn-primary" onClick={() => setStowing(true)}>
-                  Ranger au stock ({cart.length})
-                </button>
-              </div>
-            </>
+                {cart.length > 4 && <span className="cart-more">+{cart.length - 4}</span>}
+              </span>
+            )}
+            <Icon name="chevron" className={`cart-chev${cartOpen ? ' open' : ''}`} />
+          </button>
+          {cartOpen && (
+            <div className="cart-list">
+              {cart.map((it) => {
+                const slug = shopImage(it.name)
+                const col = categoryColor(it.category)
+                return (
+                  <div key={it.id} className="cart-row">
+                    <span className="shop-thumb" style={{ background: col.bg, color: col.fg }}>
+                      {slug ? <img src={productImageUrl(slug)} alt="" loading="lazy" draggable={false} /> : <Icon name={categoryIcon(it.category)} width={1.8} />}
+                    </span>
+                    <span className="cart-name">{it.name}</span>
+                    <span className="cart-qty">{qtyLabel(it.quantity, it.unit)}</span>
+                    <button type="button" className="cart-back" onClick={() => tick(it.id)} aria-label={`Remettre ${it.name} dans la liste`} title="Remettre dans la liste">
+                      <Icon name="undo" />
+                    </button>
+                  </div>
+                )
+              })}
+            </div>
+          )}
+          <button className="btn-primary cart-stow" onClick={() => setStowing(true)}>
+            <Icon name="box" />
+            Ranger au stock
+          </button>
+          {cartOpen && (
+            <button
+              type="button"
+              className="cart-clear"
+              onClick={async () => {
+                const gone = cart
+                await clearCheckedShopping()
+                toast(`${gone.length} article${gone.length > 1 ? 's' : ''} retiré${gone.length > 1 ? 's' : ''} du panier`, {
+                  label: 'Annuler',
+                  onClick: () => void restoreShoppingItems(gone),
+                })
+              }}
+            >
+              Vider le panier sans ranger
+            </button>
           )}
         </div>
       )}
