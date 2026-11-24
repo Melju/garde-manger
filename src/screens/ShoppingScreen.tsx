@@ -13,6 +13,7 @@ import { categoryColor } from '../lib/categoryColors'
 import { chosenIconSlug, productImageSlug, productImageUrl } from '../lib/productImage'
 import { QuantityWheel } from '../components/QuantityWheel'
 import { CartSheet } from '../components/CartSheet'
+import { useDragTrash } from '../components/DragTrash'
 import { CATEGORIES, categoryLabel, defaultConservation, type Category, type ShoppingItem } from '../types'
 import { buyScale, formatContenance, parseContenance } from '../lib/contenance'
 import { guessCategoryFromName, guessUnitFromName } from '../lib/categoryGuess'
@@ -109,6 +110,25 @@ export function ShoppingScreen({ addOpen, onCloseAdd }: ShoppingScreenProps) {
     }
   }
   // On propose de ranger quand tout est pris, ou quand le panier attend depuis plus de 20 minutes (retour de courses).
+  function removeItem(it: ShoppingItem) {
+    removeShoppingItem(it.id)
+    toast(`${it.name} retiré des courses`, { label: 'Annuler', onClick: () => void restoreShoppingItems([it]) })
+  }
+  // Appui long sur un article → glisser vers la corbeille qui apparaît en bas.
+  const dt = useDragTrash<ShoppingItem>({
+    onDrop: removeItem,
+    label: (it) => it.name,
+    idOf: (it) => it.id,
+    thumb: (it) => {
+      const slug = shopImage(it.name)
+      const col = categoryColor(it.category)
+      return (
+        <span className="shop-thumb" style={{ background: col.bg, color: col.fg }}>
+          {slug ? <img src={productImageUrl(slug)} alt="" draggable={false} /> : <Icon name={categoryIcon(it.category)} width={1.8} />}
+        </span>
+      )
+    },
+  })
   /** Illustration d'un article : celle du produit en stock s'il y en a une choisie, sinon devinée du nom. */
   function shopImage(name: string): string | null {
     const inStock = products.find((p) => p.name.trim().toLowerCase() === name.trim().toLowerCase())
@@ -692,7 +712,7 @@ export function ShoppingScreen({ addOpen, onCloseAdd }: ShoppingScreenProps) {
                 {group.items.map((it) => {
                   const slug = shopImage(it.name)
                   return (
-                    <div key={it.id} className={`shop-tile${it.checked || leaving.has(it.id) ? ' checked' : ''}${leaving.has(it.id) ? ' leaving' : ''}`} onClick={() => tick(it.id)} role="button" tabIndex={0}>
+                    <div key={it.id} className={`shop-tile${it.checked || leaving.has(it.id) ? ' checked' : ''}${leaving.has(it.id) ? ' leaving' : ''}${dt.isDragging(it) ? ' dragging' : ''}`} {...dt.bind(it)} onClick={() => tick(it.id)} role="button" tabIndex={0}>
                       <div className="shop-tile-img">
                         {slug ? <img src={productImageUrl(slug)} alt="" loading="lazy" draggable={false} /> : <Icon name={categoryIcon(group.category)} width={1.6} />}
                       </div>
@@ -710,7 +730,8 @@ export function ShoppingScreen({ addOpen, onCloseAdd }: ShoppingScreenProps) {
             ) : group.items.map((it) => (
               <div
                 key={it.id}
-                className={`shopping-item${leaving.has(it.id) ? ' checked leaving' : ''}`}
+                className={`shopping-item${leaving.has(it.id) ? ' checked leaving' : ''}${dt.isDragging(it) ? ' dragging' : ''}`}
+                {...dt.bind(it)}
                 onClick={() => tick(it.id)}
               >
                 <div className="checkbox">
@@ -754,8 +775,7 @@ export function ShoppingScreen({ addOpen, onCloseAdd }: ShoppingScreenProps) {
                   aria-label="Retirer"
                   onClick={(e) => {
                     e.stopPropagation()
-                    removeShoppingItem(it.id)
-                    toast(`${it.name} retiré de la liste`, { label: 'Annuler', onClick: () => void restoreShoppingItems([it]) })
+                    removeItem(it)
                   }}
                 >
                   <Icon name="trash" />
@@ -799,10 +819,7 @@ export function ShoppingScreen({ addOpen, onCloseAdd }: ShoppingScreenProps) {
           qtyLabel={qtyLabel}
           onStep={(it, dir) => void stepQty(it, dir)}
           onBack={(it) => tick(it.id)}
-          onRemove={(it) => {
-            removeShoppingItem(it.id)
-            toast(`${it.name} retiré des courses`, { label: 'Annuler', onClick: () => void restoreShoppingItems([it]) })
-          }}
+          onRemove={removeItem}
           onClear={async () => {
             const gone = cart
             setCartSheet(false)
@@ -896,6 +913,7 @@ export function ShoppingScreen({ addOpen, onCloseAdd }: ShoppingScreenProps) {
           </div>
         </div>
       )}
+      {dt.layer}
     </div>
   )
 }

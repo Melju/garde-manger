@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { Icon, categoryIcon } from './Icon'
 import { DatePicker } from './DatePicker'
 import { DateScanner } from './DateScanner'
+import { useDragTrash } from './DragTrash'
 import { categoryColor } from '../lib/categoryColors'
 import { productImageUrl } from '../lib/productImage'
 import { estimatedExpiryISO } from '../lib/shelfLife'
@@ -53,6 +54,7 @@ export function CartSheet({
       </span>
     )
   }
+  const dt = useDragTrash<ShoppingItem>({ onDrop: onRemove, label: (it) => it.name, idOf: (it) => it.id, thumb: (it) => thumb(it) })
   const dateOf = (it: ShoppingItem) => (it.id in dates ? dates[it.id] : estimate(it))
 
   return (
@@ -70,7 +72,7 @@ export function CartSheet({
             <div className="drawer-sub">
               {step === 'cart'
                 ? n
-                  ? `${n} article${plural} pris · ajuste les quantités si besoin`
+                  ? `${n} article${plural} pris · appui long pour glisser vers la corbeille`
                   : 'Le panier est vide'
                 : 'Dates estimées : corrige ou scanne celles qui comptent'}
             </div>
@@ -90,7 +92,7 @@ export function CartSheet({
                 </div>
               )}
               {items.map((it) => (
-                <div className="cart-row" key={it.id}>
+                <div className={`cart-row${dt.isDragging(it) ? ' dragging' : ''}`} key={it.id} {...dt.bind(it)}>
                   {thumb(it)}
                   <span className="cart-name">{it.name}</span>
                   <div className="shop-step">
@@ -158,6 +160,7 @@ export function CartSheet({
           </>
         )}
       </div>
+      {dt.layer}
       {scanning && (
         <DateScanner
           onResult={(r) => {
