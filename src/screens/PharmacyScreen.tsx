@@ -100,6 +100,7 @@ export function PharmacyScreen({ onBack, onAdd, onEdit, topSlot }: PharmacyScree
           {title} <span>{list.length}</span>
         </div>
         {note && <div className="pharma-note">{note}</div>}
+        <div className="pharma-items">
         {list.map((p) => (
           <ProductItem
             key={p.id}
@@ -111,6 +112,7 @@ export function PharmacyScreen({ onBack, onAdd, onEdit, topSlot }: PharmacyScree
             onConsumeSachets={handleConsumeSachets}
           />
         ))}
+        </div>
       </div>
     )
 

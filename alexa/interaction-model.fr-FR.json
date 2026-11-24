@@ -287,7 +287,15 @@
             "qu'est-ce qui périme bientôt",
             "ce qui périme bientôt",
             "qu'est-ce qui va périmer",
-            "ce qui va périmer"
+            "ce qui va périmer",
+            "qu'est-ce qu'il y a dans la {lieu}",
+            "ce qu'il y a dans la {lieu}",
+            "qu'est-ce qu'on a dans la {lieu}",
+            "quels {lieu} on a",
+            "les {lieu}",
+            "la {lieu}",
+            "montre la {lieu}",
+            "affiche la {lieu}"
           ]
         },
         {
@@ -410,6 +418,16 @@
                   "garde-manger",
                   "réserve",
                   "cave"
+                ]
+              }
+            },
+            {
+              "name": {
+                "value": "pharmacie",
+                "synonyms": [
+                  "armoire à pharmacie",
+                  "boîte à pharmacie",
+                  "médicaments"
                 ]
               }
             }

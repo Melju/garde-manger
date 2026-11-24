@@ -1254,33 +1254,6 @@ function recipeIconSlug(recipe) {
   return null;
 }
 
-// src/types.ts
-var CATEGORIES = [
-  { id: "fruits", label: "Fruits" },
-  { id: "legumes", label: "L\xE9gumes" },
-  { id: "viandes", label: "Viandes" },
-  { id: "viandes-vg", label: "Viandes VG" },
-  { id: "poissons", label: "Poissons" },
-  { id: "laitiers", label: "Laitiers" },
-  { id: "epicerie", label: "\xC9picerie" },
-  { id: "huiles", label: "Huiles" },
-  { id: "conserves", label: "Conserves" },
-  { id: "sucreries", label: "Sucreries" },
-  { id: "patisserie", label: "P\xE2tisserie" },
-  { id: "apero", label: "Ap\xE9ro" },
-  { id: "boissons", label: "Boissons" },
-  { id: "surgeles", label: "Surgel\xE9s" },
-  { id: "maison", label: "Maison" },
-  { id: "pharmacie", label: "Pharmacie" },
-  { id: "autre", label: "Autre" }
-];
-var CAT_MAP = Object.fromEntries(CATEGORIES.map((c) => [c.id, c.label]));
-function defaultConservation(category) {
-  if (category === "surgeles") return "congele";
-  if (["viandes", "viandes-vg", "poissons", "laitiers", "fruits", "legumes"].includes(category)) return "refrigere";
-  return "frais";
-}
-
 // src/lib/dryStaple.ts
 var WORDS = [
   "pates",
@@ -1429,6 +1402,33 @@ function urgentCount(products, now = /* @__PURE__ */ new Date()) {
   }).length;
 }
 
+// src/types.ts
+var CATEGORIES = [
+  { id: "fruits", label: "Fruits" },
+  { id: "legumes", label: "L\xE9gumes" },
+  { id: "viandes", label: "Viandes" },
+  { id: "viandes-vg", label: "Viandes VG" },
+  { id: "poissons", label: "Poissons" },
+  { id: "laitiers", label: "Laitiers" },
+  { id: "epicerie", label: "\xC9picerie" },
+  { id: "huiles", label: "Huiles" },
+  { id: "conserves", label: "Conserves" },
+  { id: "sucreries", label: "Sucreries" },
+  { id: "patisserie", label: "P\xE2tisserie" },
+  { id: "apero", label: "Ap\xE9ro" },
+  { id: "boissons", label: "Boissons" },
+  { id: "surgeles", label: "Surgel\xE9s" },
+  { id: "maison", label: "Maison" },
+  { id: "pharmacie", label: "Pharmacie" },
+  { id: "autre", label: "Autre" }
+];
+var CAT_MAP = Object.fromEntries(CATEGORIES.map((c) => [c.id, c.label]));
+function defaultConservation(category) {
+  if (category === "surgeles") return "congele";
+  if (["viandes", "viandes-vg", "poissons", "laitiers", "fruits", "legumes"].includes(category)) return "refrigere";
+  return "frais";
+}
+
 // server/alexa-apl.ts
 var SITE = "https://food.graphikeo.com";
 var C = {
@@ -1499,7 +1499,8 @@ var NAV = [
   { key: "congel", label: "Cong\xE9lateur" },
   { key: "list", label: "Courses" },
   { key: "week", label: "Semaine" },
-  { key: "recipes", label: "Recettes" }
+  { key: "recipes", label: "Recettes" },
+  { key: "pharma", label: "Pharmacie" }
 ];
 var layouts = {
   Header: {
@@ -2692,10 +2693,10 @@ async function handleCommand(text, link, alexaUser, ui = { apl: false }) {
     if (!ui.apl || !reply) return r2;
     if (ui.view === "grid") {
       const l = ui.lieu ? norm4(ui.lieu) : "";
-      const food = products.filter((p) => p.category !== "pharmacie");
+      const food = l.startsWith("pharma") ? products.filter((p) => p.category === "pharmacie") : products.filter((p) => p.category !== "pharmacie");
       const list = byExpiry(l ? food.filter((p) => norm4(p.location ?? "").includes(l)) : food);
       const title = ui.lieu ? ui.lieu.charAt(0).toUpperCase() + ui.lieu.slice(1) : "Tout le stock";
-      const nav = l.startsWith("refri") ? "frigo" : l.startsWith("congel") ? "congel" : l ? "" : "stock";
+      const nav = l.startsWith("refri") ? "frigo" : l.startsWith("congel") ? "congel" : l.startsWith("pharma") ? "pharma" : l ? "" : "stock";
       return attach(r2, gridScreen(title, `${list.length} produit${list.length > 1 ? "s" : ""}`, list.slice(0, 90).map(productTile), nav), true);
     }
     if (ui.view === "recipe")
@@ -2749,7 +2750,14 @@ async function handleNav(key, link, alexaUser, apl) {
     const [recipes, products2] = await Promise.all([repo.getRecipes(), repo.listProducts()]);
     return quiet(recipesScreen(recipes, products2), apl);
   }
-  const products = (await repo.listProducts()).filter((p) => p.category !== "pharmacie");
+  const all = await repo.listProducts();
+  if (key === "pharma") {
+    const list2 = byExpiry(all.filter((p) => p.category === "pharmacie"));
+    const bad = list2.filter((p) => ["expired", "soon"].includes(expiryStatus(p))).length;
+    const label2 = `${list2.length} m\xE9dicament${list2.length > 1 ? "s" : ""}${bad ? ` \xB7 ${bad} \xE0 v\xE9rifier` : ""}`;
+    return quiet(gridScreen("Pharmacie", label2, list2.map(productTile), "pharma"), apl);
+  }
+  const products = all.filter((p) => p.category !== "pharmacie");
   const count = (n) => `${n} produit${n > 1 ? "s" : ""}`;
   if (key === "urgent") {
     const list2 = priorityProducts(products);
@@ -2903,6 +2911,10 @@ async function applyOne(a, repo, sb, products, shopping, undo) {
     await logHistory(undo, sb, hid, "jete", `${p.name} jet\xE9 (p\xE9rim\xE9)`, { ...meta, qty: p.quantity });
     return;
   }
+  if (a.type === "stock_open" && p.category === "pharmacie") {
+    await repo.updateProduct(p.id, { openedAt: (/* @__PURE__ */ new Date()).toISOString().slice(0, 10) });
+    return;
+  }
   if (a.type === "stock_open") {
     const days = openShelfDays(p.name, p.category).days;
     const exp = new Date(Date.now() + days * 864e5).toISOString().slice(0, 10);
@@ -2997,7 +3009,7 @@ var VERBS = {
   CommandeIntent: ""
 };
 var FIXED = {
-  ContenuIntent: (lieu) => lieu ? `Qu\u2019est-ce qu\u2019il y a dans le ${lieu} ? Ne cite que les produits dont l\u2019emplacement est \xAB ${lieu} \xBB (sans tenir compte des majuscules), et r\xE9sume en quelques mots.` : "Qu\u2019est-ce que j\u2019ai en stock ? R\xE9sume en quelques mots, en citant d\u2019abord ce qui p\xE9rime bient\xF4t.",
+  ContenuIntent: (lieu) => lieu ? `Qu\u2019est-ce qu\u2019il y a dans ${lieu === "pharmacie" ? "la" : "le"} ${lieu} ? Ne cite que les produits dont l\u2019emplacement est \xAB ${lieu} \xBB (sans tenir compte des majuscules), et r\xE9sume en quelques mots.` : "Qu\u2019est-ce que j\u2019ai en stock ? R\xE9sume en quelques mots, en citant d\u2019abord ce qui p\xE9rime bient\xF4t.",
   RecetteIntent: () => "Qu\u2019est-ce que je peux cuisiner avec ce que j\u2019ai, en priorit\xE9 ce qui p\xE9rime bient\xF4t ? Propose une ou deux id\xE9es courtes.",
   ListeIntent: () => "Qu\u2019est-ce qu\u2019il y a sur la liste de courses ? Lis-la simplement."
 };

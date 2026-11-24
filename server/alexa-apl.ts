@@ -105,6 +105,7 @@ const NAV = [
   { key: 'list', label: 'Courses' },
   { key: 'week', label: 'Semaine' },
   { key: 'recipes', label: 'Recettes' },
+  { key: 'pharma', label: 'Pharmacie' },
 ]
 
 const layouts = {

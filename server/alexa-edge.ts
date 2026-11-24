@@ -12,6 +12,7 @@ import { SupabaseRepository } from '../src/data/supabaseRepository'
 import { consumeAmount, countLabel, countPerPack, countUnit, formatContenance, parseContenance } from '../src/lib/contenance'
 import { openShelfDays } from '../src/lib/openShelf'
 import { isIngredientInStock } from '../src/lib/recipesLib'
+import { expiryStatus } from '../src/lib/expiry'
 import { defaultConservation, type Category, type Product } from '../src/types'
 import { answerScreen, byExpiry, doneScreen, gridScreen, homeScreen, listScreen, matching, nameTile, priorityProducts, productScreen, recipeScreen, recipesScreen, weekDates, weekScreen, productTile, urgent, urgentCount, type Tile } from './alexa-apl'
 
@@ -276,10 +277,10 @@ async function handleCommand(text: string, link: { user_id: string; household_id
     if (!ui.apl || !reply) return r
     if (ui.view === 'grid') {
       const l = ui.lieu ? norm(ui.lieu) : ''
-      const food = products.filter((p) => p.category !== 'pharmacie')
+      const food = l.startsWith('pharma') ? products.filter((p) => p.category === 'pharmacie') : products.filter((p) => p.category !== 'pharmacie')
       const list = byExpiry(l ? food.filter((p) => norm(p.location ?? '').includes(l)) : food)
       const title = ui.lieu ? ui.lieu.charAt(0).toUpperCase() + ui.lieu.slice(1) : 'Tout le stock'
-      const nav = l.startsWith('refri') ? 'frigo' : l.startsWith('congel') ? 'congel' : l ? '' : 'stock'
+      const nav = l.startsWith('refri') ? 'frigo' : l.startsWith('congel') ? 'congel' : l.startsWith('pharma') ? 'pharma' : l ? '' : 'stock'
       return attach(r, gridScreen(title, `${list.length} produit${list.length > 1 ? 's' : ''}`, list.slice(0, 90).map(productTile), nav), true)
     }
     if (ui.view === 'recipe')
@@ -345,7 +346,14 @@ async function handleNav(key: string, link: any, alexaUser: string, apl: boolean
     const [recipes, products] = await Promise.all([repo.getRecipes(), repo.listProducts()])
     return quiet(recipesScreen(recipes, products), apl)
   }
-  const products = (await repo.listProducts()).filter((p) => p.category !== 'pharmacie')
+  const all = await repo.listProducts()
+  if (key === 'pharma') {
+    const list = byExpiry(all.filter((p) => p.category === 'pharmacie'))
+    const bad = list.filter((p) => ['expired', 'soon'].includes(expiryStatus(p))).length
+    const label = `${list.length} médicament${list.length > 1 ? 's' : ''}${bad ? ` · ${bad} à vérifier` : ''}`
+    return quiet(gridScreen('Pharmacie', label, list.map(productTile), 'pharma'), apl)
+  }
+  const products = all.filter((p) => p.category !== 'pharmacie')
   const count = (n: number) => `${n} produit${n > 1 ? 's' : ''}`
   if (key === 'urgent') {
     const list = priorityProducts(products)
@@ -520,6 +528,11 @@ async function applyOne(a: any, repo: SupabaseRepository, sb: any, products: Pro
     await logHistory(undo, sb, hid, 'jete', `${p.name} jeté (périmé)`, { ...meta, qty: p.quantity })
     return
   }
+  if (a.type === 'stock_open' && p.category === 'pharmacie') {
+    // Médicament : on note juste l'ouverture, sans toucher à la date ni au rangement.
+    await repo.updateProduct(p.id, { openedAt: new Date().toISOString().slice(0, 10) })
+    return
+  }
   if (a.type === 'stock_open') {
     const days = openShelfDays(p.name, p.category).days
     const exp = new Date(Date.now() + days * 86400_000).toISOString().slice(0, 10)
@@ -623,7 +636,7 @@ const VERBS: Record<string, string> = {
 const FIXED: Record<string, (lieu?: string) => string> = {
   ContenuIntent: (lieu) =>
     lieu
-      ? `Qu’est-ce qu’il y a dans le ${lieu} ? Ne cite que les produits dont l’emplacement est « ${lieu} » (sans tenir compte des majuscules), et résume en quelques mots.`
+      ? `Qu’est-ce qu’il y a dans ${lieu === 'pharmacie' ? 'la' : 'le'} ${lieu} ? Ne cite que les produits dont l’emplacement est « ${lieu} » (sans tenir compte des majuscules), et résume en quelques mots.`
       : 'Qu’est-ce que j’ai en stock ? Résume en quelques mots, en citant d’abord ce qui périme bientôt.',
   RecetteIntent: () => 'Qu’est-ce que je peux cuisiner avec ce que j’ai, en priorité ce qui périme bientôt ? Propose une ou deux idées courtes.',
   ListeIntent: () => 'Qu’est-ce qu’il y a sur la liste de courses ? Lis-la simplement.',

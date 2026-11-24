@@ -3507,3 +3507,7 @@ html.kiosk .product-list.tiles .product-icon > svg { width: 32cqw !important; ma
 .stock-switch { margin: 0 20px 14px; }
 html.kiosk .stock-switch { margin-top: 4px; }
 .med-photo-btn { display: flex; width: calc(100% - 40px); margin: 0 20px 16px; justify-content: center; padding: 14px; font-size: 15px; }
+
+@media (min-width: 1000px) {
+  .pharma-items { display: grid; grid-template-columns: repeat(auto-fill, minmax(420px, 1fr)); gap: 0 14px; }
+}
