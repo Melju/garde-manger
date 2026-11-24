@@ -7,6 +7,9 @@ const RULES: { cat: Category; words: string[] }[] = [
   { cat: 'epicerie', words: ['vinaigre', 'vinaigrette', 'mayonnaise'] },
   // Biscuits et douceurs « aux fruits » : avant les fruits, sinon « Pims framboise » ou « confiture de fraise » partent en Fruits.
   { cat: 'sucreries', words: ['pims', 'pim s', "pim's", 'pim’s', 'prince', 'oreo', 'petit beurre', 'speculoos', 'madeleine', 'cookie', 'brownie', 'gaufre', 'kinder', 'haribo', 'twix', 'snickers', 'pate a tartiner', 'confiture', 'compote', 'biscuit', 'gateau', 'tartelette', 'barre chocolatee', 'barres chocolatees', 'bonbon', 'chocolat'] },
+  // Tomates transformées (polpa, concassées, pelées, coulis…) : des conserves, pas des légumes frais.
+  { cat: 'conserves', words: ['polpa', 'pulpe de tomate', 'concasse', 'tomates pelees', 'tomate pelee', 'tomates en des', 'tomates en morceaux', 'puree de tomate', 'coulis de tomate', 'passata', 'pomodori', 'tomate en conserve', 'tomates en conserve', 'concentre de tomate', 'tomate concentre', 'double concentre', 'sauce tomate'] },
+  { cat: 'legumes', words: ['tomate cerise', 'tomates cerises', 'tomates cerise'] },
   { cat: 'laitiers', words: ['lait', 'yaourt', 'yogourt', 'fromage', 'beurre', 'creme', 'oeuf', 'mozzarella', 'comte', 'emmental', 'chevre'] },
   { cat: 'fruits', words: ['pomme', 'framboise', 'myrtille', 'mangue', 'clementine', 'mandarine', 'prune', 'figue', 'grenade', 'pamplemousse', 'banane', 'orange', 'fraise', 'raisin', 'poire', 'peche', 'abricot', 'kiwi', 'citron', 'fruit', 'cerise', 'melon', 'ananas', 'mangue'] },
   { cat: 'legumes', words: ['tomate', 'carotte', 'salade', 'courgette', 'oignon', 'ail', 'poireau', 'pomme de terre', 'patate', 'legume', 'brocoli', 'epinard', 'haricot', 'poivron', 'champignon', 'concombre', 'avocat'] },
