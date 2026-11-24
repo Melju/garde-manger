@@ -17,6 +17,7 @@ export type Category =
   | 'boissons'
   | 'surgeles'
   | 'maison'
+  | 'pharmacie'
   | 'autre'
 
 export const CATEGORIES: { id: Category; label: string }[] = [
@@ -35,6 +36,7 @@ export const CATEGORIES: { id: Category; label: string }[] = [
   { id: 'boissons', label: 'Boissons' },
   { id: 'surgeles', label: 'Surgelés' },
   { id: 'maison', label: 'Maison' },
+  { id: 'pharmacie', label: 'Pharmacie' },
   { id: 'autre', label: 'Autre' },
 ]
 
@@ -50,6 +52,9 @@ export const CATEGORY_LABELS = CAT_MAP as Record<Category, string>
 
 /** Hors alimentaire (entretien, hygiène, animaux, divers) : ni date de péremption ni conservation à renseigner. */
 export const isNonFood = (c: Category | string | undefined): boolean => c === 'maison'
+
+/** Pharmacie (médicaments, soins) : suivie à part du stock alimentaire, date de péremption stricte. */
+export const isPharmacy = (c: Category | string | undefined): boolean => c === 'pharmacie'
 
 /** Mode de conservation (influe sur l'estimation de péremption). */
 export type Conservation = 'frais' | 'refrigere' | 'congele'

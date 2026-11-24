@@ -129,7 +129,8 @@ export function monthlyStats(
   now: Date = new Date(),
 ): MonthlyStats {
   const mk = monthKey(toISODate(now))
-  const monthHistory = history.filter((h) => monthKey(h.date) === mk)
+  // La pharmacie ne compte pas dans le gaspillage alimentaire.
+  const monthHistory = history.filter((h) => monthKey(h.date) === mk && h.meta?.category !== 'pharmacie')
   const consumed = monthHistory.filter((h) => h.kind === 'consomme').length
   const wasted = monthHistory.filter((h) => h.kind === 'jete').length
   const prepared = monthHistory.filter((h) => h.kind === 'prepare').length

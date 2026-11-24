@@ -17,6 +17,7 @@ export const CATEGORY_COLORS: Record<Category, { bg: string; fg: string }> = {
   boissons: { bg: 'oklch(0.93 0.06 200)', fg: 'oklch(0.55 0.13 205)' }, // cyan
   surgeles: { bg: 'oklch(0.93 0.06 225)', fg: 'oklch(0.55 0.14 225)' }, // glace
   maison: { bg: 'oklch(0.94 0.04 200)', fg: 'oklch(0.5 0.1 210)' }, // bleu doux
+  pharmacie: { bg: 'oklch(0.94 0.05 150)', fg: 'oklch(0.5 0.14 155)' }, // vert pharmacie
   autre: { bg: 'oklch(0.95 0.008 220)', fg: 'oklch(0.5 0.02 220)' }, // neutre
 }
 

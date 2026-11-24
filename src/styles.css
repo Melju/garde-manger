@@ -3489,3 +3489,15 @@ html.kiosk .product-list.tiles .product-icon > svg { width: 32cqw !important; ma
 @media (max-width: 380px) { .alexa-row { flex-direction: column; } .alexa-row .btn-primary { width: 100%; } }
 .alexa-linked .btn-secondary { flex: 0 0 auto; width: auto; height: 40px; padding: 0 14px; font-size: 14px; }
 .alexa-linked { display: flex; align-items: center; justify-content: space-between; gap: 10px; font-size: 14px; padding: 8px 12px; border-radius: 12px; background: var(--accent-soft); }
+
+/* Pharmacie */
+.pharma-summary { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 18px; }
+.pharma-stat { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 14px 10px; text-align: center; }
+.pharma-stat .value { font-size: 26px; font-weight: 800; }
+.pharma-stat .label { font-size: 12px; color: var(--muted); margin-top: 2px; }
+.pharma-stat.danger .value { color: var(--danger); }
+.pharma-stat.warn .value { color: var(--warn, #c9861a); }
+.pharma-section { margin-bottom: 18px; }
+.pharma-title { font-size: 14px; font-weight: 700; margin: 4px 2px 8px; display: flex; align-items: center; gap: 8px; }
+.pharma-title span { font-size: 12px; color: var(--muted); font-weight: 600; background: var(--soft, var(--border)); border-radius: 10px; padding: 1px 8px; }
+.pharma-note { font-size: 13px; color: var(--muted); margin: -2px 2px 10px; }

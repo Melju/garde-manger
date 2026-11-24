@@ -100,6 +100,11 @@ function daysUntilExpiry(product, now = /* @__PURE__ */ new Date()) {
 function expiryStatus(product, now = /* @__PURE__ */ new Date()) {
   const days = daysUntilExpiry(product, now);
   if (days === null) return "none";
+  if (product.category === "pharmacie") {
+    if (days < 0) return "expired";
+    if (days <= 30) return "soon";
+    return "ok";
+  }
   if (isFrozen(product)) {
     if (days < -frozenGraceDays(product)) return "expired";
     if (days < 0) return "still-good";
@@ -120,7 +125,8 @@ function expiryStatus(product, now = /* @__PURE__ */ new Date()) {
 }
 
 // src/lib/pushDigest.ts
-function buildDigest(products, settings) {
+function buildDigest(all, settings) {
+  const products = all.filter((p) => p.category !== "pharmacie");
   const urgent = [];
   if (settings.notifExpiry) {
     for (const p of products) {

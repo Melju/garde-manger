@@ -62,6 +62,12 @@ export function daysUntilExpiry(product: Product, now: Date = new Date()): numbe
 export function expiryStatus(product: Product, now: Date = new Date()): ExpiryStatus {
   const days = daysUntilExpiry(product, now)
   if (days === null) return 'none'
+  // Pharmacie : date stricte, et on s'en préoccupe un mois avant (le temps de racheter).
+  if (product.category === 'pharmacie') {
+    if (days < 0) return 'expired'
+    if (days <= 30) return 'soon'
+    return 'ok'
+  }
   // Congelé : pas d'urgence à l'approche de la date, et une tolérance après la date.
   if (isFrozen(product)) {
     if (days < -frozenGraceDays(product)) return 'expired'
@@ -88,6 +94,7 @@ export function expiryStatus(product: Product, now: Date = new Date()): ExpirySt
 export function expiryLabel(product: Product, now: Date = new Date()): string {
   const days = daysUntilExpiry(product, now)
   if (days === null) return '—'
+  if (product.category === 'pharmacie' && days < 0) return `Périmé (${Math.abs(days)}j)`
   if (product.dateType !== 'dlc' && days < 0 && isDryStaple(product.name, product.category)) return '—'
   if (isFrozen(product) && days < 0) {
     return days >= -frozenGraceDays(product) ? `Encore bon (${Math.abs(days)}j)` : `Périmé (${Math.abs(days)}j)`

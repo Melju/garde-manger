@@ -9,6 +9,7 @@ import {
   CATEGORIES,
   defaultConservation,
   isNonFood,
+  isPharmacy,
   type Category,
   type Conservation,
   type DateType,
@@ -38,6 +39,8 @@ import { familyAllergenWarnings, allergenLabel } from '../lib/allergens'
 
 /** Unités de contenance proposées. */
 const SIZE_UNITS = ['g', 'kg', 'mL', 'cl', 'L', 'pièce', 'pack', 'boîte', 'sachet', 'pot', 'tranche']
+/** Unités proposées pour la pharmacie. */
+const PHARMA_UNITS = ['comprimé', 'gélule', 'sachet', 'dose', 'unidose', 'pastille', 'ampoule', 'patch', 'mL', 'g', 'pièce']
 
 /** Emplacements proposés (boutons). */
 const LOCATIONS = ['Placard', 'Réfrigérateur', 'Congélateur', 'Cellier', 'Cave', 'Corbeille']
@@ -196,8 +199,10 @@ export function ProductFormScreen({ product, initial, onClose, onSaved }: Produc
   const canSave = name.trim().length > 0 && quantity > 0
 
   const nonFood = isNonFood(category)
+  const pharma = isPharmacy(category)
+  const locations = pharma ? ['Pharmacie', ...LOCATIONS] : LOCATIONS
   const estimate = useMemo(
-    () => (isNonFood(category) ? null : estimateShelfLife(name, conservation, category)),
+    () => (isNonFood(category) || isPharmacy(category) ? null : estimateShelfLife(name, conservation, category)),
     [name, conservation, category],
   )
   // Type de date proposé d'après le produit (DDM pour les pâtes, DLC pour la viande...), tant que tu n'as pas choisi toi-même.
@@ -290,6 +295,10 @@ export function ProductFormScreen({ product, initial, onClose, onSaved }: Produc
       autoDate.current = null
     }
     pickConservation(defaultConservation(c))
+    if (isPharmacy(c)) {
+      setDateType('dlc')
+      if (!locTouched.current) setLocation('Pharmacie')
+    }
   }
 
   // Pré-remplissage IA : devine catégorie/conservation/unité/DLC depuis le nom.
@@ -330,7 +339,7 @@ export function ProductFormScreen({ product, initial, onClose, onSaved }: Produc
         product?.size && splitSize(product.size).full && splitSize(product.size).current.replace(/\s+/g, '') === sizeStr.replace(/\s+/g, '')
           ? product.size
           : sizeStr || undefined,
-      dateType,
+      dateType: pharma ? 'dlc' : dateType,
       expiryDate: nonFood ? undefined : expiryDate || undefined,
       location: location.trim() || undefined,
       price: price ? Number(price.replace(',', '.')) || undefined : undefined,
@@ -609,8 +618,8 @@ export function ProductFormScreen({ product, initial, onClose, onSaved }: Produc
             onChange={setSizeUnit}
             options={[
               { value: '', label: 'Unité…' },
-              ...(sizeUnit && !SIZE_UNITS.includes(sizeUnit) ? [{ value: sizeUnit, label: sizeUnit }] : []),
-              ...SIZE_UNITS.map((u) => ({ value: u, label: u })),
+              ...(sizeUnit && !(pharma ? PHARMA_UNITS : SIZE_UNITS).includes(sizeUnit) ? [{ value: sizeUnit, label: sizeUnit }] : []),
+              ...(pharma ? PHARMA_UNITS : SIZE_UNITS).map((u) => ({ value: u, label: u })),
             ]}
           />
         </div>
@@ -625,7 +634,7 @@ export function ProductFormScreen({ product, initial, onClose, onSaved }: Produc
             <Icon name="scan" width={2.2} />
             Scanner la date
           </button>
-        {isEdit && product && !nonFood && conservation !== 'congele' && (
+        {isEdit && product && !nonFood && !pharma && conservation !== 'congele' && (
           product.openedAt ? (
             <div className="opened-note">Ouvert le {formatLong(product.openedAt)}</div>
           ) : (
@@ -702,7 +711,7 @@ export function ProductFormScreen({ product, initial, onClose, onSaved }: Produc
         </div>
         {!showDeduced && (
           <div className="deduced-summary">
-            {CATEGORIES.find((c) => c.id === category)?.label ?? category} · {location || 'Emplacement ?'}{!nonFood && ` · ${dateType === 'dlc' ? 'DLC' : 'DDM'}`}
+            {CATEGORIES.find((c) => c.id === category)?.label ?? category} · {location || 'Emplacement ?'}{!nonFood && !pharma && ` · ${dateType === 'dlc' ? 'DLC' : 'DDM'}`}
             {placeSource && <span className="deduced-learned"> (rangement appris)</span>}
           </div>
         )}
@@ -727,7 +736,7 @@ export function ProductFormScreen({ product, initial, onClose, onSaved }: Produc
       <div className="form-section">
         <label className="form-label" htmlFor="location">Emplacement</label>
         <div className="opt-grid">
-          {LOCATIONS.map((l) => (
+          {locations.map((l) => (
             <button
               key={l}
               type="button"
@@ -743,12 +752,12 @@ export function ProductFormScreen({ product, initial, onClose, onSaved }: Produc
           className="form-input"
           style={{ marginTop: 10 }}
           placeholder="Autre emplacement…"
-          value={LOCATIONS.includes(location) ? '' : location}
+          value={locations.includes(location) ? '' : location}
           onChange={(e) => userPickLocation(e.target.value)}
         />
       </div>
 
-      {!nonFood && (
+      {!nonFood && !pharma && (
       <div className="form-section">
         <label className="form-label">Type de date</label>
         <div className="opt-grid two">

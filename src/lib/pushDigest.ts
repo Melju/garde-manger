@@ -11,7 +11,9 @@ export interface Digest {
  * plus le stock bas si activé. Renvoie null s'il n'y a rien à signaler (pas de notification « tout va bien »).
  * Réutilise expiryStatus : congelé, DDM et tolérances sont donc traités comme dans l'app.
  */
-export function buildDigest(products: Product[], settings: Settings): Digest | null {
+export function buildDigest(all: Product[], settings: Settings): Digest | null {
+  // La pharmacie a son propre suivi : pas de « Doliprane à consommer vite » dans le résumé.
+  const products = all.filter((p) => p.category !== 'pharmacie')
   const urgent: { name: string; days: number }[] = []
   if (settings.notifExpiry) {
     for (const p of products) {

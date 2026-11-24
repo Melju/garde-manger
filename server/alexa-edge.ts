@@ -214,7 +214,8 @@ async function handleHome(link: any, apl: boolean, text: ((name: string) => stri
   const name = await displayName(link, repo)
   const r: any = text ? say(text(name), { end: false, reprompt: 'Que veux-tu faire ?' }) : { version: '1.0', response: {} }
   if (!apl) return r
-  const [products, shopping] = await Promise.all([repo.listProducts(), repo.listShopping()])
+  const [allProducts, shopping] = await Promise.all([repo.listProducts(), repo.listShopping()])
+  const products = allProducts.filter((p) => p.category !== 'pharmacie')
   return attach(
     r,
     homeScreen({
@@ -275,13 +276,14 @@ async function handleCommand(text: string, link: { user_id: string; household_id
     if (!ui.apl || !reply) return r
     if (ui.view === 'grid') {
       const l = ui.lieu ? norm(ui.lieu) : ''
-      const list = byExpiry(l ? products.filter((p) => norm(p.location ?? '').includes(l)) : products)
+      const food = products.filter((p) => p.category !== 'pharmacie')
+      const list = byExpiry(l ? food.filter((p) => norm(p.location ?? '').includes(l)) : food)
       const title = ui.lieu ? ui.lieu.charAt(0).toUpperCase() + ui.lieu.slice(1) : 'Tout le stock'
       const nav = l.startsWith('refri') ? 'frigo' : l.startsWith('congel') ? 'congel' : l ? '' : 'stock'
       return attach(r, gridScreen(title, `${list.length} produit${list.length > 1 ? 's' : ''}`, list.slice(0, 90).map(productTile), nav), true)
     }
     if (ui.view === 'recipe')
-      return attach(r, answerScreen(reply, { title: 'Idées de repas', tiles: urgent(products, 12).map(productTile), tilesTitle: 'À utiliser en priorité', nav: 'recipe' }), true)
+      return attach(r, answerScreen(reply, { title: 'Idées de repas', tiles: urgent(products.filter((p) => p.category !== 'pharmacie'), 12).map(productTile), tilesTitle: 'À utiliser en priorité', nav: 'recipe' }), true)
     return attach(r, answerScreen(reply, { tiles: matching(products, ui.query || text).map(productTile), tilesTitle: 'Dans ton stock' }), true)
   }
 
@@ -343,7 +345,7 @@ async function handleNav(key: string, link: any, alexaUser: string, apl: boolean
     const [recipes, products] = await Promise.all([repo.getRecipes(), repo.listProducts()])
     return quiet(recipesScreen(recipes, products), apl)
   }
-  const products = await repo.listProducts()
+  const products = (await repo.listProducts()).filter((p) => p.category !== 'pharmacie')
   const count = (n: number) => `${n} produit${n > 1 ? 's' : ''}`
   if (key === 'urgent') {
     const list = priorityProducts(products)

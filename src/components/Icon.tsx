@@ -4,6 +4,7 @@ import type { Category } from '../types'
 export type IconName =
   | 'bell'
   | 'plus'
+  | 'pill'
   | 'minus'
   | 'alert'
   | 'search'
@@ -66,6 +67,12 @@ const paths: Record<IconName, React.ReactNode> = {
     />
   ),
   plus: <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />,
+  pill: (
+    <>
+      <path d="m10.5 20.5 10-10a4.95 4.95 0 1 0-7-7l-10 10a4.95 4.95 0 1 0 7 7Z" />
+      <path d="m8.5 8.5 7 7" />
+    </>
+  ),
   minus: <path strokeLinecap="round" strokeLinejoin="round" d="M5 12h14" />,
   alert: (
     <path
@@ -397,6 +404,7 @@ const CATEGORY_ICON: Record<Category, IconName> = {
   boissons: 'bottle',
   surgeles: 'snowflake',
   maison: 'box',
+  pharmacie: 'pill',
   autre: 'box',
 }
 

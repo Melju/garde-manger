@@ -1,7 +1,7 @@
 import { useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import type { Product } from '../types'
-import { categoryLabel, isNonFood } from '../types'
+import { categoryLabel, isNonFood, isPharmacy } from '../types'
 import { expiryLabel, expiryStatus, isFrozen } from '../lib/expiry'
 import { OpenProductSheet } from './OpenProductSheet'
 import { categoryColor } from '../lib/categoryColors'
@@ -84,8 +84,10 @@ export function ProductItem({
 
   const status = expiryStatus(product)
   const col = categoryColor(product.category)
-  const iconKey = productIconKey(product.name)
-  const imageSlug = chosenIconSlug(product.imageUrl) ?? productImageSlug(product.name)
+  // Pharmacie : pas d'illustration d'aliment devinée d'après le nom (« sirop » n'est pas une grenadine), sauf icône choisie.
+  const pharma = isPharmacy(product.category)
+  const iconKey = pharma ? null : productIconKey(product.name)
+  const imageSlug = chosenIconSlug(product.imageUrl) ?? (pharma ? null : productImageSlug(product.name))
   // Produit au poids/volume si une seule unité en stock avec une contenance continue.
   const byWeight = product.quantity <= 1 && isWeightProduct(product.size)
   const scale = byWeight ? portionScale(product.size) : null
@@ -96,7 +98,7 @@ export function ProductItem({
   // Glissement progressif : la ligne suit le doigt, puis s'ouvre ou se referme selon la position relâchée.
   const OPEN_LEFT = 216
   // Glissement à droite : « Ouvert » (si applicable) + « Périmé ».
-  const canOpen = !product.openedAt && !isNonFood(product.category) && !isFrozen(product)
+  const canOpen = !product.openedAt && !isNonFood(product.category) && !isPharmacy(product.category) && !isFrozen(product)
   const [opening, setOpening] = useState(false)
   const OPEN_RIGHT = canOpen ? 240 : 120
   const base = swipe === 'left' ? -OPEN_LEFT : swipe === 'right' ? OPEN_RIGHT : 0

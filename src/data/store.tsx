@@ -44,7 +44,7 @@ import { toISODate } from '../lib/dates'
 import { linkedProduct } from '../lib/recipesLib'
 import { priorityProducts } from '../lib/expiry'
 import { buildNotifications, type Notification } from '../lib/analytics'
-import { DIET_LABELS } from '../types'
+import { DIET_LABELS, isPharmacy } from '../types'
 import { lookupBarcode } from '../lib/openfoodfacts'
 
 /** Brouillon de recette issu d'une photo. */
@@ -59,7 +59,10 @@ export interface ScannedRecipe {
 }
 
 interface StoreValue {
+  /** Stock alimentaire et maison (sans la pharmacie). */
   products: Product[]
+  /** Pharmacie : médicaments et soins, suivis à part (péremption stricte). */
+  pharmacy: Product[]
   shopping: ShoppingItem[]
   recipes: Recipe[]
   family: FamilyMember[]
@@ -189,7 +192,9 @@ const AVATAR_COLORS = [
 ]
 
 export function StoreProvider({ children }: { children: ReactNode }) {
-  const [products, setProducts] = useState<Product[]>([])
+  const [allProducts, setProducts] = useState<Product[]>([])
+  const products = useMemo(() => allProducts.filter((p) => !isPharmacy(p.category)), [allProducts])
+  const pharmacy = useMemo(() => allProducts.filter((p) => isPharmacy(p.category)), [allProducts])
   const [shopping, setShopping] = useState<ShoppingItem[]>([])
   const [recipes, setRecipes] = useState<Recipe[]>([])
   const [family, setFamily] = useState<FamilyMember[]>([])
@@ -422,6 +427,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
 
     return {
       products,
+      pharmacy,
       shopping,
       recipes,
       family,
@@ -488,7 +494,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       },
 
       async refreshFromOFF() {
-        const withBarcode = products.filter((p) => p.barcode)
+        const withBarcode = allProducts.filter((p) => p.barcode && !isPharmacy(p.category))
         let updated = 0
         for (const p of withBarcode) {
           // On saute ceux déjà complets.
@@ -543,7 +549,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
         }
       },
       async adjustQuantity(id, delta) {
-        const before = products.find((p) => p.id === id)
+        const before = allProducts.find((p) => p.id === id)
         setProducts((prev) =>
           prev.flatMap((p) => (p.id !== id ? [p] : p.quantity + delta <= 0 ? [] : [{ ...p, quantity: p.quantity + delta }])),
         )
@@ -583,7 +589,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
           if (m?.name) {
             const existing =
               entry.kind === 'consomme'
-                ? products.find((p) => p.name.trim().toLowerCase() === m.name!.trim().toLowerCase())
+                ? allProducts.find((p) => p.name.trim().toLowerCase() === m.name!.trim().toLowerCase())
                 : undefined
             if (existing) {
               await repo.adjustQuantity(existing.id, m.qty ?? 1)
@@ -604,7 +610,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
         setHistory(history.filter((h) => h.id !== entry.id))
       },
       async wasteProduct(id, qty) {
-        const before = products.find((p) => p.id === id)
+        const before = allProducts.find((p) => p.id === id)
         const partial = !!before && qty !== undefined && qty > 0 && qty < before.quantity
         setProducts((prev) =>
           partial && before
@@ -809,7 +815,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
         }
         if (product.quantity > 1) {
           // Un seul exemplaire est ouvert : on le sépare du lot fermé (ou on le range avec un lot déjà ouvert pareil).
-          const twin = products.find(
+          const twin = allProducts.find(
             (p) =>
               p.id !== product.id && p.name === product.name && p.brand === product.brand && p.size === product.size &&
               p.openedAt === patch.openedAt && p.expiryDate === patch.expiryDate,
@@ -1022,7 +1028,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
         await loadAll()
       },
     }
-  }, [repo, products, shopping, recipes, family, mealPlan, history, expenses, shopCatalog, budget, settings, loading, offline, notifications, allNotifications, dismissedNotif, seenNotif, loadAll])
+  }, [repo, products, allProducts, pharmacy, shopping, recipes, family, mealPlan, history, expenses, shopCatalog, budget, settings, loading, offline, notifications, allNotifications, dismissedNotif, seenNotif, loadAll])
 
   return <StoreContext.Provider value={value}>{children}</StoreContext.Provider>
 }

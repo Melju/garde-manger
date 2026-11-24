@@ -10,7 +10,7 @@ function json(obj: unknown, status = 200): Response {
   return new Response(JSON.stringify(obj), { status, headers: { 'content-type': 'application/json' } })
 }
 
-const CATEGORIES = 'fruits, legumes, viandes, viandes-vg, poissons, laitiers, epicerie, huiles, conserves, sucreries, patisserie, apero, boissons, surgeles, autre'
+const CATEGORIES = 'fruits, legumes, viandes, viandes-vg, poissons, laitiers, epicerie, huiles, conserves, sucreries, patisserie, apero, boissons, surgeles, maison, pharmacie, autre'
 const UNITS = ['', 'g', 'kg', 'mL', 'cL', 'L']
 const TYPES = ['shop_add', 'shop_remove', 'stock_add', 'stock_remove', 'stock_finish', 'stock_open', 'stock_waste', 'ask']
 

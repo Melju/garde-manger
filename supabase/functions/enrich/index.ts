@@ -10,7 +10,7 @@ function json(obj: unknown, status = 200): Response {
   return new Response(JSON.stringify(obj), { status, headers: { 'content-type': 'application/json' } })
 }
 
-const CATEGORIES = 'fruits, legumes, viandes, viandes-vg, poissons, laitiers, epicerie, huiles, conserves, sucreries, patisserie, apero, boissons, surgeles, autre'
+const CATEGORIES = 'fruits, legumes, viandes, viandes-vg, poissons, laitiers, epicerie, huiles, conserves, sucreries, patisserie, apero, boissons, surgeles, maison, pharmacie, autre'
 const TTL = 24 * 60 * 60 * 1000 // 24 h
 
 Deno.serve(async (req) => {

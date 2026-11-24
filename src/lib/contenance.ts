@@ -18,6 +18,11 @@ const COUNT_ALIASES: Record<string, string> = {
   boite: 'boîte', boites: 'boîte', 'boîte': 'boîte', 'boîtes': 'boîte',
   pot: 'pot', pots: 'pot',
   tranche: 'tranche', tranches: 'tranche',
+  'comprimé': 'comprimé', 'comprimés': 'comprimé', comprime: 'comprimé', comprimes: 'comprimé', cp: 'comprimé', cps: 'comprimé',
+  'gélule': 'gélule', 'gélules': 'gélule', gelule: 'gélule', gelules: 'gélule',
+  dose: 'dose', doses: 'dose', unidose: 'unidose', unidoses: 'unidose',
+  ampoule: 'ampoule', ampoules: 'ampoule', pastille: 'pastille', pastilles: 'pastille',
+  suppositoire: 'suppositoire', suppositoires: 'suppositoire', patch: 'patch', patchs: 'patch',
 }
 
 /** Forme canonique (singulier) d'une unité dénombrable, ou null si ce n'est pas un comptage. */

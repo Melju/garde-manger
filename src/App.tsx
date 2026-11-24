@@ -12,6 +12,7 @@ import { StatsScreen } from './screens/StatsScreen'
 import { ConsumptionScreen } from './screens/ConsumptionScreen'
 import { BudgetScreen } from './screens/BudgetScreen'
 import { WasteScreen } from './screens/WasteScreen'
+import { PharmacyScreen } from './screens/PharmacyScreen'
 import { FamilyScreen } from './screens/FamilyScreen'
 import { MemberEditScreen } from './screens/MemberEditScreen'
 import { MoreScreen } from './screens/MoreScreen'
@@ -68,6 +69,7 @@ type Route =
   | { name: 'consumption' }
   | { name: 'budget' }
   | { name: 'waste' }
+  | { name: 'pharmacy' }
   | { name: 'recipe-detail'; recipe: Recipe }
   | { name: 'recipe-form'; recipe?: Recipe }
   | { name: 'shared-recipe'; token: string }
@@ -79,7 +81,7 @@ type Route =
   | { name: 'add-menu' }
 
 export function App() {
-  const { loading, products, adjustQuantity, addProduct, updateProduct } = useStore()
+  const { loading, products, pharmacy, adjustQuantity, addProduct, updateProduct } = useStore()
   const [pendingConsume, setPendingConsume] = useState<Product | null>(null)
   const pendingRef = useRef(false)
   const askConfirm = useConfirm()
@@ -88,7 +90,7 @@ export function App() {
 
   // Ajout par scan : un produit déjà en stock (même code-barres) demande juste « combien ? ».
   function findKnownByBarcode(barcode: string) {
-    return products.find((x) => x.barcode && x.barcode === barcode) ?? null
+    return products.find((x) => x.barcode && x.barcode === barcode) ?? pharmacy.find((x) => x.barcode && x.barcode === barcode) ?? null
   }
   async function addKnown(p: Product, n: number, expiries: string[]) {
     // Regroupe les articles par date : même date que le produit (ou vide) = +quantité, sinon nouveau lot.
@@ -392,6 +394,7 @@ export function App() {
                 onStats={() => push({ name: 'stats' })}
                 onNotifications={() => push({ name: 'notifications' })}
                 onWaste={() => push({ name: 'waste' })}
+                onPharmacy={() => push({ name: 'pharmacy' })}
                 onBudget={() => push({ name: 'budget' })}
                 onSettings={() => push({ name: 'settings' })}
                 onDuplicates={() => push({ name: 'duplicates' })}
@@ -476,6 +479,14 @@ export function App() {
         return <ConsumptionScreen onBack={back} />
       case 'waste':
         return <WasteScreen onBack={back} />
+      case 'pharmacy':
+        return (
+          <PharmacyScreen
+            onBack={back}
+            onAdd={() => push({ name: 'product-form', product: null, initial: { category: 'pharmacie', location: 'Pharmacie', dateType: 'dlc' } })}
+            onEdit={(product) => push({ name: 'product-form', product })}
+          />
+        )
       case 'recipe-detail':
         return (
           <RecipeDetailScreen

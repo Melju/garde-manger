@@ -5,12 +5,14 @@ import { Icon, type IconName } from '../components/Icon'
 import { budgetSummary } from '../lib/analytics'
 import { monthlyStats } from '../lib/analytics'
 import { findDuplicates } from '../lib/duplicates'
+import { expiryStatus } from '../lib/expiry'
 
 interface MoreScreenProps {
   onFamily: () => void
   onStats: () => void
   onNotifications: () => void
   onWaste: () => void
+  onPharmacy: () => void
   onBudget: () => void
   onSettings: () => void
   onDuplicates: () => void
@@ -18,10 +20,14 @@ interface MoreScreenProps {
 }
 
 export function MoreScreen(props: MoreScreenProps) {
-  const { products, expenses, budget, history, unreadNotifCount } = useStore()
+  const { products, pharmacy, expenses, budget, history, unreadNotifCount } = useStore()
   const auth = useAuth()
   const notifCount = unreadNotifCount
   const spent = useMemo(() => budgetSummary(expenses, budget).spent, [expenses, budget])
+  const pharmaAlert = useMemo(
+    () => pharmacy.filter((p) => { const s = expiryStatus(p); return s === 'expired' || s === 'soon' }).length,
+    [pharmacy],
+  )
   const dupCount = useMemo(() => findDuplicates(products).length, [products])
   const score = useMemo(() => monthlyStats(products, history, expenses).score, [products, history, expenses])
 
@@ -40,6 +46,17 @@ export function MoreScreen(props: MoreScreenProps) {
       desc: notifCount > 0 ? `${notifCount} alerte${notifCount > 1 ? 's' : ''}` : 'Aucune alerte',
       onClick: props.onNotifications,
       badge: notifCount || undefined,
+    },
+    {
+      icon: 'pill',
+      title: 'Pharmacie',
+      desc: pharmacy.length
+        ? pharmaAlert
+          ? `${pharmaAlert} à vérifier sur ${pharmacy.length}`
+          : `${pharmacy.length} médicament${pharmacy.length > 1 ? 's' : ''}, tout est en ordre`
+        : 'Suivre les dates des médicaments',
+      onClick: props.onPharmacy,
+      badge: pharmaAlert || undefined,
     },
     { icon: 'recycle', title: 'Anti-gaspillage', desc: `Score ${score}/100`, onClick: props.onWaste },
     { icon: 'wallet', title: 'Budget', desc: `${spent}€ ce mois`, onClick: props.onBudget },

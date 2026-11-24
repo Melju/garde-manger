@@ -432,7 +432,29 @@ var COUNT_ALIASES = {
   pot: "pot",
   pots: "pot",
   tranche: "tranche",
-  tranches: "tranche"
+  tranches: "tranche",
+  "comprim\xE9": "comprim\xE9",
+  "comprim\xE9s": "comprim\xE9",
+  comprime: "comprim\xE9",
+  comprimes: "comprim\xE9",
+  cp: "comprim\xE9",
+  cps: "comprim\xE9",
+  "g\xE9lule": "g\xE9lule",
+  "g\xE9lules": "g\xE9lule",
+  gelule: "g\xE9lule",
+  gelules: "g\xE9lule",
+  dose: "dose",
+  doses: "dose",
+  unidose: "unidose",
+  unidoses: "unidose",
+  ampoule: "ampoule",
+  ampoules: "ampoule",
+  pastille: "pastille",
+  pastilles: "pastille",
+  suppositoire: "suppositoire",
+  suppositoires: "suppositoire",
+  patch: "patch",
+  patchs: "patch"
 };
 function countUnit(unit) {
   if (!unit) return null;
@@ -1246,6 +1268,7 @@ var CATEGORIES = [
   { id: "boissons", label: "Boissons" },
   { id: "surgeles", label: "Surgel\xE9s" },
   { id: "maison", label: "Maison" },
+  { id: "pharmacie", label: "Pharmacie" },
   { id: "autre", label: "Autre" }
 ];
 var CAT_MAP = Object.fromEntries(CATEGORIES.map((c) => [c.id, c.label]));
@@ -1347,6 +1370,11 @@ function daysUntilExpiry(product, now = /* @__PURE__ */ new Date()) {
 function expiryStatus(product, now = /* @__PURE__ */ new Date()) {
   const days = daysUntilExpiry(product, now);
   if (days === null) return "none";
+  if (product.category === "pharmacie") {
+    if (days < 0) return "expired";
+    if (days <= 30) return "soon";
+    return "ok";
+  }
   if (isFrozen(product)) {
     if (days < -frozenGraceDays(product)) return "expired";
     if (days < 0) return "still-good";
@@ -1368,6 +1396,7 @@ function expiryStatus(product, now = /* @__PURE__ */ new Date()) {
 function expiryLabel(product, now = /* @__PURE__ */ new Date()) {
   const days = daysUntilExpiry(product, now);
   if (days === null) return "\u2014";
+  if (product.category === "pharmacie" && days < 0) return `P\xE9rim\xE9 (${Math.abs(days)}j)`;
   if (product.dateType !== "dlc" && days < 0 && isDryStaple(product.name, product.category)) return "\u2014";
   if (isFrozen(product) && days < 0) {
     return days >= -frozenGraceDays(product) ? `Encore bon (${Math.abs(days)}j)` : `P\xE9rim\xE9 (${Math.abs(days)}j)`;
@@ -2608,7 +2637,8 @@ async function handleHome(link, apl, text) {
   const name = await displayName(link, repo);
   const r = text ? say(text(name), { end: false, reprompt: "Que veux-tu faire ?" }) : { version: "1.0", response: {} };
   if (!apl) return r;
-  const [products, shopping] = await Promise.all([repo.listProducts(), repo.listShopping()]);
+  const [allProducts, shopping] = await Promise.all([repo.listProducts(), repo.listShopping()]);
+  const products = allProducts.filter((p) => p.category !== "pharmacie");
   return attach(
     r,
     homeScreen({
@@ -2659,13 +2689,14 @@ async function handleCommand(text, link, alexaUser, ui = { apl: false }) {
     if (!ui.apl || !reply) return r2;
     if (ui.view === "grid") {
       const l = ui.lieu ? norm4(ui.lieu) : "";
-      const list = byExpiry(l ? products.filter((p) => norm4(p.location ?? "").includes(l)) : products);
+      const food = products.filter((p) => p.category !== "pharmacie");
+      const list = byExpiry(l ? food.filter((p) => norm4(p.location ?? "").includes(l)) : food);
       const title = ui.lieu ? ui.lieu.charAt(0).toUpperCase() + ui.lieu.slice(1) : "Tout le stock";
       const nav = l.startsWith("refri") ? "frigo" : l.startsWith("congel") ? "congel" : l ? "" : "stock";
       return attach(r2, gridScreen(title, `${list.length} produit${list.length > 1 ? "s" : ""}`, list.slice(0, 90).map(productTile), nav), true);
     }
     if (ui.view === "recipe")
-      return attach(r2, answerScreen(reply, { title: "Id\xE9es de repas", tiles: urgent(products, 12).map(productTile), tilesTitle: "\xC0 utiliser en priorit\xE9", nav: "recipe" }), true);
+      return attach(r2, answerScreen(reply, { title: "Id\xE9es de repas", tiles: urgent(products.filter((p) => p.category !== "pharmacie"), 12).map(productTile), tilesTitle: "\xC0 utiliser en priorit\xE9", nav: "recipe" }), true);
     return attach(r2, answerScreen(reply, { tiles: matching(products, ui.query || text).map(productTile), tilesTitle: "Dans ton stock" }), true);
   }
   const ask = actions.find((a) => a.type === "ask");
@@ -2715,7 +2746,7 @@ async function handleNav(key, link, alexaUser, apl) {
     const [recipes, products2] = await Promise.all([repo.getRecipes(), repo.listProducts()]);
     return quiet(recipesScreen(recipes, products2), apl);
   }
-  const products = await repo.listProducts();
+  const products = (await repo.listProducts()).filter((p) => p.category !== "pharmacie");
   const count = (n) => `${n} produit${n > 1 ? "s" : ""}`;
   if (key === "urgent") {
     const list2 = priorityProducts(products);
