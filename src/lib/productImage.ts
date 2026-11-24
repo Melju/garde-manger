@@ -615,6 +615,8 @@ const SYRUP_FLAVORS: [string[], string][] = [
 export function productImageSlug(name: string): string | null {
   const padded = ` ${normalize(name)} `
   if (padded.trim() === '') return null
+  // « Huile de sésame / de noix / de tournesol » : c'est une bouteille d'huile, pas la graine ni le fruit.
+  if (/^ huiles? /.test(padded)) return 'huile'
   if (padded.includes(' sirop ') && !/ (pancakes?|crepes?|gaufres?|peches? au|poires? au|ananas au|fruits? au) /.test(padded)) {
     for (const [words, slug] of SYRUP_FLAVORS) if (words.some((w) => padded.includes(` ${w} `) || padded.includes(` ${w}s `))) return slug
   }

@@ -1212,6 +1212,7 @@ var SYRUP_FLAVORS = [
 function productImageSlug(name) {
   const padded = ` ${normalize(name)} `;
   if (padded.trim() === "") return null;
+  if (/^ huiles? /.test(padded)) return "huile";
   if (padded.includes(" sirop ") && !/ (pancakes?|crepes?|gaufres?|peches? au|poires? au|ananas au|fruits? au) /.test(padded)) {
     for (const [words, slug] of SYRUP_FLAVORS) if (words.some((w) => padded.includes(` ${w} `) || padded.includes(` ${w}s `))) return slug;
   }
