@@ -8,6 +8,11 @@ import { normalize } from './productIcon'
  * Retourne null si rien ne correspond : l'appelant retombe sur le pictogramme de secours.
  */
 const RULES: [string[], string][] = [
+  [['liquide de rincage', 'liquide rincage', 'produit de rincage', 'rincage lave vaisselle'], 'liquide-rincage'],
+  [['petit bois', 'bois d allumage', 'bois allumage', 'allume feu', 'allumes feu', 'fagot'], 'petit-bois'],
+  [['m m s', 'm ms', 'mms', 'smarties', 'dragees chocolat', 'dragees au chocolat', 'bonbons chocolat', 'bonbons au chocolat'], 'bonbons-chocolat'],
+  [['profiterole', 'profiteroles', 'choux au chocolat', 'chou a la creme'], 'profiteroles'],
+  [['thermometre'], 'med-thermometre'],
   [['gousse de vanille', 'gousses de vanille', 'gousse vanille', 'vanille en gousse', 'vanille bourbon gousse'], 'gousses-vanille'],
   [['arome vanille', 'arome de vanille', 'extrait de vanille', 'vanille liquide', 'essence de vanille', 'arome naturel vanille'], 'arome-vanille'],
   [['bicarbonate', 'bicarbonate de soude', 'bicarbonate alimentaire', 'bicarbonate de sodium'], 'bicarbonate'],

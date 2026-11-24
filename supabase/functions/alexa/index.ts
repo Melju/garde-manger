@@ -618,6 +618,11 @@ function openShelfDays(name, _category) {
 
 // src/lib/productImage.ts
 var RULES = [
+  [["liquide de rincage", "liquide rincage", "produit de rincage", "rincage lave vaisselle"], "liquide-rincage"],
+  [["petit bois", "bois d allumage", "bois allumage", "allume feu", "allumes feu", "fagot"], "petit-bois"],
+  [["m m s", "m ms", "mms", "smarties", "dragees chocolat", "dragees au chocolat", "bonbons chocolat", "bonbons au chocolat"], "bonbons-chocolat"],
+  [["profiterole", "profiteroles", "choux au chocolat", "chou a la creme"], "profiteroles"],
+  [["thermometre"], "med-thermometre"],
   [["gousse de vanille", "gousses de vanille", "gousse vanille", "vanille en gousse", "vanille bourbon gousse"], "gousses-vanille"],
   [["arome vanille", "arome de vanille", "extrait de vanille", "vanille liquide", "essence de vanille", "arome naturel vanille"], "arome-vanille"],
   [["bicarbonate", "bicarbonate de soude", "bicarbonate alimentaire", "bicarbonate de sodium"], "bicarbonate"],
@@ -1423,6 +1428,23 @@ var CATEGORIES = [
   { id: "autre", label: "Autre" }
 ];
 var CAT_MAP = Object.fromEntries(CATEGORIES.map((c) => [c.id, c.label]));
+var MED_FORMS = [
+  { id: "comprime", label: "Comprim\xE9", unit: "comprim\xE9", icon: "med-comprime" },
+  { id: "gelule", label: "G\xE9lule", unit: "g\xE9lule", icon: "med-gelule" },
+  { id: "effervescent", label: "Effervescent", unit: "comprim\xE9", icon: "med-effervescent" },
+  { id: "sachet", label: "Sachet \xE0 diluer", unit: "sachet", icon: "med-sachet" },
+  { id: "sirop", label: "Sirop / buvable", unit: "mL", liquid: true, icon: "med-sirop" },
+  { id: "gouttes", label: "Gouttes", unit: "mL", liquid: true, icon: "med-collyre" },
+  { id: "collyre", label: "Collyre", unit: "mL", liquid: true, icon: "med-collyre" },
+  { id: "spray", label: "Spray", unit: "mL", liquid: true, icon: "med-spray" },
+  { id: "creme", label: "Cr\xE8me / pommade", unit: "g", icon: "med-creme" },
+  { id: "pastille", label: "Pastille", unit: "pastille", icon: "med-pastille" },
+  { id: "suppositoire", label: "Suppositoire", unit: "suppositoire", icon: "med-suppositoire" },
+  { id: "patch", label: "Patch", unit: "patch", icon: "med-pansement" },
+  { id: "soin", label: "Pansement / soin", unit: "pi\xE8ce", icon: "med-pansement" },
+  { id: "autre", label: "Autre", unit: "" }
+];
+var medFormIcon = (f) => MED_FORMS.find((m) => m.id === f)?.icon ?? "med-comprime";
 function defaultConservation(category) {
   if (category === "surgeles") return "congele";
   if (["viandes", "viandes-vg", "poissons", "laitiers", "fruits", "legumes"].includes(category)) return "refrigere";
@@ -1461,7 +1483,7 @@ function productTile(p) {
     id: p.id,
     name: p.name,
     sub: [sub, qty].filter(Boolean).join(" \xB7 ") || void 0,
-    img: imageFor(p.name, p.imageUrl, p.category),
+    img: p.category === "pharmacie" && !chosenIconSlug(p.imageUrl) ? `${SITE}/icons-png/${medFormIcon(p.medForm)}.png` : imageFor(p.name, p.imageUrl, p.category),
     initial: p.name.trim().charAt(0).toUpperCase() || "?",
     tone: st === "expired" ? "expired" : st === "urgent" ? "soon" : "ok"
   };

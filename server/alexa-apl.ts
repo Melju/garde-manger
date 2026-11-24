@@ -1,7 +1,7 @@
 // Écrans de la skill Alexa « Miam miam » pour les Echo à écran (APL), aux couleurs de l'app.
 // Pensés d'abord pour l'Echo Show 15 (1920 × 1080), et lisibles sur les écrans plus petits.
 import { productImageSlug, chosenIconSlug } from '../src/lib/productImage'
-import type { MealPlan, Product, Recipe, ShoppingItem } from '../src/types'
+import { medFormIcon, type MealPlan, type Product, type Recipe, type ShoppingItem } from '../src/types'
 import { recipeIconSlug, recipeStock, isIngredientInStock } from '../src/lib/recipesLib'
 import { countPerPack, formatContenance, isWeightProduct, portionScale } from '../src/lib/contenance'
 import { daysUntilExpiry, expiryLabel, expiryStatus, priorityProducts, urgentCount } from '../src/lib/expiry'
@@ -45,7 +45,7 @@ export function productTile(p: Product): Tile {
     id: p.id,
     name: p.name,
     sub: [sub, qty].filter(Boolean).join(' · ') || undefined,
-    img: imageFor(p.name, p.imageUrl, p.category),
+    img: p.category === 'pharmacie' && !chosenIconSlug(p.imageUrl) ? `${SITE}/icons-png/${medFormIcon(p.medForm)}.png` : imageFor(p.name, p.imageUrl, p.category),
     initial: p.name.trim().charAt(0).toUpperCase() || '?',
     tone: st === 'expired' ? 'expired' : st === 'urgent' ? 'soon' : 'ok',
   }

@@ -73,22 +73,25 @@ export type MedForm =
   | 'soin'
   | 'autre'
 
-export const MED_FORMS: { id: MedForm; label: string; unit: string; liquid?: boolean }[] = [
-  { id: 'comprime', label: 'Comprimé', unit: 'comprimé' },
-  { id: 'gelule', label: 'Gélule', unit: 'gélule' },
-  { id: 'effervescent', label: 'Effervescent', unit: 'comprimé' },
-  { id: 'sachet', label: 'Sachet à diluer', unit: 'sachet' },
-  { id: 'sirop', label: 'Sirop / buvable', unit: 'mL', liquid: true },
-  { id: 'gouttes', label: 'Gouttes', unit: 'mL', liquid: true },
-  { id: 'collyre', label: 'Collyre', unit: 'mL', liquid: true },
-  { id: 'spray', label: 'Spray', unit: 'mL', liquid: true },
-  { id: 'creme', label: 'Crème / pommade', unit: 'g' },
-  { id: 'pastille', label: 'Pastille', unit: 'pastille' },
-  { id: 'suppositoire', label: 'Suppositoire', unit: 'suppositoire' },
-  { id: 'patch', label: 'Patch', unit: 'patch' },
-  { id: 'soin', label: 'Pansement / soin', unit: 'pièce' },
+export const MED_FORMS: { id: MedForm; label: string; unit: string; liquid?: boolean; icon?: string }[] = [
+  { id: 'comprime', label: 'Comprimé', unit: 'comprimé', icon: 'med-comprime' },
+  { id: 'gelule', label: 'Gélule', unit: 'gélule', icon: 'med-gelule' },
+  { id: 'effervescent', label: 'Effervescent', unit: 'comprimé', icon: 'med-effervescent' },
+  { id: 'sachet', label: 'Sachet à diluer', unit: 'sachet', icon: 'med-sachet' },
+  { id: 'sirop', label: 'Sirop / buvable', unit: 'mL', liquid: true, icon: 'med-sirop' },
+  { id: 'gouttes', label: 'Gouttes', unit: 'mL', liquid: true, icon: 'med-collyre' },
+  { id: 'collyre', label: 'Collyre', unit: 'mL', liquid: true, icon: 'med-collyre' },
+  { id: 'spray', label: 'Spray', unit: 'mL', liquid: true, icon: 'med-spray' },
+  { id: 'creme', label: 'Crème / pommade', unit: 'g', icon: 'med-creme' },
+  { id: 'pastille', label: 'Pastille', unit: 'pastille', icon: 'med-pastille' },
+  { id: 'suppositoire', label: 'Suppositoire', unit: 'suppositoire', icon: 'med-suppositoire' },
+  { id: 'patch', label: 'Patch', unit: 'patch', icon: 'med-pansement' },
+  { id: 'soin', label: 'Pansement / soin', unit: 'pièce', icon: 'med-pansement' },
   { id: 'autre', label: 'Autre', unit: '' },
 ]
+
+/** Illustration d'un médicament : celle de sa forme (boîte de comprimés par défaut). */
+export const medFormIcon = (f?: string): string => MED_FORMS.find((m) => m.id === f)?.icon ?? 'med-comprime'
 
 export const medFormLabel = (f?: string): string | undefined => MED_FORMS.find((m) => m.id === f)?.label
 
