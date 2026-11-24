@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { openVoice } from '../components/VoiceAssistant'
 import { useStore } from '../data/store'
 import { detectNearbyStores, type NearbyStore } from '../lib/geoStore'
@@ -12,7 +12,7 @@ import { Icon, categoryIcon } from '../components/Icon'
 import { categoryColor } from '../lib/categoryColors'
 import { chosenIconSlug, productImageSlug, productImageUrl } from '../lib/productImage'
 import { QuantityWheel } from '../components/QuantityWheel'
-import { StowSheet } from '../components/StowSheet'
+import { CartSheet } from '../components/CartSheet'
 import { CATEGORIES, categoryLabel, defaultConservation, type Category, type ShoppingItem } from '../types'
 import { buyScale, formatContenance, parseContenance } from '../lib/contenance'
 import { guessCategoryFromName, guessUnitFromName } from '../lib/categoryGuess'
@@ -70,11 +70,9 @@ export function ShoppingScreen({ addOpen, onCloseAdd }: ShoppingScreenProps) {
   }
   // Panier (tampon) : les articles cochés, rangés au stock en une fois au retour.
   const cart = shopping.filter((it) => it.checked)
-  const [cartOpen, setCartOpen] = useState(false)
   const [leaving, setLeaving] = useState<Set<string>>(new Set())
   const [bump, setBump] = useState(0)
-  const cartRef = useRef<HTMLDivElement>(null)
-  const [stowing, setStowing] = useState(false)
+  const [cartSheet, setCartSheet] = useState(false)
   const [cartAt, setCartAt] = useState<number>(() => {
     try {
       return Number(localStorage.getItem('miamm.cartAt')) || 0
@@ -447,10 +445,7 @@ export function ShoppingScreen({ addOpen, onCloseAdd }: ShoppingScreenProps) {
               type="button"
               key={bump}
               className={`icon-btn cart-btn${bump ? ' bump' : ''}`}
-              onClick={() => {
-                setCartOpen(true)
-                setTimeout(() => cartRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 50)
-              }}
+              onClick={() => setCartSheet(true)}
               aria-label={`Panier : ${cart.length} article${cart.length > 1 ? 's' : ''}`}
               title="Voir le panier"
             >
@@ -517,7 +512,7 @@ export function ShoppingScreen({ addOpen, onCloseAdd }: ShoppingScreenProps) {
       </div>
 
       {offerStow && (
-        <button type="button" className="stow-banner" onClick={() => setStowing(true)}>
+        <button type="button" className="stow-banner" onClick={() => setCartSheet(true)}>
           <Icon name="cart" />
           <span>
             {remaining === 0 ? 'Tout est dans le panier !' : 'De retour des courses ?'}{' '}
@@ -772,84 +767,50 @@ export function ShoppingScreen({ addOpen, onCloseAdd }: ShoppingScreenProps) {
         })
       )}
       {cart.length > 0 && (
-        <div className={`cart-block${cartOpen ? ' open' : ''}`} ref={cartRef}>
-          <button type="button" className="cart-head" onClick={() => setCartOpen((v) => !v)} aria-expanded={cartOpen}>
-            <span className="cart-ico">
-              <Icon name="cart" />
-            </span>
-            <span className="cart-title">
-              <strong>Dans le panier</strong>
-              <small>
-                {cart.length} article{cart.length > 1 ? 's' : ''} pris
-              </small>
-            </span>
-            {!cartOpen && (
-              <span className="cart-stack" aria-hidden>
-                {cart.slice(0, 4).map((it) => {
-                  const slug = shopImage(it.name)
-                  const col = categoryColor(it.category)
-                  return (
-                    <span key={it.id} style={{ background: col.bg, color: col.fg }}>
-                      {slug ? <img src={productImageUrl(slug)} alt="" loading="lazy" draggable={false} /> : <Icon name={categoryIcon(it.category)} width={1.8} />}
-                    </span>
-                  )
-                })}
-                {cart.length > 4 && <span className="cart-more">+{cart.length - 4}</span>}
-              </span>
-            )}
-            <Icon name="chevron" className={`cart-chev${cartOpen ? ' open' : ''}`} />
-          </button>
-          {cartOpen && (
-            <div className="cart-list">
-              {cart.map((it) => {
-                const slug = shopImage(it.name)
-                const col = categoryColor(it.category)
-                return (
-                  <div key={it.id} className="cart-row">
-                    <span className="shop-thumb" style={{ background: col.bg, color: col.fg }}>
-                      {slug ? <img src={productImageUrl(slug)} alt="" loading="lazy" draggable={false} /> : <Icon name={categoryIcon(it.category)} width={1.8} />}
-                    </span>
-                    <span className="cart-name">{it.name}</span>
-                    <span className="cart-qty">{qtyLabel(it.quantity, it.unit)}</span>
-                    <button type="button" className="cart-back" onClick={() => tick(it.id)} aria-label={`Remettre ${it.name} dans la liste`} title="Remettre dans la liste">
-                      <Icon name="undo" />
-                    </button>
-                  </div>
-                )
-              })}
-            </div>
-          )}
-          <button className="btn-primary cart-stow" onClick={() => setStowing(true)}>
-            <Icon name="box" />
-            Ranger au stock
-          </button>
-          {cartOpen && (
-            <button
-              type="button"
-              className="cart-clear"
-              onClick={async () => {
-                const gone = cart
-                await clearCheckedShopping()
-                toast(`${gone.length} article${gone.length > 1 ? 's' : ''} retiré${gone.length > 1 ? 's' : ''} du panier`, {
-                  label: 'Annuler',
-                  onClick: () => void restoreShoppingItems(gone),
-                })
-              }}
-            >
-              Vider le panier sans ranger
-            </button>
-          )}
-        </div>
+        <button type="button" className="cart-summary" onClick={() => setCartSheet(true)}>
+          <span className="cart-ico">
+            <Icon name="cart" />
+          </span>
+          <span className="cart-title">
+            <strong>Panier · {cart.length}</strong>
+            <small>Ajuster ou ranger au stock</small>
+          </span>
+          <span className="cart-stack" aria-hidden>
+            {cart.slice(0, 3).map((it) => {
+              const slug = shopImage(it.name)
+              const col = categoryColor(it.category)
+              return (
+                <span key={it.id} style={{ background: col.bg, color: col.fg }}>
+                  {slug ? <img src={productImageUrl(slug)} alt="" loading="lazy" draggable={false} /> : <Icon name={categoryIcon(it.category)} width={1.8} />}
+                </span>
+              )
+            })}
+            {cart.length > 3 && <span className="cart-more">+{cart.length - 3}</span>}
+          </span>
+          <Icon name="chevron" className="cart-chev" />
+        </button>
       )}
       </div>
 
-      {stowing && (
-        <StowSheet
+      {cartSheet && (
+        <CartSheet
           items={cart}
           imageOf={shopImage}
-          onClose={() => setStowing(false)}
+          qtyLabel={qtyLabel}
+          onStep={(it, dir) => void stepQty(it, dir)}
+          onBack={(it) => tick(it.id)}
+          onClear={async () => {
+            const gone = cart
+            setCartSheet(false)
+            await clearCheckedShopping()
+            toast(`${gone.length} article${gone.length > 1 ? 's' : ''} retiré${gone.length > 1 ? 's' : ''} du panier`, {
+              label: 'Annuler',
+              onClick: () => void restoreShoppingItems(gone),
+            })
+          }}
+          onClose={() => setCartSheet(false)}
           onConfirm={(dates) => {
-            setStowing(false)
+            setCartSheet(false)
             void addCheckedToStock(dates)
           }}
         />
