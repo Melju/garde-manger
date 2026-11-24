@@ -31,6 +31,8 @@ interface InventoryScreenProps {
   onOpenNotifications: () => void
   onOpenBudget: () => void
   onScanConsume: () => void
+  /** Sélecteur Garde-manger | Pharmacie, affiché sous l'en-tête. */
+  topSlot?: React.ReactNode
 }
 
 
@@ -40,6 +42,7 @@ export function InventoryScreen({
   onOpenNotifications,
   onOpenBudget,
   onScanConsume,
+  topSlot,
 }: InventoryScreenProps) {
   const { products, adjustQuantity, wasteProduct, updateProduct, addProduct, expenses, budget, cloudMode, offline, unreadNotifCount } = useStore()
   const spent = useMemo(() => budgetSummary(expenses, budget).spent, [expenses, budget])
@@ -425,6 +428,8 @@ export function InventoryScreen({
           </button>
         </div>
       </header>
+
+      {topSlot}
 
       <div className="search-row">
         <div className="search-input">

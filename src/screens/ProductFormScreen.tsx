@@ -10,6 +10,9 @@ import {
   defaultConservation,
   isNonFood,
   isPharmacy,
+  guessMedForm,
+  MED_FORMS,
+  type MedForm,
   type Category,
   type Conservation,
   type DateType,
@@ -200,6 +203,39 @@ export function ProductFormScreen({ product, initial, onClose, onSaved }: Produc
 
   const nonFood = isNonFood(category)
   const pharma = isPharmacy(category)
+  const kind: 'food' | 'home' | 'med' = pharma ? 'med' : nonFood ? 'home' : 'food'
+  // Pharmacie : forme du médicament (décide de l'unité proposée).
+  const [medForm, setMedForm] = useState<MedForm | undefined>(product?.medForm ?? initial?.medForm)
+  const medFormTouched = useRef(!!(product?.medForm ?? initial?.medForm))
+  function pickMedForm(f: MedForm) {
+    medFormTouched.current = true
+    setMedForm(f)
+    const unit = MED_FORMS.find((m) => m.id === f)?.unit
+    if (unit !== undefined) setSizeUnit(unit)
+  }
+  useEffect(() => {
+    if (!pharma || medFormTouched.current) return
+    const g = guessMedForm(name)
+    if (g && g !== medForm) {
+      setMedForm(g)
+      const unit = MED_FORMS.find((m) => m.id === g)?.unit
+      if (unit && !sizeValue.trim()) setSizeUnit(unit)
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [name, pharma])
+  /** Aliment · Maison · Médicament : le premier choix, qui adapte le reste de la fiche. */
+  function pickKind(k: 'food' | 'home' | 'med') {
+    if (k === kind) return
+    if (k === 'med') pickCategory('pharmacie')
+    else if (k === 'home') pickCategory('maison')
+    else {
+      const g = guessCategoryFromName(name)
+      catTouched.current = false
+      pickCategory(g !== 'maison' && g !== 'pharmacie' ? g : 'autre')
+      catTouched.current = false
+      if (location === 'Pharmacie') setLocation('')
+    }
+  }
   const locations = pharma ? ['Pharmacie', ...LOCATIONS] : LOCATIONS
   const estimate = useMemo(
     () => (isNonFood(category) || isPharmacy(category) ? null : estimateShelfLife(name, conservation, category)),
@@ -340,6 +376,7 @@ export function ProductFormScreen({ product, initial, onClose, onSaved }: Produc
           ? product.size
           : sizeStr || undefined,
       dateType: pharma ? 'dlc' : dateType,
+      medForm: pharma ? medForm : undefined,
       expiryDate: nonFood ? undefined : expiryDate || undefined,
       location: location.trim() || undefined,
       price: price ? Number(price.replace(',', '.')) || undefined : undefined,
@@ -436,7 +473,28 @@ export function ProductFormScreen({ product, initial, onClose, onSaved }: Produc
         <button className="back-btn" onClick={onClose} aria-label="Retour">
           <Icon name="back" />
         </button>
-        <h1 style={{ flex: 1 }}>{isEdit ? 'Modifier le produit' : 'Ajouter un produit'}</h1>
+        <h1 style={{ flex: 1 }}>
+          {pharma ? (isEdit ? 'Modifier le médicament' : 'Ajouter un médicament') : isEdit ? 'Modifier le produit' : 'Ajouter un produit'}
+        </h1>
+      </div>
+
+      <div className="seg kind-seg" role="tablist" aria-label="Type de produit">
+        {([
+          ['food', 'Aliment'],
+          ['home', 'Maison'],
+          ['med', 'Médicament'],
+        ] as const).map(([k, label]) => (
+          <button
+            key={k}
+            type="button"
+            role="tab"
+            aria-selected={kind === k}
+            className={`seg-btn${kind === k ? ' active' : ''}`}
+            onClick={() => pickKind(k)}
+          >
+            {label}
+          </button>
+        ))}
       </div>
 
       <div className="form-group product-hero">
@@ -585,8 +643,25 @@ export function ProductFormScreen({ product, initial, onClose, onSaved }: Produc
 
       <div className="form-group">
         <h2 className="form-group-title">Stock</h2>
+      {pharma && (
+        <div className="form-section">
+          <label className="form-label">Forme</label>
+          <div className="med-forms">
+            {MED_FORMS.map((f) => (
+              <button
+                key={f.id}
+                type="button"
+                className={`usual-chip${medForm === f.id ? ' on' : ''}`}
+                onClick={() => pickMedForm(f.id)}
+              >
+                {f.label}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
       <div className="form-section">
-        <label className="form-label">Quantité</label>
+        <label className="form-label">{pharma ? 'Nombre de boîtes' : 'Quantité'}</label>
         <div className="qty-stepper">
           <button type="button" onClick={() => setQuantity((q) => Math.max(1, q - 1))} aria-label="Diminuer">−</button>
           <input
@@ -600,7 +675,7 @@ export function ProductFormScreen({ product, initial, onClose, onSaved }: Produc
       </div>
 
       <div className="form-section">
-        <label className="form-label">Contenance (optionnel)</label>
+        <label className="form-label">{pharma ? 'Contenu d’une boîte (optionnel)' : 'Contenance (optionnel)'}</label>
         <div className="form-row">
           <input
             className="form-input"

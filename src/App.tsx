@@ -1,5 +1,6 @@
 import { useConfirm } from './components/Confirm'
-import { lazy, Suspense, useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react'
+import { lazy, Suspense, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
+import { expiryStatus } from './lib/expiry'
 import { InventoryScreen } from './screens/InventoryScreen'
 import { ShoppingScreen } from './screens/ShoppingScreen'
 import { ProductFormScreen } from './screens/ProductFormScreen'
@@ -56,6 +57,8 @@ const NAV: { tab: Tab; icon: 'box' | 'book' | 'calendar' | 'cart' | 'menu'; labe
   { tab: 'shopping', icon: 'cart', label: 'Courses' },
   { tab: 'more', icon: 'menu', label: 'Plus' },
 ]
+
+const MED_INITIAL: Partial<ProductInput> = { category: 'pharmacie', location: 'Pharmacie', dateType: 'dlc' }
 
 /** Sous-pages empilées par-dessus l'onglet courant. */
 type Route =
@@ -177,6 +180,37 @@ export function App() {
   }
   const [tab, setTab] = useState<Tab>('inventory')
   const [stack, setStack] = useState<Route[]>([])
+  // Onglet Stock : garde-manger ou pharmacie (mémorisé sur l'appareil).
+  const [stockMode, setStockMode] = useState<'food' | 'pharmacy'>(() => {
+    try {
+      return localStorage.getItem('miamm.stockMode') === 'pharmacy' ? 'pharmacy' : 'food'
+    } catch {
+      return 'food'
+    }
+  })
+  function pickStockMode(m: 'food' | 'pharmacy') {
+    setStockMode(m)
+    try {
+      localStorage.setItem('miamm.stockMode', m)
+    } catch {
+      /* stockage indisponible */
+    }
+  }
+  const pharmaAlert = useMemo(
+    () => pharmacy.filter((p) => { const st = expiryStatus(p); return st === 'expired' || st === 'soon' }).length,
+    [pharmacy],
+  )
+  const addMedicine = () => push({ name: 'product-form', product: null, initial: MED_INITIAL })
+  const stockSwitch = (
+    <div className="seg stock-switch" role="tablist" aria-label="Garde-manger ou pharmacie">
+      <button type="button" role="tab" aria-selected={stockMode === 'food'} className={`seg-btn${stockMode === 'food' ? ' active' : ''}`} onClick={() => pickStockMode('food')}>
+        Garde-manger
+      </button>
+      <button type="button" role="tab" aria-selected={stockMode === 'pharmacy'} className={`seg-btn${stockMode === 'pharmacy' ? ' active' : ''}`} onClick={() => pickStockMode('pharmacy')}>
+        Pharmacie{pharmaAlert ? ` (${pharmaAlert})` : ''}
+      </button>
+    </div>
+  )
   const [shopAddOpen, setShopAddOpen] = useState(false)
   // Produits ajoutés pendant une session de scan en série (pour « Terminé »).
   const [scanAdded, setScanAdded] = useState<{ name: string; count: number }[]>([])
@@ -311,7 +345,10 @@ export function App() {
 
   // Action d'ajout contextuelle par page (barre du bas en mobile, bouton sidebar en bureau).
   const addAction: Partial<Record<Tab, { label: string; run: () => void }>> = {
-    inventory: { label: 'Ajouter un produit', run: () => push({ name: 'add-menu' }) },
+    inventory:
+      stockMode === 'pharmacy'
+        ? { label: 'Ajouter un médicament', run: addMedicine }
+        : { label: 'Ajouter un produit', run: () => push({ name: 'add-menu' }) },
     recipes: { label: 'Nouvelle recette', run: () => push({ name: 'recipe-form' }) },
     shopping: { label: 'Ajouter un article', run: () => setShopAddOpen(true) },
   }
@@ -366,8 +403,16 @@ export function App() {
             ses filtres, la pagination déjà chargée et donc la position de défilement au retour. */}
         {(
           <div className="tab-host" hidden={Boolean(top)}>
-            {tab === 'inventory' && (
+            {tab === 'inventory' && stockMode === 'pharmacy' && (
+              <PharmacyScreen
+                topSlot={stockSwitch}
+                onAdd={addMedicine}
+                onEdit={(product) => push({ name: 'product-form', product })}
+              />
+            )}
+            {tab === 'inventory' && stockMode === 'food' && (
               <InventoryScreen
+                topSlot={stockSwitch}
                 onEdit={(product) => push({ name: 'product-form', product })}
                 onOpenStats={() => push({ name: 'stats' })}
                 onOpenNotifications={() => push({ name: 'notifications' })}
@@ -483,7 +528,7 @@ export function App() {
         return (
           <PharmacyScreen
             onBack={back}
-            onAdd={() => push({ name: 'product-form', product: null, initial: { category: 'pharmacie', location: 'Pharmacie', dateType: 'dlc' } })}
+            onAdd={addMedicine}
             onEdit={(product) => push({ name: 'product-form', product })}
           />
         )
@@ -530,6 +575,7 @@ export function App() {
             onBack={back}
             onBarcode={() => { setScanAdded([]); replace({ name: 'scan' }) }}
             onManual={() => replace({ name: 'product-form', product: null })}
+            onMedicine={() => replace({ name: 'product-form', product: null, initial: MED_INITIAL })}
             onBulk={() => replace({ name: 'bulk-add' })}
             onTicket={() => replace({ name: 'ticket-scan' })}
             onTicketEmail={() => replace({ name: 'ticket-scan', mode: 'file' })}

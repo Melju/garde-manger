@@ -8,6 +8,7 @@ interface AddMenuScreenProps {
   onTicketEmail: () => void
   onBulk: () => void
   onManual: () => void
+  onMedicine: () => void
 }
 
 export function AddMenuScreen({
@@ -17,6 +18,7 @@ export function AddMenuScreen({
   onTicketEmail,
   onBulk,
   onManual,
+  onMedicine,
 }: AddMenuScreenProps) {
   const items: { icon: IconName; title: string; desc: string; onClick: () => void; soon?: boolean }[] = [
     {
@@ -48,6 +50,12 @@ export function AddMenuScreen({
       title: 'Saisie manuelle',
       desc: 'Pour le vrac, fait-maison ou restes',
       onClick: onManual,
+    },
+    {
+      icon: 'pill',
+      title: 'Médicament',
+      desc: 'Pour la pharmacie : forme, nombre et date de péremption',
+      onClick: onMedicine,
     },
   ]
 

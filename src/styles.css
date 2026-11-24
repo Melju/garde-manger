@@ -3501,3 +3501,8 @@ html.kiosk .product-list.tiles .product-icon > svg { width: 32cqw !important; ma
 .pharma-title { font-size: 14px; font-weight: 700; margin: 4px 2px 8px; display: flex; align-items: center; gap: 8px; }
 .pharma-title span { font-size: 12px; color: var(--muted); font-weight: 600; background: var(--soft, var(--border)); border-radius: 10px; padding: 1px 8px; }
 .pharma-note { font-size: 13px; color: var(--muted); margin: -2px 2px 10px; }
+
+.kind-seg { margin: 0 20px 16px; }
+.med-forms { display: flex; flex-wrap: wrap; gap: 8px; }
+.stock-switch { margin: 0 20px 14px; }
+html.kiosk .stock-switch { margin-top: 4px; }

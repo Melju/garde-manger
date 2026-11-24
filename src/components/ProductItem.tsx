@@ -1,7 +1,7 @@
 import { useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import type { Product } from '../types'
-import { categoryLabel, isNonFood, isPharmacy } from '../types'
+import { categoryLabel, isNonFood, isPharmacy, medFormLabel, MED_FORMS } from '../types'
 import { expiryLabel, expiryStatus, isFrozen } from '../lib/expiry'
 import { OpenProductSheet } from './OpenProductSheet'
 import { categoryColor } from '../lib/categoryColors'
@@ -173,7 +173,7 @@ export function ProductItem({
 
   const weightLabel = stockLabel(product)
   // Au poids / volume, la quantité est affichée à droite (« 700 g / 1 kg ») : pas de doublon dans la ligne de détail.
-  const meta = [product.location?.trim() || categoryLabel(product.category), weightLabel ? null : product.size, product.openedAt ? 'Ouvert' : null].filter(Boolean).join(' · ')
+  const meta = [pharma ? medFormLabel(product.medForm) ?? 'Pharmacie' : product.location?.trim() || categoryLabel(product.category), weightLabel ? null : product.size, product.openedAt ? 'Ouvert' : null].filter(Boolean).join(' · ')
   const qtyLabel =
     weightLabel ?? (product.unit ? `×${product.quantity} ${product.unit}` : `×${product.quantity}`)
 
@@ -216,7 +216,7 @@ export function ProductItem({
           ) : iconKey && hasFoodIcon(iconKey) ? (
             <FoodIcon name={iconKey} />
           ) : (
-            <Icon name={categoryIcon(product.category)} width={1.7} />
+            <Icon name={pharma && MED_FORMS.find((f) => f.id === product.medForm)?.liquid ? 'droplet' : categoryIcon(product.category)} width={1.7} />
           )}
         </div>
         <div className="product-info">

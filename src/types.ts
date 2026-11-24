@@ -56,6 +56,62 @@ export const isNonFood = (c: Category | string | undefined): boolean => c === 'm
 /** Pharmacie (médicaments, soins) : suivie à part du stock alimentaire, date de péremption stricte. */
 export const isPharmacy = (c: Category | string | undefined): boolean => c === 'pharmacie'
 
+/** Forme d'un médicament : elle décide de l'unité (comprimés, mL, sachets…). */
+export type MedForm =
+  | 'comprime'
+  | 'gelule'
+  | 'effervescent'
+  | 'sachet'
+  | 'sirop'
+  | 'gouttes'
+  | 'collyre'
+  | 'spray'
+  | 'creme'
+  | 'pastille'
+  | 'suppositoire'
+  | 'patch'
+  | 'soin'
+  | 'autre'
+
+export const MED_FORMS: { id: MedForm; label: string; unit: string; liquid?: boolean }[] = [
+  { id: 'comprime', label: 'Comprimé', unit: 'comprimé' },
+  { id: 'gelule', label: 'Gélule', unit: 'gélule' },
+  { id: 'effervescent', label: 'Effervescent', unit: 'comprimé' },
+  { id: 'sachet', label: 'Sachet à diluer', unit: 'sachet' },
+  { id: 'sirop', label: 'Sirop / buvable', unit: 'mL', liquid: true },
+  { id: 'gouttes', label: 'Gouttes', unit: 'mL', liquid: true },
+  { id: 'collyre', label: 'Collyre', unit: 'mL', liquid: true },
+  { id: 'spray', label: 'Spray', unit: 'mL', liquid: true },
+  { id: 'creme', label: 'Crème / pommade', unit: 'g' },
+  { id: 'pastille', label: 'Pastille', unit: 'pastille' },
+  { id: 'suppositoire', label: 'Suppositoire', unit: 'suppositoire' },
+  { id: 'patch', label: 'Patch', unit: 'patch' },
+  { id: 'soin', label: 'Pansement / soin', unit: 'pièce' },
+  { id: 'autre', label: 'Autre', unit: '' },
+]
+
+export const medFormLabel = (f?: string): string | undefined => MED_FORMS.find((m) => m.id === f)?.label
+
+/** Devine la forme d'un médicament d'après son nom (« Doliprane effervescent », « sirop », « Smecta »…). */
+export function guessMedForm(name: string): MedForm | undefined {
+  const n = name.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+  const has = (...w: string[]) => w.some((x) => n.includes(x))
+  if (has('effervescent', 'orodispersible')) return 'effervescent'
+  if (has('sirop', 'buvable', 'solution orale', 'suspension')) return 'sirop'
+  if (has('collyre', 'dacryoserum', 'unidose')) return 'collyre'
+  if (has('goutte')) return 'gouttes'
+  if (has('spray', 'pulverisation', 'nasal')) return 'spray'
+  if (has('creme', 'pommade', ' gel', 'biafine', 'baume')) return 'creme'
+  if (has('gelule')) return 'gelule'
+  if (has('sachet', 'smecta', 'poudre')) return 'sachet'
+  if (has('pastille', 'strepsils')) return 'pastille'
+  if (has('suppo')) return 'suppositoire'
+  if (has('patch')) return 'patch'
+  if (has('pansement', 'compresse', 'bandage', 'sparadrap')) return 'soin'
+  if (has('comprime', 'cp ', 'doliprane', 'dafalgan', 'efferalgan', 'advil', 'nurofen', 'ibuprofene', 'paracetamol', 'aspirine', 'spasfon')) return 'comprime'
+  return undefined
+}
+
 /** Mode de conservation (influe sur l'estimation de péremption). */
 export type Conservation = 'frais' | 'refrigere' | 'congele'
 
@@ -102,6 +158,8 @@ export interface Product {
   location?: string
   /** Date d'ouverture (ISO) : le produit se garde alors moins longtemps. */
   openedAt?: string
+  /** Pharmacie : forme du médicament (comprimé, sirop, sachet à diluer…). */
+  medForm?: MedForm
   /** Membre qui a ajouté le produit (cloud uniquement). */
   createdBy?: string
   // ----- Données enrichies Open Food Facts (optionnelles) -----

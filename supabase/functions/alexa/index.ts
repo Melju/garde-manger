@@ -30,6 +30,7 @@ function toProduct(r) {
     dateType: r.date_type ?? void 0,
     location: r.location ?? void 0,
     openedAt: r.opened_at ?? void 0,
+    medForm: r.med_form ?? void 0,
     createdBy: r.created_by ?? void 0,
     imageUrl: r.image_url ?? void 0,
     nutriscore: r.nutriscore ?? void 0,
@@ -109,6 +110,7 @@ var SupabaseRepository = class {
       date_type: input.dateType ?? null,
       location: input.location ?? null,
       opened_at: input.openedAt ?? null,
+      med_form: input.medForm ?? null,
       image_url: input.imageUrl ?? null,
       nutriscore: input.nutriscore ?? null,
       nova: input.nova ?? null,
@@ -134,6 +136,7 @@ var SupabaseRepository = class {
     if (has("dateType")) row2.date_type = patch.dateType ?? null;
     if (has("location")) row2.location = patch.location ?? null;
     if (has("openedAt")) row2.opened_at = patch.openedAt ?? null;
+    if (has("medForm")) row2.med_form = patch.medForm ?? null;
     if (has("imageUrl")) row2.image_url = patch.imageUrl ?? null;
     if (has("nutriscore")) row2.nutriscore = patch.nutriscore ?? null;
     if (has("nova")) row2.nova = patch.nova ?? null;

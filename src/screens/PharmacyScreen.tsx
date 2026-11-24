@@ -9,13 +9,15 @@ import { countLabel, countPerPack, isBareWeightUnit, remainingLabel } from '../l
 import type { Product } from '../types'
 
 interface PharmacyScreenProps {
-  onBack: () => void
+  /** Absent en mode intégré à l'onglet Stock (sélecteur Garde-manger | Pharmacie). */
+  onBack?: () => void
+  topSlot?: React.ReactNode
   onAdd: () => void
   onEdit: (p: Product) => void
 }
 
 /** Pharmacie : médicaments et soins, triés par date de péremption, à part du stock alimentaire. */
-export function PharmacyScreen({ onBack, onAdd, onEdit }: PharmacyScreenProps) {
+export function PharmacyScreen({ onBack, onAdd, onEdit, topSlot }: PharmacyScreenProps) {
   const { pharmacy, adjustQuantity, updateProduct, addProduct, wasteProduct } = useStore()
   const toast = useToast()
 
@@ -114,15 +116,24 @@ export function PharmacyScreen({ onBack, onAdd, onEdit }: PharmacyScreenProps) {
 
   return (
     <div className="screen-fade">
-      <PageHeader
-        title="Pharmacie"
-        onBack={onBack}
-        action={
-          <button className="icon-btn" onClick={onAdd} aria-label="Ajouter un médicament">
-            <Icon name="plus" />
-          </button>
-        }
-      />
+      {onBack ? (
+        <PageHeader
+          title="Pharmacie"
+          onBack={onBack}
+          action={
+            <button className="icon-btn" onClick={onAdd} aria-label="Ajouter un médicament">
+              <Icon name="plus" />
+            </button>
+          }
+        />
+      ) : (
+        <header className="header">
+          <div className="header-left">
+            <h1 className="logo"><img src={`${import.meta.env.BASE_URL}logo.webp`} alt="Miam miam" /></h1>
+          </div>
+        </header>
+      )}
+      {topSlot}
 
       {pharmacy.length === 0 ? (
         <div className="empty-state">
