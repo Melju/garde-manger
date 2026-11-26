@@ -209,6 +209,8 @@ export function ProductFormScreen({ product, initial, onClose, onSaved }: Produc
   const kind: 'food' | 'home' | 'med' = pharma ? 'med' : nonFood ? 'home' : 'food'
   // Pharmacie : forme du médicament (décide de l'unité proposée).
   const [medForm, setMedForm] = useState<MedForm | undefined>(product?.medForm ?? initial?.medForm)
+  // Médicament déjà ouvert (flacon, tube, collyre…) : la date d'ouverture compte autant que la péremption.
+  const [medOpenedAt, setMedOpenedAt] = useState<string>(product?.openedAt ?? '')
   const medFormTouched = useRef(!!(product?.medForm ?? initial?.medForm))
   function pickMedForm(f: MedForm) {
     medFormTouched.current = true
@@ -397,6 +399,7 @@ export function ProductFormScreen({ product, initial, onClose, onSaved }: Produc
           : sizeStr || undefined,
       dateType: pharma ? 'dlc' : dateType,
       medForm: pharma ? medForm : undefined,
+      ...(pharma ? { openedAt: medOpenedAt || undefined } : {}),
       expiryDate: nonFood ? undefined : expiryDate || undefined,
       location: location.trim() || undefined,
       price: price ? Number(price.replace(',', '.')) || undefined : undefined,
@@ -774,6 +777,31 @@ export function ProductFormScreen({ product, initial, onClose, onSaved }: Produc
         )}
         </div>
         {scanningDate && <DateScanner onResult={onDateScanned} onClose={() => setScanningDate(false)} />}
+        {pharma && (
+          <div className="med-opened">
+            <label className="form-label">Déjà ouvert ?</label>
+            <div className="scan-known-exp-actions">
+              <button type="button" className={`usual-chip${!medOpenedAt ? ' on' : ''}`} onClick={() => setMedOpenedAt('')}>
+                Non, fermé
+              </button>
+              <button
+                type="button"
+                className={`usual-chip${medOpenedAt ? ' on' : ''}`}
+                onClick={() => !medOpenedAt && setMedOpenedAt(new Date().toISOString().slice(0, 10))}
+              >
+                Oui, ouvert
+              </button>
+            </div>
+            {medOpenedAt && (
+              <>
+                <label className="form-label" htmlFor="med-opened" style={{ marginTop: 10 }}>
+                  Ouvert le
+                </label>
+                <DatePicker id="med-opened" value={medOpenedAt} onChange={(v) => setMedOpenedAt(v || new Date().toISOString().slice(0, 10))} />
+              </>
+            )}
+          </div>
+        )}
         {quantity > 1 && (
           <div className="scan-known-exp-actions" style={{ marginTop: 10 }}>
             <button type="button" className={`usual-chip${!perDate ? ' on' : ''}`} onClick={() => setPerDate(false)}>

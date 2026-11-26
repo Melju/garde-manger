@@ -136,6 +136,8 @@ interface StoreValue {
   scanRecipe(images: { data: string; mediaType: string }[]): Promise<ScannedRecipe>
   /** Marque 1 exemplaire comme ouvert : péremption raccourcie (frigo), reste du stock inchangé. */
   openProduct(product: Product, days: number): Promise<void>
+  /** Médicament : on note seulement la date d'ouverture (la péremption de la boîte ne change pas). Renvoie l'id de l'exemplaire ouvert. */
+  openMedicine(product: Product): Promise<string>
   /** Crée un lien de partage (instantané) d'une recette ; renvoie le jeton. */
   shareRecipe(recipe: Recipe): Promise<string>
   /** Lit une recette partagée par jeton (compte connecté requis). */
@@ -823,6 +825,20 @@ export function StoreProvider({ children }: { children: ReactNode }) {
         const d = data as any
         if (!d || !Array.isArray(d.ingredients)) throw new Error(d?.error || 'Réponse invalide')
         return d as ScannedRecipe
+      },
+      async openMedicine(product) {
+        const openedAt = toISODate(new Date())
+        let id = product.id
+        if (product.quantity > 1) {
+          // Une seule boîte est ouverte : on la sépare des boîtes fermées.
+          await repo.updateProduct(product.id, { quantity: product.quantity - 1 })
+          const { id: _i, createdAt: _c, updatedAt: _u, ...rest } = product
+          id = (await repo.addProduct({ ...rest, openedAt, quantity: 1 })).id
+        } else {
+          await repo.updateProduct(product.id, { openedAt })
+        }
+        setProducts(await repo.listProducts())
+        return id
       },
       async openProduct(product, days) {
         const today = new Date()

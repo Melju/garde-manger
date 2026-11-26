@@ -713,7 +713,7 @@ export function productScreen(p: Product) {
     p.brand ? p.brand : '',
     p.location ? `Emplacement : ${p.location}` : '',
     `Quantité : ×${p.quantity}${p.size ? ` · ${p.size}` : ''}`,
-    p.openedAt ? `Entamé le ${new Date(p.openedAt).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', timeZone: 'Europe/Paris' })}` : '',
+    p.openedAt ? `${p.category === 'pharmacie' ? 'Ouvert' : 'Entamé'} le ${new Date(p.openedAt).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', timeZone: 'Europe/Paris' })}` : '',
   ].filter(Boolean)
   const line = (text: string) => ({ type: 'Text', text, fontSize: 30, color: C.fg, spacing: 10, maxLines: 1 })
   const doc: any = page(
@@ -809,7 +809,7 @@ export function productScreen(p: Product) {
           spacing: 24,
           items: [
             { type: 'BigButton', label: 'J’ai fini', action: 'finish', pid: p.id, danger: false, grow: 1 },
-            { type: 'BigButton', label: p.openedAt ? 'Déjà entamé' : 'Entamé', action: 'open', pid: p.id, grow: 1, spacing: 20, danger: false },
+            { type: 'BigButton', label: p.openedAt ? (p.category === 'pharmacie' ? 'Déjà ouvert' : 'Déjà entamé') : p.category === 'pharmacie' ? 'Ouvert' : 'Entamé', action: 'open', pid: p.id, grow: 1, spacing: 20, danger: false },
             { type: 'BigButton', label: 'Ajouter aux courses', action: 'shop', pid: p.id, grow: 1, spacing: 20, danger: false },
             { type: 'BigButton', label: 'Jeté', action: 'waste', pid: p.id, grow: 1, spacing: 20, danger: true },
           ],

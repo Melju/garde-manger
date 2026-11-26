@@ -2122,7 +2122,7 @@ function productScreen(p) {
     p.brand ? p.brand : "",
     p.location ? `Emplacement : ${p.location}` : "",
     `Quantit\xE9 : \xD7${p.quantity}${p.size ? ` \xB7 ${p.size}` : ""}`,
-    p.openedAt ? `Entam\xE9 le ${new Date(p.openedAt).toLocaleDateString("fr-FR", { day: "numeric", month: "long", timeZone: "Europe/Paris" })}` : ""
+    p.openedAt ? `${p.category === "pharmacie" ? "Ouvert" : "Entam\xE9"} le ${new Date(p.openedAt).toLocaleDateString("fr-FR", { day: "numeric", month: "long", timeZone: "Europe/Paris" })}` : ""
   ].filter(Boolean);
   const line = (text) => ({ type: "Text", text, fontSize: 30, color: C.fg, spacing: 10, maxLines: 1 });
   const doc = page(
@@ -2218,7 +2218,7 @@ function productScreen(p) {
         spacing: 24,
         items: [
           { type: "BigButton", label: "J\u2019ai fini", action: "finish", pid: p.id, danger: false, grow: 1 },
-          { type: "BigButton", label: p.openedAt ? "D\xE9j\xE0 entam\xE9" : "Entam\xE9", action: "open", pid: p.id, grow: 1, spacing: 20, danger: false },
+          { type: "BigButton", label: p.openedAt ? p.category === "pharmacie" ? "D\xE9j\xE0 ouvert" : "D\xE9j\xE0 entam\xE9" : p.category === "pharmacie" ? "Ouvert" : "Entam\xE9", action: "open", pid: p.id, grow: 1, spacing: 20, danger: false },
           { type: "BigButton", label: "Ajouter aux courses", action: "shop", pid: p.id, grow: 1, spacing: 20, danger: false },
           { type: "BigButton", label: "Jet\xE9", action: "waste", pid: p.id, grow: 1, spacing: 20, danger: true }
         ]

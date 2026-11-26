@@ -3617,3 +3617,4 @@ html.kiosk .stock-switch { margin-top: 4px; }
 .dragtrash-zone.over { background: var(--danger); }
 .dragtrash-zone.over svg { transform: scale(1.35) rotate(-8deg); }
 @keyframes zoneIn { from { transform: translateY(100%); } }
+.med-opened { margin-top: 18px; }

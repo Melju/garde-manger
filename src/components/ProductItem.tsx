@@ -21,6 +21,8 @@ import { productIconKey } from '../lib/productIcon'
 import { productImageSlug, chosenIconSlug, productImageUrl } from '../lib/productImage'
 import { SwipeWheel } from './SwipeWheel'
 import { ConsumeSheet } from './ConsumeSheet'
+import { useStore } from '../data/store'
+import { useToast } from './Toast'
 
 /** Souris / pavé tactile : boutons d'action au lieu des glissements. */
 const finePointer = typeof window !== 'undefined' && window.matchMedia?.('(hover: hover) and (pointer: fine)').matches
@@ -56,6 +58,14 @@ type Swipe = 'none' | 'left' | 'right'
  * - glisser à gauche → molette pour retirer (poids ou nombre)
  * - glisser à droite → marquer périmé (jeté)
  */
+/** « Ouvert depuis 12 j » / « Ouvert aujourd'hui ». */
+function openedSince(iso: string): string {
+  const d = Math.round((new Date(new Date().toISOString().slice(0, 10)).getTime() - new Date(iso).getTime()) / 86_400_000)
+  if (d <= 0) return "Ouvert aujourd'hui"
+  if (d < 60) return `Ouvert depuis ${d} j`
+  return `Ouvert depuis ${Math.round(d / 30)} mois`
+}
+
 export function ProductItem({
   product: rawProduct,
   detail,
@@ -98,8 +108,27 @@ export function ProductItem({
   // Glissement progressif : la ligne suit le doigt, puis s'ouvre ou se referme selon la position relâchée.
   const OPEN_LEFT = 216
   // Glissement à droite : « Ouvert » (si applicable) + « Périmé ».
-  const canOpen = !product.openedAt && !isNonFood(product.category) && !isPharmacy(product.category) && !isFrozen(product)
-  const [opening, setOpening] = useState(false)
+  const canOpen = !product.openedAt && !isNonFood(product.category) && (pharma || !isFrozen(product))
+  const [openingSheet, setOpening] = useState(false)
+  const opening = openingSheet && !pharma
+  const { openMedicine, updateProduct, removeProduct } = useStore()
+  const toast = useToast()
+  // Médicament : « Ouvert » note juste la date d'ouverture, sans revoir la péremption (pas de fiche intermédiaire).
+  const markOpen = pharma
+    ? () => {
+        const before = rawProduct
+        setSwipe('none')
+        void openMedicine(before).then((id) =>
+          toast(`${before.name} : ouvert aujourd'hui`, {
+            label: 'Annuler',
+            onClick: () => {
+              if (id === before.id) void updateProduct(before.id, { openedAt: undefined })
+              else void removeProduct(id).then(() => updateProduct(before.id, { quantity: before.quantity }))
+            },
+          }),
+        )
+      }
+    : () => setOpening(true)
   const OPEN_RIGHT = canOpen ? 240 : 120
   const base = swipe === 'left' ? -OPEN_LEFT : swipe === 'right' ? OPEN_RIGHT : 0
   const [dragX, setDragX] = useState<number | null>(null)
@@ -173,7 +202,7 @@ export function ProductItem({
 
   const weightLabel = stockLabel(product)
   // Au poids / volume, la quantité est affichée à droite (« 700 g / 1 kg ») : pas de doublon dans la ligne de détail.
-  const meta = [pharma ? medFormLabel(product.medForm) ?? 'Pharmacie' : product.location?.trim() || categoryLabel(product.category), weightLabel ? null : product.size, product.openedAt ? 'Ouvert' : null].filter(Boolean).join(' · ')
+  const meta = [pharma ? medFormLabel(product.medForm) ?? 'Pharmacie' : product.location?.trim() || categoryLabel(product.category), weightLabel ? null : product.size, product.openedAt ? (pharma ? openedSince(product.openedAt) : 'Ouvert') : null].filter(Boolean).join(' · ')
   const qtyLabel =
     weightLabel ?? (product.unit ? `×${product.quantity} ${product.unit}` : `×${product.quantity}`)
 
@@ -185,8 +214,8 @@ export function ProductItem({
       {/* Action gauche révélée par un glissement vers la droite : périmé */}
       <div className="swipe-actions left">
         {canOpen && (
-          <button className="qty-btn open" onClick={() => setOpening(true)}>
-            Ouvert<span>péremption revue</span>
+          <button className="qty-btn open" onClick={markOpen}>
+            Ouvert<span>{pharma ? "aujourd'hui" : 'péremption revue'}</span>
           </button>
         )}
         <button
@@ -251,7 +280,7 @@ export function ProductItem({
               Consommé
             </button>
             {canOpen && (
-              <button className="pi-act" title="Marquer comme ouvert" onClick={() => setOpening(true)}>
+              <button className="pi-act" title="Marquer comme ouvert" onClick={markOpen}>
                 Ouvert
               </button>
             )}
