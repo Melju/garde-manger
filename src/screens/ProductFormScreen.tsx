@@ -209,7 +209,7 @@ export function ProductFormScreen({ product, initial, onClose, onSaved }: Produc
   const kind: 'food' | 'home' | 'med' = pharma ? 'med' : nonFood ? 'home' : 'food'
   // Pharmacie : forme du médicament (décide de l'unité proposée).
   const [medForm, setMedForm] = useState<MedForm | undefined>(product?.medForm ?? initial?.medForm)
-  // Médicament déjà ouvert (flacon, tube, collyre…) : la date d'ouverture compte autant que la péremption.
+  // Médicament déjà ouvert (flacon, tube, collyre…) : on retient juste ouvert / fermé.
   const [medOpenedAt, setMedOpenedAt] = useState<string>(product?.openedAt ?? '')
   const medFormTouched = useRef(!!(product?.medForm ?? initial?.medForm))
   function pickMedForm(f: MedForm) {
@@ -792,14 +792,6 @@ export function ProductFormScreen({ product, initial, onClose, onSaved }: Produc
                 Oui, ouvert
               </button>
             </div>
-            {medOpenedAt && (
-              <>
-                <label className="form-label" htmlFor="med-opened" style={{ marginTop: 10 }}>
-                  Ouvert le
-                </label>
-                <DatePicker id="med-opened" value={medOpenedAt} onChange={(v) => setMedOpenedAt(v || new Date().toISOString().slice(0, 10))} />
-              </>
-            )}
           </div>
         )}
         {quantity > 1 && (

@@ -2122,7 +2122,7 @@ function productScreen(p) {
     p.brand ? p.brand : "",
     p.location ? `Emplacement : ${p.location}` : "",
     `Quantit\xE9 : \xD7${p.quantity}${p.size ? ` \xB7 ${p.size}` : ""}`,
-    p.openedAt ? `${p.category === "pharmacie" ? "Ouvert" : "Entam\xE9"} le ${new Date(p.openedAt).toLocaleDateString("fr-FR", { day: "numeric", month: "long", timeZone: "Europe/Paris" })}` : ""
+    p.openedAt ? p.category === "pharmacie" ? "Ouvert" : `Entam\xE9 le ${new Date(p.openedAt).toLocaleDateString("fr-FR", { day: "numeric", month: "long", timeZone: "Europe/Paris" })}` : ""
   ].filter(Boolean);
   const line = (text) => ({ type: "Text", text, fontSize: 30, color: C.fg, spacing: 10, maxLines: 1 });
   const doc = page(

@@ -713,7 +713,7 @@ export function productScreen(p: Product) {
     p.brand ? p.brand : '',
     p.location ? `Emplacement : ${p.location}` : '',
     `Quantité : ×${p.quantity}${p.size ? ` · ${p.size}` : ''}`,
-    p.openedAt ? `${p.category === 'pharmacie' ? 'Ouvert' : 'Entamé'} le ${new Date(p.openedAt).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', timeZone: 'Europe/Paris' })}` : '',
+    p.openedAt ? p.category === 'pharmacie' ? 'Ouvert' : `Entamé le ${new Date(p.openedAt).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', timeZone: 'Europe/Paris' })}` : '',
   ].filter(Boolean)
   const line = (text: string) => ({ type: 'Text', text, fontSize: 30, color: C.fg, spacing: 10, maxLines: 1 })
   const doc: any = page(
