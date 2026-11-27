@@ -1,5 +1,3 @@
-import { recordPrices } from '../lib/prices'
-import { getCurrentStore } from '../lib/stores'
 import { notifyShoppingAdded } from '../lib/shoppingNotify'
 import { seedFromProducts } from '../lib/learnedShelf'
 import { seedProductMemory } from '../lib/productMemory'
@@ -131,7 +129,8 @@ interface StoreValue {
   /** Génère une recette via Claude (edge function) à partir du stock. */
   generateRecipe(opts?: { constraints?: string; course?: string }): Promise<Recipe>
   /** Analyse la photo d'un ticket de caisse (Claude Vision) → articles détectés. */
-  scanReceipt(image: string, mediaType: string): Promise<ReceiptItem[]>
+  /** Lit un ticket. `known` : libellés des produits déjà connus, pour que l'IA les reconnaisse. */
+  scanReceipt(image: string, mediaType: string, known?: string[]): Promise<{ items: ReceiptItem[]; store: string | null }>
   /** Lit la photo d'une recette (Claude Vision) → brouillon de recette. */
   scanRecipe(images: { data: string; mediaType: string }[]): Promise<ScannedRecipe>
   /** Marque 1 exemplaire comme ouvert : péremption raccourcie (frigo), reste du stock inchangé. */
@@ -804,19 +803,14 @@ export function StoreProvider({ children }: { children: ReactNode }) {
         await repo.saveRecipes(next)
         return recipe
       },
-      async scanReceipt(image, mediaType) {
+      async scanReceipt(image, mediaType, known) {
         if (!supabase) throw new Error('Connecte-toi pour scanner un ticket')
-        const { data, error } = await invokeFn('receipt', { image, mediaType })
+        const { data, error } = await invokeFn('receipt', { image, mediaType, known: known ?? [] })
         if (error) throw new Error(error.message || 'Analyse impossible')
         const items = (data as any)?.items
         if (!Array.isArray(items)) throw new Error((data as any)?.error || 'Réponse invalide')
-        // Les prix du ticket alimentent le comparatif par magasin (enseigne lue sur le ticket, sinon magasin choisi).
-        const shop = ((data as any)?.store as string | null) || getCurrentStore()
-        if (shop)
-          void recordPrices(
-            (items as ReceiptItem[]).map((it) => ({ name: it.name, store: shop, price: it.price, source: 'ticket' })),
-          )
-        return items as ReceiptItem[]
+        // Les prix sont enregistrés à la validation, avec le magasin confirmé par l'utilisateur.
+        return { items: items as ReceiptItem[], store: ((data as any)?.store as string | null) || null }
       },
       async scanRecipe(images) {
         if (!supabase) throw new Error('Connecte-toi pour scanner une recette')

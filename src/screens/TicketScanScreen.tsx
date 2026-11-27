@@ -1,10 +1,11 @@
-import { useRef, useState } from 'react'
+import { useMemo, useRef, useState } from 'react'
 import { useStore } from '../data/store'
 import { useToast } from '../components/Toast'
 import { PageHeader } from '../components/PageHeader'
 import { Icon } from '../components/Icon'
 import { ReviewItems } from '../components/ReviewItems'
 import type { ReceiptItem } from '../types'
+import { buildKnownCatalog, knownLabel } from '../lib/knownProducts'
 
 interface TicketScanScreenProps {
   onClose: () => void
@@ -54,7 +55,10 @@ function readPdf(file: File): Promise<{ data: string; mediaType: string }> {
 
 export function TicketScanScreen({ onClose, onAdded, mode = 'photo' }: TicketScanScreenProps) {
   const electronic = mode === 'file'
-  const { scanReceipt } = useStore()
+  const { scanReceipt, products, pharmacy, history } = useStore()
+  // Produits déjà connus (stock + historique) : envoyés avec le ticket pour reconnaître les lignes abrégées.
+  const known = useMemo(() => buildKnownCatalog([...products, ...pharmacy], history), [products, pharmacy, history])
+  const [detectedStore, setDetectedStore] = useState<string | null>(null)
   const toast = useToast()
   const fileRef = useRef<HTMLInputElement>(null)
   const [busy, setBusy] = useState(false)
@@ -68,9 +72,10 @@ export function TicketScanScreen({ onClose, onAdded, mode = 'photo' }: TicketSca
     try {
       const isPdf = file.type === 'application/pdf' || /\.pdf$/i.test(file.name)
       const { data, mediaType } = isPdf ? await readPdf(file) : await downscale(file)
-      const found = await scanReceipt(data, mediaType)
-      if (found.length === 0) toast('Aucun article détecté')
-      setItems(found)
+      const found = await scanReceipt(data, mediaType, known.map(knownLabel))
+      if (found.items.length === 0) toast('Aucun article détecté')
+      setDetectedStore(found.store)
+      setItems(found.items)
     } catch (err) {
       toast(err instanceof Error ? err.message : 'Analyse impossible')
     } finally {
@@ -114,7 +119,15 @@ export function TicketScanScreen({ onClose, onAdded, mode = 'photo' }: TicketSca
           <button className="btn-secondary" onClick={() => setItems(null)}>Réessayer</button>
         </div>
       ) : (
-        <ReviewItems items={items} onDone={onAdded} onRetry={() => setItems(null)} matchRecent />
+        <ReviewItems
+          items={items}
+          onDone={onAdded}
+          onRetry={() => setItems(null)}
+          matchRecent
+          known={known}
+          askStore
+          detectedStore={detectedStore}
+        />
       )}
     </div>
   )

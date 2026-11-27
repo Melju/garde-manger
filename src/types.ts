@@ -209,6 +209,8 @@ export interface ReceiptItem {
   size?: string | null
   price: number | null
   category: Category
+  /** Ticket : index du produit déjà connu reconnu par l'IA (dans le catalogue envoyé). */
+  known?: number | null
 }
 
 /**

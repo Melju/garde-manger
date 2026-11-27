@@ -25,6 +25,20 @@ Deno.serve(async (req) => {
   const image: string = typeof body.image === 'string' ? body.image : ''
   const mediaType: string = ['image/jpeg', 'image/png', 'image/webp', 'image/gif', 'application/pdf'].includes(body.mediaType) ? body.mediaType : 'image/jpeg'
   if (!image) return json({ error: 'Aucune image fournie' }, 400)
+  // Produits déjà connus du foyer : l'IA rattache les lignes du ticket à ceux-ci (libellés abrégés compris).
+  const known: string[] = Array.isArray(body.known)
+    ? body.known.filter((k: unknown) => typeof k === 'string' && k.trim()).slice(0, 400).map((k: string) => k.slice(0, 90))
+    : []
+  const knownBlock = known.length
+    ? `
+
+Produits que ce foyer a déjà achetés (numérotés) :
+${known.map((k, i) => `${i + 1}. ${k}`).join('\n')}
+
+Pour chaque article du ticket, si c'est clairement le MÊME produit qu'un de cette liste (même produit et même
+variante, la marque peut être absente du ticket), mets son numéro dans known. Sinon known = null. Ne force jamais
+une correspondance douteuse : un yaourt nature n'est pas un yaourt fraise.`
+    : ''
 
   const prompt = `Voici un ticket de caisse de courses alimentaires (photo, capture d'écran ou ticket électronique en PDF).
 Extrais UNIQUEMENT les articles alimentaires / produits du quotidien achetés (ignore le total,
@@ -39,18 +53,18 @@ Pour chaque article, donne :
   et mets le nombre d'unités dans quantity. null si rien n'est lisible : ne devine jamais.
 - unit : "" (obsolète, laisse vide)
 - price : prix d'UNE unité en euros (nombre) si visible, sinon null (« 2 x 3,49 » → 3.49)
-- category : une seule valeur parmi [${CATEGORIES}]
+- category : une seule valeur parmi [${CATEGORIES}]${known.length ? '\n- known : numéro du produit déjà connu correspondant (voir la liste plus bas), ou null' : ''}
 
 Indique aussi store : le nom court de l'enseigne du magasin (« Lidl », « Colruyt », « Carrefour Market »…), ou null si illisible.
 
 Réponds STRICTEMENT en JSON valide, sans texte autour :
-{"store":string|null,"items":[{"name":string,"quantity":number,"size":string|null,"unit":string,"price":number|null,"category":string}]}
-Si le document n'est pas un ticket lisible, renvoie {"store":null,"items":[]}.`
+{"store":string|null,"items":[{"name":string,"quantity":number,"size":string|null,"unit":string,"price":number|null,"category":string${known.length ? ',"known":number|null' : ''}}]}
+Si le document n'est pas un ticket lisible, renvoie {"store":null,"items":[]}.${knownBlock}`
 
   const res = await callClaude({ apiKey: gate.apiKey,
     prompt,
     tier: 'smart',
-    maxTokens: 2000,
+    maxTokens: 2400,
     images: [{ data: image, mediaType }],
   })
   if (!res.ok) return json({ error: res.detail }, res.status)
@@ -67,6 +81,7 @@ Si le document n'est pas un ticket lisible, renvoie {"store":null,"items":[]}.`
       unit: typeof i.unit === 'string' && ['g', 'kg', 'mL', 'L'].includes(i.unit) ? i.unit : '',
       price: i.price != null && !isNaN(Number(i.price)) ? Number(i.price) : null,
       category: cats.includes(i.category) ? i.category : 'autre',
+      known: Number.isInteger(Number(i.known)) && Number(i.known) >= 1 && Number(i.known) <= known.length ? Number(i.known) - 1 : null,
     }))
     .slice(0, 80)
 
