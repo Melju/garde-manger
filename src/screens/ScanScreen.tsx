@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { BrowserMultiFormatReader } from '@zxing/browser'
+import { countBackCameras, nextCamera } from '../lib/camera'
 import { acquireCamera, releaseCamera } from '../lib/camera'
 import { Icon } from '../components/Icon'
 import { useToast } from '../components/Toast'
@@ -60,8 +61,34 @@ export function ScanScreen({ mode = 'add', onResult, onConsume, findKnown, onAdd
   const [phase, setPhase] = useState<Phase>('scanning')
   const [errorMsg, setErrorMsg] = useState('')
 
+  const [camCount, setCamCount] = useState(0)
+  async function switchCamera() {
+    const v = videoRef.current
+    if (!v) return
+    try {
+      const st = await nextCamera()
+      v.srcObject = st
+      void v.play().catch(() => {})
+      toast('Caméra changée')
+    } catch {
+      toast('Impossible de changer de caméra')
+    }
+  }
+
   useEffect(() => {
     const reader = new BrowserMultiFormatReader()
+    // Détecteur natif (Chrome Android, Samsung Internet…) : bien plus rapide et fiable que ZXing en JavaScript.
+    const Native = (window as any).BarcodeDetector
+    let native: any = null
+    if (Native)
+      Promise.resolve(Native.getSupportedFormats?.() ?? [])
+        .then((f: string[]) => {
+          const want = ['ean_13', 'ean_8', 'upc_a', 'upc_e', 'code_128', 'code_39', 'itf']
+          const formats = want.filter((x) => f.includes(x))
+          if (formats.length) native = new Native({ formats })
+        })
+        .catch(() => {})
+    let decoding = false
     let cancelled = false
 
     async function onDetected(barcode: string) {
@@ -115,6 +142,7 @@ export function ScanScreen({ mode = 'add', onResult, onConsume, findKnown, onAdd
         if (cancelled || !v) return
         v.srcObject = stream
         void v.play().catch(() => {})
+        void countBackCameras().then((n) => !cancelled && setCamCount(n))
         // Boucle de lecture : une tentative de décodage toutes les ~150 ms.
         let reviving = false
         const timer = window.setInterval(() => {
@@ -141,7 +169,20 @@ export function ScanScreen({ mode = 'add', onResult, onConsume, findKnown, onAdd
             void v.play().catch(() => {})
             return
           }
-          if (!v.videoWidth) return
+          if (!v.videoWidth || decoding) return
+          if (native) {
+            decoding = true
+            native
+              .detect(v)
+              .then((codes: { rawValue: string }[]) => {
+                if (codes[0]?.rawValue) void onDetected(codes[0].rawValue)
+              })
+              .catch(() => {})
+              .finally(() => {
+                decoding = false
+              })
+            return
+          }
           try {
             const r = reader.decode(v)
             if (r) void onDetected(r.getText())
@@ -212,6 +253,11 @@ export function ScanScreen({ mode = 'add', onResult, onConsume, findKnown, onAdd
           <Icon name="back" />
         </button>
         <span className="scan-title">{isConsume ? 'Scanner un retrait' : 'Scanner un code-barres'}</span>
+        {camCount > 1 && phase !== 'error' && (
+          <button className="back-btn scan-switch" onClick={() => void switchCamera()} aria-label="Changer de caméra" title="Image floue ? Changer de caméra">
+            <Icon name="camswitch" />
+          </button>
+        )}
       </div>
 
       <div className={`scan-mode-banner${isConsume ? ' minus' : ' plus'}`}>

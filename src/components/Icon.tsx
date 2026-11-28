@@ -58,6 +58,7 @@ export type IconName =
   | 'list'
   | 'snowflake'
   | 'undo'
+  | 'camswitch'
 
 const paths: Record<IconName, React.ReactNode> = {
   bell: (
@@ -371,6 +372,13 @@ const paths: Record<IconName, React.ReactNode> = {
       <path d="M5 14c0-1.7 1.2-3 3.2-3h7.6c2 0 3.2 1.3 3.2 3" />
       <path d="M12 11V8" />
       <path d="M12 3.5c1 1 1 2.5 0 3.5-1-1-1-2.5 0-3.5Z" />
+    </>
+  ),
+  camswitch: (
+    <>
+      <path d="M4 8h3l2-3h6l2 3h3a1 1 0 0 1 1 1v9a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V9a1 1 0 0 1 1-1z" />
+      <path d="M9.5 12.5a3 3 0 0 1 5-1.5l.5.5M14.5 14a3 3 0 0 1-5 1.5l-.5-.5" />
+      <path d="M15 9.8v1.7h-1.7M9 16.2v-1.7h1.7" />
     </>
   ),
   undo: (
