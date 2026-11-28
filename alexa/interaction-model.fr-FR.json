@@ -378,6 +378,28 @@
             "la liste des recettes",
             "ouvre les recettes"
           ]
+        },
+        {
+          "name": "LibreIntent",
+          "slots": [
+            {
+              "name": "phrase",
+              "type": "TEXTE"
+            }
+          ],
+          "samples": [
+            "{phrase}",
+            "et {phrase}",
+            "aussi {phrase}",
+            "puis {phrase}",
+            "alors {phrase}",
+            "euh {phrase}",
+            "non {phrase}",
+            "je suis {phrase}",
+            "moi c'est {phrase}",
+            "pour {phrase}",
+            "avec {phrase}"
+          ]
         }
       ],
       "types": [
@@ -429,6 +451,731 @@
                   "boîte à pharmacie",
                   "médicaments"
                 ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "TEXTE",
+          "values": [
+            {
+              "name": {
+                "value": "du lait"
+              }
+            },
+            {
+              "name": {
+                "value": "le beurre"
+              }
+            },
+            {
+              "name": {
+                "value": "des œufs"
+              }
+            },
+            {
+              "name": {
+                "value": "le comté"
+              }
+            },
+            {
+              "name": {
+                "value": "les yaourts"
+              }
+            },
+            {
+              "name": {
+                "value": "du pain"
+              }
+            },
+            {
+              "name": {
+                "value": "deux paquets de pâtes"
+              }
+            },
+            {
+              "name": {
+                "value": "et le jambon"
+              }
+            },
+            {
+              "name": {
+                "value": "et les pommes"
+              }
+            },
+            {
+              "name": {
+                "value": "un litre de lait"
+              }
+            },
+            {
+              "name": {
+                "value": "la crème fraîche"
+              }
+            },
+            {
+              "name": {
+                "value": "du fromage râpé"
+              }
+            },
+            {
+              "name": {
+                "value": "les tomates"
+              }
+            },
+            {
+              "name": {
+                "value": "des carottes"
+              }
+            },
+            {
+              "name": {
+                "value": "le poulet"
+              }
+            },
+            {
+              "name": {
+                "value": "la viande hachée"
+              }
+            },
+            {
+              "name": {
+                "value": "du riz"
+              }
+            },
+            {
+              "name": {
+                "value": "de la farine"
+              }
+            },
+            {
+              "name": {
+                "value": "du sucre"
+              }
+            },
+            {
+              "name": {
+                "value": "le café"
+              }
+            },
+            {
+              "name": {
+                "value": "du thé"
+              }
+            },
+            {
+              "name": {
+                "value": "les biscuits"
+              }
+            },
+            {
+              "name": {
+                "value": "le chocolat"
+              }
+            },
+            {
+              "name": {
+                "value": "la confiture"
+              }
+            },
+            {
+              "name": {
+                "value": "du jus d'orange"
+              }
+            },
+            {
+              "name": {
+                "value": "de l'eau pétillante"
+              }
+            },
+            {
+              "name": {
+                "value": "la bière"
+              }
+            },
+            {
+              "name": {
+                "value": "le vin"
+              }
+            },
+            {
+              "name": {
+                "value": "les surgelés"
+              }
+            },
+            {
+              "name": {
+                "value": "les petits pois"
+              }
+            },
+            {
+              "name": {
+                "value": "le saumon"
+              }
+            },
+            {
+              "name": {
+                "value": "le thon"
+              }
+            },
+            {
+              "name": {
+                "value": "des sardines"
+              }
+            },
+            {
+              "name": {
+                "value": "la mayonnaise"
+              }
+            },
+            {
+              "name": {
+                "value": "le ketchup"
+              }
+            },
+            {
+              "name": {
+                "value": "la moutarde"
+              }
+            },
+            {
+              "name": {
+                "value": "l'huile d'olive"
+              }
+            },
+            {
+              "name": {
+                "value": "du vinaigre"
+              }
+            },
+            {
+              "name": {
+                "value": "le sel"
+              }
+            },
+            {
+              "name": {
+                "value": "le poivre"
+              }
+            },
+            {
+              "name": {
+                "value": "les épices"
+              }
+            },
+            {
+              "name": {
+                "value": "la sauce tomate"
+              }
+            },
+            {
+              "name": {
+                "value": "des conserves"
+              }
+            },
+            {
+              "name": {
+                "value": "le doliprane"
+              }
+            },
+            {
+              "name": {
+                "value": "le sirop"
+              }
+            },
+            {
+              "name": {
+                "value": "les pansements"
+              }
+            },
+            {
+              "name": {
+                "value": "combien il en reste"
+              }
+            },
+            {
+              "name": {
+                "value": "il en reste"
+              }
+            },
+            {
+              "name": {
+                "value": "mets-en deux"
+              }
+            },
+            {
+              "name": {
+                "value": "plutôt trois"
+              }
+            },
+            {
+              "name": {
+                "value": "non l'autre"
+              }
+            },
+            {
+              "name": {
+                "value": "le premier"
+              }
+            },
+            {
+              "name": {
+                "value": "le deuxième"
+              }
+            },
+            {
+              "name": {
+                "value": "celui du frigo"
+              }
+            },
+            {
+              "name": {
+                "value": "celui qui est ouvert"
+              }
+            },
+            {
+              "name": {
+                "value": "oui"
+              }
+            },
+            {
+              "name": {
+                "value": "non merci"
+              }
+            },
+            {
+              "name": {
+                "value": "c'est tout"
+              }
+            },
+            {
+              "name": {
+                "value": "rien d'autre"
+              }
+            },
+            {
+              "name": {
+                "value": "et aussi des bananes"
+              }
+            },
+            {
+              "name": {
+                "value": "et des oranges"
+              }
+            },
+            {
+              "name": {
+                "value": "pour ce soir"
+              }
+            },
+            {
+              "name": {
+                "value": "pour demain midi"
+              }
+            },
+            {
+              "name": {
+                "value": "au frigo"
+              }
+            },
+            {
+              "name": {
+                "value": "au congélateur"
+              }
+            },
+            {
+              "name": {
+                "value": "dans le placard"
+              }
+            },
+            {
+              "name": {
+                "value": "encore"
+              }
+            },
+            {
+              "name": {
+                "value": "pareil"
+              }
+            },
+            {
+              "name": {
+                "value": "la même chose"
+              }
+            },
+            {
+              "name": {
+                "value": "Julien"
+              }
+            },
+            {
+              "name": {
+                "value": "Stéphanie"
+              }
+            },
+            {
+              "name": {
+                "value": "Alice"
+              }
+            },
+            {
+              "name": {
+                "value": "Jean-Luc"
+              }
+            },
+            {
+              "name": {
+                "value": "c'est Julien"
+              }
+            },
+            {
+              "name": {
+                "value": "moi c'est Stéphanie"
+              }
+            },
+            {
+              "name": {
+                "value": "je suis Alice"
+              }
+            },
+            {
+              "name": {
+                "value": "le lait est fini"
+              }
+            },
+            {
+              "name": {
+                "value": "plus de beurre"
+              }
+            },
+            {
+              "name": {
+                "value": "il manque des œufs"
+              }
+            },
+            {
+              "name": {
+                "value": "on n'en a plus"
+              }
+            },
+            {
+              "name": {
+                "value": "j'en ai utilisé la moitié"
+              }
+            },
+            {
+              "name": {
+                "value": "à moitié"
+              }
+            },
+            {
+              "name": {
+                "value": "un quart"
+              }
+            },
+            {
+              "name": {
+                "value": "200 grammes"
+              }
+            },
+            {
+              "name": {
+                "value": "un kilo"
+              }
+            },
+            {
+              "name": {
+                "value": "une boîte"
+              }
+            },
+            {
+              "name": {
+                "value": "un sachet"
+              }
+            },
+            {
+              "name": {
+                "value": "six bouteilles"
+              }
+            },
+            {
+              "name": {
+                "value": "les fruits"
+              }
+            },
+            {
+              "name": {
+                "value": "les légumes"
+              }
+            },
+            {
+              "name": {
+                "value": "la salade"
+              }
+            },
+            {
+              "name": {
+                "value": "les champignons"
+              }
+            },
+            {
+              "name": {
+                "value": "l'ail"
+              }
+            },
+            {
+              "name": {
+                "value": "les oignons"
+              }
+            },
+            {
+              "name": {
+                "value": "les pommes de terre"
+              }
+            },
+            {
+              "name": {
+                "value": "les courgettes"
+              }
+            },
+            {
+              "name": {
+                "value": "le brocoli"
+              }
+            },
+            {
+              "name": {
+                "value": "les épinards"
+              }
+            },
+            {
+              "name": {
+                "value": "la soupe"
+              }
+            },
+            {
+              "name": {
+                "value": "les pizzas"
+              }
+            },
+            {
+              "name": {
+                "value": "les frites"
+              }
+            },
+            {
+              "name": {
+                "value": "la glace"
+              }
+            },
+            {
+              "name": {
+                "value": "les céréales"
+              }
+            },
+            {
+              "name": {
+                "value": "le muesli"
+              }
+            },
+            {
+              "name": {
+                "value": "les compotes"
+              }
+            },
+            {
+              "name": {
+                "value": "les gâteaux"
+              }
+            },
+            {
+              "name": {
+                "value": "les chips"
+              }
+            },
+            {
+              "name": {
+                "value": "les cacahuètes"
+              }
+            },
+            {
+              "name": {
+                "value": "les olives"
+              }
+            },
+            {
+              "name": {
+                "value": "le houmous"
+              }
+            },
+            {
+              "name": {
+                "value": "le tofu"
+              }
+            },
+            {
+              "name": {
+                "value": "les steaks végétaux"
+              }
+            },
+            {
+              "name": {
+                "value": "les lentilles"
+              }
+            },
+            {
+              "name": {
+                "value": "les pois chiches"
+              }
+            },
+            {
+              "name": {
+                "value": "les haricots"
+              }
+            },
+            {
+              "name": {
+                "value": "le couscous"
+              }
+            },
+            {
+              "name": {
+                "value": "la semoule"
+              }
+            },
+            {
+              "name": {
+                "value": "les nouilles"
+              }
+            },
+            {
+              "name": {
+                "value": "les lasagnes"
+              }
+            },
+            {
+              "name": {
+                "value": "le parmesan"
+              }
+            },
+            {
+              "name": {
+                "value": "la mozzarella"
+              }
+            },
+            {
+              "name": {
+                "value": "l'emmental"
+              }
+            },
+            {
+              "name": {
+                "value": "le camembert"
+              }
+            },
+            {
+              "name": {
+                "value": "le chèvre"
+              }
+            },
+            {
+              "name": {
+                "value": "la feta"
+              }
+            },
+            {
+              "name": {
+                "value": "le yaourt grec"
+              }
+            },
+            {
+              "name": {
+                "value": "la crème"
+              }
+            },
+            {
+              "name": {
+                "value": "le lait d'amande"
+              }
+            },
+            {
+              "name": {
+                "value": "le miel"
+              }
+            },
+            {
+              "name": {
+                "value": "le sirop d'érable"
+              }
+            },
+            {
+              "name": {
+                "value": "la grenadine"
+              }
+            },
+            {
+              "name": {
+                "value": "le sirop de menthe"
+              }
+            },
+            {
+              "name": {
+                "value": "les sodas"
+              }
+            },
+            {
+              "name": {
+                "value": "le coca"
+              }
+            },
+            {
+              "name": {
+                "value": "la limonade"
+              }
+            },
+            {
+              "name": {
+                "value": "le jus de pomme"
+              }
+            },
+            {
+              "name": {
+                "value": "les capsules de café"
+              }
+            },
+            {
+              "name": {
+                "value": "les filtres"
+              }
+            },
+            {
+              "name": {
+                "value": "le papier toilette"
+              }
+            },
+            {
+              "name": {
+                "value": "l'essuie-tout"
+              }
+            },
+            {
+              "name": {
+                "value": "le liquide vaisselle"
+              }
+            },
+            {
+              "name": {
+                "value": "la lessive"
+              }
+            },
+            {
+              "name": {
+                "value": "les sacs poubelle"
+              }
+            },
+            {
+              "name": {
+                "value": "les éponges"
               }
             }
           ]

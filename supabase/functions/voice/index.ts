@@ -32,13 +32,29 @@ Deno.serve(async (req) => {
   if (!text) return json({ error: 'Rien entendu' }, 400)
   const stock: StockLine[] = Array.isArray(body.stock) ? body.stock.slice(0, 400) : []
   const shopping: ShopLine[] = Array.isArray(body.shopping) ? body.shopping.slice(0, 200) : []
+  // Conversation en cours (Alexa) : les derniers échanges, pour comprendre « et le beurre ? », « mets-en deux »…
+  const history: { u: string; a: string }[] = Array.isArray(body.history)
+    ? body.history
+        .filter((h: any) => h && typeof h.u === 'string')
+        .slice(-4)
+        .map((h: any) => ({ u: String(h.u).slice(0, 300), a: String(h.a ?? '').slice(0, 300) }))
+    : []
+  const speaker: string = typeof body.speaker === 'string' ? body.speaker.slice(0, 40).trim() : ''
+  const historyTxt = history.length
+    ? `
+ÉCHANGES PRÉCÉDENTS de cette conversation (du plus ancien au plus récent). La nouvelle phrase peut s'y rapporter
+(« et le beurre ? » = même question pour le beurre, « mets-en deux » = la même action en quantité 2, « non, l'autre ») :
+${history.map((h) => `Utilisateur : ${h.u}\nAssistant : ${h.a}`).join('\n')}
+`
+    : ''
 
   const stockTxt = stock
     .map((p) => `${p.id} | ${p.name}${p.brand ? ` (${p.brand})` : ''} | ×${p.qty}${p.size ? ` | ${p.size}` : ''}${p.opened ? ' | ouvert' : ''}${p.exp ? ` | à consommer avant ${p.exp}` : ''}${p.place ? ` | ${p.place}` : ''}`)
     .join('\n')
   const shopTxt = shopping.map((s) => `${s.id} | ${s.name}${s.qty ? ` | ${s.qty}` : ''}`).join('\n')
 
-  const prompt = `Tu es l'assistant vocal d'une appli de garde-manger familiale. L'utilisateur a dit (transcription automatique, fautes possibles) :
+  const prompt = `Tu es l'assistant vocal d'une appli de garde-manger familiale.${speaker ? ` Tu parles avec ${speaker} (tu peux l'appeler par son prénom, sans en abuser).` : ''}${historyTxt}
+L'utilisateur dit maintenant (transcription automatique, fautes possibles, la phrase peut être incomplète ou sans verbe) :
 """${text}"""
 
 STOCK actuel (id | nom | nombre d'exemplaires | contenance restante/d'origine | état | date | emplacement). Nous sommes le ${new Date().toISOString().slice(0, 10)} :
@@ -65,6 +81,7 @@ Règles :
 - Un produit absent du stock pour une action stock_* : ne l'invente pas, ajoute-le à "unknown".
 - N'ajoute pas aux courses un article déjà présent dans la LISTE : signale-le dans reply.
 - Plusieurs demandes dans une phrase = plusieurs actions, dans l'ordre.
+- Phrase sans verbe (« du lait », « le beurre ? », « deux paquets ») : déduis l'intention des ÉCHANGES PRÉCÉDENTS s'il y en a ; sinon, un nom de produit seul est une question (« est-ce qu'il en reste ? »).
 - label : une phrase très courte en français décrivant l'action (ex « Lait 2 L aux courses », « −200 g de Comté »).
 - Si l'utilisateur POSE UNE QUESTION (« est-ce que j'ai encore du beurre ? », « il reste combien d'œufs ? », « qu'est-ce qui périme bientôt ? », « c'est sur la liste ? »), ne crée aucune action : réponds dans "reply" en t'appuyant uniquement sur le STOCK et la LISTE ci-dessus (quantités, contenance restante, ouvert ou non).
 - "reply" : toujours présent. Une ou deux phrases naturelles, au tutoiement, qui seront LUES À VOIX HAUTE : soit la réponse à la question, soit la confirmation de ce qui va être fait (ex « C'est noté, j'ajoute 2 litres de lait et des pommes à la liste de courses. »). Pas d'emoji, pas de liste, pas d'identifiants, orthographe soignée. S'il faut choisir (ask), pose la question.

@@ -2605,6 +2605,21 @@ async function setConfig(key, value) {
   } catch {
   }
 }
+async function getConfig(key) {
+  try {
+    const k = env("SUPABASE_SERVICE_ROLE_KEY");
+    const r = await fetch(`${env("SUPABASE_URL")}/rest/v1/push_config?key=eq.${encodeURIComponent(key)}&select=value`, {
+      headers: { apikey: k, authorization: `Bearer ${k}` }
+    });
+    return (await r.json())[0]?.value ?? null;
+  } catch {
+    return null;
+  }
+}
+async function shortHash(s) {
+  const d = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(s));
+  return [...new Uint8Array(d)].slice(0, 10).map((b) => b.toString(16).padStart(2, "0")).join("");
+}
 async function note(msg) {
   try {
     const k = env("SUPABASE_SERVICE_ROLE_KEY");
@@ -2714,6 +2729,8 @@ async function handleCommand(text, link, alexaUser, ui = { apl: false }) {
     headers: { apikey: env("SUPABASE_ANON_KEY"), authorization: `Bearer ${jwt}`, "content-type": "application/json" },
     body: JSON.stringify({
       text,
+      history: ui.turns ?? [],
+      speaker: ui.speaker || void 0,
       stock: products.slice(0, 400).map((p) => ({
         id: p.id,
         name: p.name,
@@ -3049,7 +3066,8 @@ var VERBS = {
   JaiIntent: "j\u2019ai",
   QuestionIntent: "Question :",
   PlusIntent: "on n\u2019a plus",
-  CommandeIntent: ""
+  CommandeIntent: "",
+  LibreIntent: ""
 };
 var FIXED = {
   ContenuIntent: (lieu) => lieu ? `Qu\u2019est-ce qu\u2019il y a dans ${lieu === "pharmacie" ? "la" : "le"} ${lieu} ? Ne cite que les produits dont l\u2019emplacement est \xAB ${lieu} \xBB (sans tenir compte des majuscules), et r\xE9sume en quelques mots.` : "Qu\u2019est-ce que j\u2019ai en stock ? R\xE9sume en quelques mots, en citant d\u2019abord ce qui p\xE9rime bient\xF4t.",
@@ -3107,8 +3125,53 @@ Deno.serve(async (req) => {
         })
       );
     }
-    if (rq.type === "LaunchRequest")
-      return send(await handleHome(link, apl, (n) => `Salut${n ? ` ${n}` : ""} ! Qu\u2019est-ce que je fais ?`));
+    const personId = body?.context?.System?.person?.personId ?? "";
+    const attrsIn = body?.session?.attributes ?? {};
+    const turns = Array.isArray(attrsIn.turns) ? attrsIn.turns.slice(-4) : [];
+    let speaker = typeof attrsIn.speaker === "string" ? attrsIn.speaker : "";
+    if (!speaker && personId) speaker = await getConfig(`alexa_person_${await shortHash(personId)}`) ?? "";
+    const conv = (r, u) => {
+      if (!r?.response) return r;
+      const a = String(r.response.outputSpeech?.ssml ?? "").replace(/<[^>]+>/g, "").trim();
+      r.sessionAttributes = {
+        ...r.sessionAttributes ?? {},
+        ...speaker ? { speaker } : {},
+        turns: u && a ? [...turns, { u: u.slice(0, 300), a: a.slice(0, 300) }].slice(-4) : turns
+      };
+      if (r.response.outputSpeech) r.response.shouldEndSession = false;
+      return r;
+    };
+    const phraseIn = rq.intent?.slots?.phrase?.value ?? "";
+    if (attrsIn.askName && personId && phraseIn) {
+      const nm = phraseIn.replace(/^(c'?est|c’est|moi c'?est|moi c’est|je suis|je m'?appelle|je m’appelle|ici)\s+/i, "").trim().split(/\s+/)[0];
+      const name = nm ? nm.charAt(0).toUpperCase() + nm.slice(1).toLowerCase() : "";
+      if (name) {
+        await setConfig(`alexa_person_${await shortHash(personId)}`, name);
+        speaker = name;
+        return send(conv(say(`Enchant\xE9e ${name} ! Je reconna\xEEtrai ta voix. Je t\u2019\xE9coute.`)));
+      }
+    }
+    if (rq.type === "LaunchRequest") {
+      const today = (/* @__PURE__ */ new Date()).toLocaleDateString("sv-SE", { timeZone: "Europe/Paris" });
+      const gkey = `alexa_greet_${await shortHash(alexaUser + personId)}`;
+      const greeted = await getConfig(gkey) === today;
+      void setConfig(gkey, today);
+      if (personId && !speaker) {
+        const r = await handleHome(link, apl, () => "Salut ! Je ne reconnais pas encore ta voix. C\u2019est qui ?");
+        r.sessionAttributes = { ...r.sessionAttributes ?? {}, askName: true };
+        return send(r);
+      }
+      const short = ["Oui ?", "Je t\u2019\xE9coute.", "Dis-moi."];
+      return send(
+        conv(
+          await handleHome(
+            link,
+            apl,
+            (n) => greeted ? short[Math.floor(Math.random() * short.length)] : `Salut${speaker || n ? ` ${speaker || n}` : ""} ! Je t\u2019\xE9coute.`
+          )
+        )
+      );
+    }
     if (intent === "AMAZON.HelpIntent" || intent === "AMAZON.NavigateHomeIntent")
       return send(
         await handleHome(
@@ -3157,13 +3220,13 @@ Deno.serve(async (req) => {
       }
       return send({ version: "1.0", response: {} });
     }
-    const pending = body?.session?.attributes?.pending;
-    const phrase = rq.intent?.slots?.phrase?.value ?? "";
+    const pending = attrsIn.pending;
+    const phrase = phraseIn;
     if (pending && phrase) {
       const text = `${pending.question} R\xE9ponse : ${phrase}. (Action : ${pending.then}${pending.then === "stock_remove" ? ` ${pending.amount} ${pending.unit}` : ""})`;
-      return send(await handleCommand(text, link, alexaUser, { apl, query: phrase }));
+      return send(conv(await handleCommand(text, link, alexaUser, { apl, query: phrase, turns, speaker }), phrase));
     }
-    if (intent === "ListeIntent") return send(await handleList(link, apl));
+    if (intent === "ListeIntent") return send(conv(await handleList(link, apl), "Qu\u2019est-ce qu\u2019il y a sur la liste ?"));
     if (intent === "SemaineIntent") return send(await handleWeek(link, apl, 0, true));
     if (intent === "RecettesIntent") {
       const r = await handleNav("recipes", link, alexaUser, apl);
@@ -3186,19 +3249,15 @@ Deno.serve(async (req) => {
     if (intent in FIXED) {
       const lieu = rq.intent?.slots?.lieu?.resolutions?.resolutionsPerAuthority?.[0]?.values?.[0]?.value?.name ?? rq.intent?.slots?.lieu?.value;
       const view = intent === "ContenuIntent" ? "grid" : intent === "RecetteIntent" ? "recipe" : void 0;
-      return send(await handleCommand(FIXED[intent](lieu), link, alexaUser, { apl, view, lieu }));
+      return send(conv(await handleCommand(FIXED[intent](lieu), link, alexaUser, { apl, view, lieu, turns, speaker }), FIXED[intent](lieu).split("?")[0] + " ?"));
     }
     if (intent in VERBS && phrase) {
       const verb = VERBS[intent];
-      return send(await handleCommand(verb ? `${verb} ${phrase}` : phrase, link, alexaUser, { apl, query: phrase }));
+      const said = verb ? `${verb} ${phrase}` : phrase;
+      return send(conv(await handleCommand(said, link, alexaUser, { apl, query: phrase, turns, speaker }), said));
     }
     if (intent === "AMAZON.FallbackIntent" || intent in VERBS)
-      return send(
-        say("Je n\u2019ai pas saisi. Commence par un verbe, par exemple : ajoute du lait, j\u2019ai fini le beurre, ou est-ce qu\u2019il reste des \u0153ufs.", {
-          end: false,
-          reprompt: "Que veux-tu faire ?"
-        })
-      );
+      return send(conv(say("Je n\u2019ai pas saisi. Tu peux le redire autrement ?", { end: false })));
     return send(say("Je n\u2019ai pas compris.", { end: false, reprompt: "Que veux-tu faire ?" }));
   } catch (e) {
     await note(`erreur : ${e instanceof Error ? `${e.message} ${e.stack ?? ""}` : String(e)}`);
